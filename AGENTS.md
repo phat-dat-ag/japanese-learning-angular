@@ -14,7 +14,7 @@ Repository guide for AI coding agents. Applies to this Angular workspace and its
 
 ## Project and tooling
 
-Japanese Learning is a browser Angular application with a shared layout, a minimal home page, and a flashcard learning feature. The current frontend uses in-memory sample data. Authentication, backend integration, vocabulary management, and persistent learning progress are planned, not implemented here. There is no backend implementation or API contract in this workspace.
+Japanese Learning is a browser Angular application with a shared layout, a minimal home page, and a flashcard learning feature. The frontend loads JLPT levels from Quarkus; lesson/study data remains in-memory samples. Authentication, further backend integration, vocabulary management, and persistent learning progress are planned. The backend implementation is outside this workspace; shared frontend API contracts live in `core/api/`.
 
 Declared tooling in `package.json`:
 - Angular 22.1.x; Angular CLI/build 22.1.x.
@@ -58,7 +58,9 @@ Paths are relative to this workspace. Component folders normally contain matchin
 | Lesson selection | `src/app/features/flashcard/pages/lesson-list/`, `components/lesson-card/` within the same feature |
 | Study sequencing and progress | `src/app/features/flashcard/pages/study/study.ts` and `.html` |
 | Individual card display and reveal | `src/app/features/flashcard/components/flashcard/flashcard.ts` and `.html` |
-| Sample data and retrieval | `src/app/features/flashcard/services/flashcard.service.ts` |
+| JLPT API retrieval | `src/app/features/flashcard/services/jlpt-level.service.ts` |
+| Shared API contracts, validation, configuration, and errors | `src/app/core/api/`, `proxy.conf.json` |
+| Sample lesson/study data and retrieval | `src/app/features/flashcard/services/flashcard.service.ts` |
 | Domain types | `src/app/features/flashcard/models/` |
 | Global styles and Tailwind integration | `src/styles.css`, `.postcssrc.json` |
 | Document title, base URL, favicon | `src/index.html`, `public/favicon.ico` |
@@ -66,7 +68,7 @@ Paths are relative to this workspace. Component folders normally contain matchin
 
 Execution flow:
 1. `src/main.ts` calls `bootstrapApplication(App, appConfig)`.
-2. `app.config.ts` provides browser global error listeners and `provideRouter(routes)`. No HTTP client provider is currently registered.
+2. `app.config.ts` provides browser global error listeners and `provideRouter(routes)`. `provideHttpClient()` registers HTTP support.
 3. `App` renders only a router outlet.
 4. The empty-path route lazily loads `MainLayout`; its child outlet hosts Home and flashcard pages.
 5. `MainLayout` renders Header, an optional Sidebar, the child outlet, and Footer. Its `isSidebarOpen` signal starts true. Header's `toggleSidebarFromHeader` output calls the layout's `toggleSidebar()`.
@@ -98,23 +100,34 @@ Models:
 - `models/flashcard-lesson.model.ts`: `FlashcardLesson` has `id, levelId, lessonNumber, title, description, vocabularyCount`.
 - `models/flashcard.model.ts`: `Flashcard` has required `id, lessonId, word, reading, meaning`; optional `exampleSentence, exampleTranslation, audioUrl`.
 
-`FlashcardService` is root-provided and synchronous:
-- `getLevels(): FlashcardLevel[]`
+`JlptLevelService.getLevels()` returns `Observable<readonly JlptLevel[]>` from the backend. `JlptLevel` contains only `code` and `name`; transport validation rejects malformed rows, blank codes/names, and duplicate codes. The service then filters to supported uppercase N1–N5 codes, so additional codes such as n6 do not fail the entire list. An entirely unsupported list renders the empty state. LevelCard derives the lowercase route ID and does not invent counts or descriptions.
+
+`FlashcardService` remains root-provided and synchronous for sample lesson/study pages:
 - `getLevelById(levelId): FlashcardLevel | undefined`
 - `getLessonsByLevel(levelId): FlashcardLesson[]`
 - `getLessonById(lessonId): FlashcardLesson | undefined`
 - `getFlashcardsByLesson(lessonId): Flashcard[]`
 
-No HTTP, Observable fetching, loading state, or persistence is implemented. Returned objects refer to the service's sample objects; avoid mutating them from display components.
+Sample service objects are not persisted and refer to the service's arrays; avoid mutating them from display components. The legacy level metadata remains only for lesson/study headings. The level-selection page uses backend data exclusively.
 
 Current sample data includes five levels (N5 through N1), three N5 lessons, and three cards belonging only to `n5-lesson-01`. Displayed lesson/vocabulary counts are sample metadata and do not match actual array lengths. Japanese words/readings, English meanings, and Vietnamese example translations coexist intentionally in the source.
 
 Page/component responsibilities:
-- `LevelList` retrieves levels and passes each to LevelCard's required `level` signal input.
+- `LevelList` uses `JlptLevelService`, `toSignal`, and a discriminated loading/loaded/error state. Retry triggers `switchMap`; stale requests and requests on page destruction are cancelled. The loaded state distinguishes empty data. LevelCard receives a required `JlptLevel` input. Both components use OnPush.
 - `LessonList` retrieves a level and its lessons; LessonCard takes required `lesson` and `levelId` inputs and builds the study link.
 - `Study` retrieves level, lesson, and cards. `currentIndex` starts at zero; `currentCard` and `progress` are computed signals. Progress is `(index + 1) / cardCount * 100`, or zero for an empty deck. `nextCard()` stops at the last card.
 - The Flashcard UI component takes required `card` input. Its local `revealed` signal starts false; `reveal()` sets it true and emits `revealedChange(true)`. The template always shows word/reading and conditionally shows meaning/examples.
 - The component class and domain interface are both named `Flashcard`; the component imports the interface as `FlashcardModel`.
+
+## Backend API conventions
+
+- `ApiClient` in `core/api/` owns HTTP transport, timeout, envelope validation, and normalized errors. Feature services own endpoints and payload validation. Components own presentation state. Avoid a catch-all interceptor that changes unrelated HTTP traffic or a generic CRUD abstraction without a use case.
+- `ApiResponse<T>` is a discriminated union: `{ success: true, data, meta }` or `{ success: false, error: { code, message, details }, meta }`. Metadata contains `timestamp`, `traceId`, and `correlationId`; validation details contain `field` and `message`. Runtime guards validate the envelope and feature payloads.
+- `ApiClient.get(path, isData)` returns `Observable<ApiSuccess<T>>`, retaining success metadata. `ApiError` retains backend code/message, validation details, metadata, and HTTP status for both non-2xx and `success: false` 2xx responses. Network, timeout, invalid response, and unstructured HTTP errors are normalized. Pages show safe user-facing messages rather than internal diagnostics.
+- `API_CONFIG` defaults to `/api/v1` and 15,000 ms. Override through dependency injection when necessary. No automatic retries or persistent cache are configured; the page offers manual retry.
+- Confirmed endpoint: `GET /api/v1/jlpt-levels`; fields are `code` and `name`. Preserve server ordering. Lowercase URLs remain compatible with the sample lesson pages.
+- `angular.json` configures `proxy.conf.json` for `ng serve`: `/api/**` forwards to `http://localhost:8080`. Restart the dev server after proxy edits. Production hosting must proxy `/api/**` itself and support SPA fallback, or override `API_CONFIG` for a separate HTTPS API with matching backend CORS. Never ship localhost as the production API origin.
+- On Windows PowerShell with restricted script execution, use `npm.cmd` / `npx.cmd` instead of changing execution policy.
 
 ## Implementation conventions
 
@@ -146,7 +159,7 @@ These are source observations, not a request to fix them on every task.
 ## Validation and delivery
 
 - For behavior changes, add or update focused tests and run them with the Angular test command. Before a PR, README calls for tests and a production build; use `npm test -- --watch=false` and `npm run build`.
-- Existing specs cover App, Home, Header, Sidebar, Footer, and MainLayout, and only assert creation. Flashcard pages/components/service currently have no tests. Do not infer behavioral coverage from those smoke tests.
+- Existing specs cover App, Home, Header, Sidebar, Footer, and MainLayout, and only assert creation. Additional tests in `core/api/api-client.service.spec.ts` and `features/flashcard/pages/level-list/level-list.spec.ts` cover API envelopes, network errors, timeout, payload validation, links, loading/empty/error/retry, and cancellation. Other flashcard pages and the sample service remain untested.
 - Tests use Angular TestBed with standalone components in `imports`, Vitest globals, and `fixture.whenStable()`. Provide router dependencies (e.g. `provideRouter([])`) when a tested component requires routing. Set required signal inputs through `fixture.componentRef.setInput(...)` before rendering.
 - Relevant flashcard checks include reveal behavior across card changes, index bounds, empty decks, missing IDs, and route parameter changes. Test changed behavior rather than duplicating implementation details.
 - For UI changes, manually check the populated N5 study URL, N4's empty lesson list, N5 lesson 02's empty deck, back links, sidebar toggle, and narrow viewport behavior as applicable.

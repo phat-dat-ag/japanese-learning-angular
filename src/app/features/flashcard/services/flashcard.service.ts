@@ -104,10 +104,6 @@ export class FlashcardService {
         }
     ];
 
-    getLevels(): FlashcardLevel[] {
-        return this.levels;
-    }
-
     getLevelById(levelId: string): FlashcardLevel | undefined {
         return this.levels.find(level => level.id === levelId);
     }

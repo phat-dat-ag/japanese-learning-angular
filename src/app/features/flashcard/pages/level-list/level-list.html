@@ -1,21 +1,37 @@
 <div class="mx-auto max-w-6xl px-6 py-8">
-    <div>
-        <p class="text-sm font-medium text-indigo-600">
-            Flashcard
-        </p>
+  <div>
+    <p class="text-sm font-medium text-indigo-600">Flashcard</p>
+    <h1 class="mt-2 text-3xl font-bold text-gray-900">Choose your level</h1>
+    <p class="mt-2 text-gray-500">Select a JLPT level to start learning vocabulary.</p>
+  </div>
 
-        <h1 class="mt-2 text-3xl font-bold text-gray-900">
-            Choose your level
-        </h1>
-
-        <p class="mt-2 text-gray-500">
-            Select a JLPT level to start learning vocabulary.
-        </p>
+  @let current = state();
+  <section class="mt-8" aria-label="JLPT levels" [attr.aria-busy]="current.status === 'loading'">
+    @switch (current.status) {
+    @case ('loading') {
+    <p role="status" class="py-12 text-center text-gray-500">Loading JLPT levels…</p>
+    }
+    @case ('error') {
+    <div class="rounded-xl border border-red-200 bg-red-50 p-8 text-center">
+      <p role="alert" class="text-red-700">Unable to load JLPT levels. Please try again.</p>
+      <button type="button" (click)="retry()"
+        class="mt-4 rounded-lg bg-indigo-600 px-5 py-2 font-medium text-white hover:bg-indigo-700 focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-indigo-600">
+        Try again
+      </button>
     </div>
-
-    <div class="mt-8 grid gap-6 sm:grid-cols-2 lg:grid-cols-3">
-        @for (level of levels; track level.id) {
-        <app-level-card [level]="level" />
-        }
+    }
+    @case ('loaded') {
+    <div class="grid gap-6 sm:grid-cols-2 lg:grid-cols-3">
+      @for (level of current.levels; track level.code) {
+      <app-level-card [level]="level" />
+      } @empty {
+      <p role="status"
+        class="col-span-full rounded-xl border border-dashed border-gray-300 p-12 text-center text-gray-500">
+        No JLPT levels available.
+      </p>
+      }
     </div>
+    }
+    }
+  </section>
 </div>

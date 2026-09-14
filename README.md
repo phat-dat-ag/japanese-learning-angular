@@ -9,16 +9,16 @@ An Angular frontend for learning Japanese through JLPT levels, lessons, and voca
 - Reveal card answers and move through a lesson with a progress indicator.
 - Navigate through a shared header, collapsible sidebar, and footer.
 
-The app currently uses local sample data: three N5 lessons, with three flashcards in the first lesson. Other levels have no lessons yet. Displayed vocabulary and lesson counts are placeholder metadata.
+JLPT levels are loaded from the Quarkus API. Lessons and study cards still use local sample data: three N5 lessons, with three cards in the first lesson. Counts shown on lesson pages are placeholder metadata.
 
 ## Tech stack
 
-| Technology | Purpose |
-| --- | --- |
+| Technology                  | Purpose                 |
+| --------------------------- | ----------------------- |
 | Angular 22 and TypeScript 6 | Application and routing |
-| Tailwind CSS 4 | Styling |
-| RxJS 7 | Reactive utilities |
-| Vitest 4 and jsdom | Unit testing |
+| Tailwind CSS 4              | Styling                 |
+| RxJS 7                      | Reactive utilities      |
+| Vitest 4 and jsdom          | Unit testing            |
 
 ## Getting started
 
@@ -31,24 +31,32 @@ npm start
 
 Open [localhost:4200](http://localhost:4200). The development server reloads when source files change.
 
-To try the sample deck, go to **Flashcards → N5 → Lesson 1**.
+Start Quarkus on `http://localhost:8080`, then go to **Flashcards → N5 → Lesson 1** to try the sample deck.
+
+## API configuration
+
+The level list calls `GET /api/v1/jlpt-levels`. During development, `proxy.conf.json` forwards `/api/**` to `http://localhost:8080`, avoiding cross-origin requests from the browser. Restart `npm start` after changing proxy settings.
+
+Shared API types, runtime response validation, and error handling live in `src/app/core/api/`. `API_CONFIG` sets the base URL and a 15-second timeout. The level list provides loading, empty, error, and retry states.
+
+For production, configure the web server to proxy `/api/**` to Quarkus and serve Angular routes through `index.html`. The development proxy is not included in the production build. For a separate API origin, override `API_CONFIG` in `app.config.ts` and configure backend CORS for the frontend origin. Use HTTPS in production.
 
 ## Development commands
 
-| Task | Command |
-| --- | --- |
-| Start development server | `npm start` |
-| Production build | `npm run build` |
-| Run tests once | `npm test -- --watch=false` |
-| Watch tests | `npm test -- --watch=true` |
-| Watch development build | `npm run watch` |
+| Task                     | Command                     |
+| ------------------------ | --------------------------- |
+| Start development server | `npm start`                 |
+| Production build         | `npm run build`             |
+| Run tests once           | `npm test -- --watch=false` |
+| Watch tests              | `npm test -- --watch=true`  |
+| Watch development build  | `npm run watch`             |
 
 ## Project structure
 
 ```text
 src/
   app/
-    core/layout/       # Header, sidebar, footer, and main layout
+    core/              # Shared API infrastructure and application layout
     features/
       home/            # Landing page
       flashcard/       # Pages, components, models, service, and routes
@@ -58,11 +66,11 @@ src/
 public/                # Static assets
 ```
 
-The app uses standalone components and lazy-loaded routes. Each feature keeps its UI and data logic together; flashcard sample data lives in `src/app/features/flashcard/services/flashcard.service.ts`.
+The app uses standalone components and lazy-loaded routes. Feature services handle domain data: `JlptLevelService` loads backend levels, while `FlashcardService` supplies sample lessons and study cards.
 
 ## Development status
 
-The flashcard flow is an early prototype. Authentication, backend integration, vocabulary management, and saved learning progress are planned. Some sidebar links are placeholders, and existing unit tests mainly check component creation.
+Backend integration currently covers JLPT levels. Authentication, lesson/card API integration, vocabulary management, and saved progress are planned. Some sidebar links remain placeholders. Tests cover API response/error handling and the level-list flow, alongside layout creation checks.
 
 ## Contributing
 

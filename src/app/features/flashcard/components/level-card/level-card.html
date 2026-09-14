@@ -1,26 +1,6 @@
-<a [routerLink]="['/flashcards', level().id]"
-    class="group block rounded-xl border border-gray-200 bg-white p-6 shadow-sm transition hover:-translate-y-1 hover:border-indigo-300 hover:shadow-md">
-    <div class="flex items-start justify-between">
-        <div>
-            <p class="text-sm font-medium text-indigo-600">
-                {{ level().code }}
-            </p>
-
-            <h3 class="mt-1 text-xl font-semibold text-gray-900">
-                {{ level().name }}
-            </h3>
-        </div>
-
-        <span class="rounded-full bg-indigo-50 px-3 py-1 text-xs font-medium text-indigo-600">
-            {{ level().lessonCount }} lessons
-        </span>
-    </div>
-
-    <p class="mt-4 text-sm text-gray-500">
-        {{ level().description }}
-    </p>
-
-    <div class="mt-6 text-sm font-medium text-indigo-600">
-        Start learning →
-    </div>
+<a [routerLink]="['/flashcards', levelId()]"
+  class="group block rounded-xl border border-gray-200 bg-white p-6 shadow-sm transition hover:-translate-y-1 hover:border-indigo-300 hover:shadow-md focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-indigo-600">
+  <p class="text-sm font-medium text-indigo-600">{{ level().code }}</p>
+  <h2 class="mt-1 text-xl font-semibold text-gray-900">{{ level().name }}</h2>
+  <div class="mt-6 text-sm font-medium text-indigo-600">Start learning →</div>
 </a>
