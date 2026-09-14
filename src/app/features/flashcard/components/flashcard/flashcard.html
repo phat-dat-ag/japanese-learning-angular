@@ -1,47 +1,121 @@
-<button type="button"
-    class="w-full max-w-2xl rounded-2xl border border-gray-200 bg-white p-8 text-left shadow-sm transition hover:shadow-md"
-    (click)="reveal()">
-    <div class="min-h-[360px]">
-        <div class="flex items-center justify-between">
-            <span class="text-xs font-medium uppercase tracking-wider text-gray-400">
-                Vocabulary
-            </span>
-
-            @if (!revealed()) {
-            <span class="text-xs text-gray-400">
-                Click to reveal
-            </span>
-            }
-        </div>
-
-        <div class="flex min-h-[300px] flex-col items-center justify-center text-center">
-            <p class="text-5xl font-bold text-gray-900">
-                {{ card().word }}
-            </p>
-
-            <p class="mt-4 text-xl text-gray-500">
-                {{ card().reading }}
-            </p>
-
-            @if (revealed()) {
-            <div class="mt-10">
-                <p class="text-2xl font-semibold text-indigo-600">
-                    {{ card().meaning }}
-                </p>
-
-                @if (card().exampleSentence) {
-                <p class="mt-6 text-lg text-gray-700">
-                    {{ card().exampleSentence }}
-                </p>
-                }
-
-                @if (card().exampleTranslation) {
-                <p class="mt-2 text-sm text-gray-500">
-                    {{ card().exampleTranslation }}
-                </p>
-                }
-            </div>
-            }
-        </div>
+@let detail = card();
+<article class="space-y-6 text-gray-700">
+  <header class="rounded-2xl border border-gray-200 bg-white p-8 shadow-sm">
+    <p class="text-sm font-medium text-indigo-600">Vocabulary</p>
+    <h1 lang="ja" class="mt-4 break-words text-5xl font-bold text-gray-900">
+      {{ detail.vocabulary.word }}
+    </h1>
+    <p class="mt-3 text-sm text-gray-500">
+      Normalized word: <span lang="ja">{{ detail.vocabulary.normalizedWord }}</span>
+    </p>
+    <div class="mt-4 flex flex-wrap gap-2">
+      @for (level of detail.levels; track $index) {
+      <span class="rounded-full bg-indigo-50 px-3 py-1 text-sm font-medium text-indigo-700">{{
+        level.name
+        }}</span>
+      }
+      @for (part of detail.partsOfSpeech; track $index) {
+      <span class="rounded-full bg-gray-100 px-3 py-1 text-sm">{{ part.nameEn }} / <span lang="vi">{{ part.nameVi
+          }}</span></span>
+      }
     </div>
-</button>
+  </header>
+  <div class="grid gap-6 md:grid-cols-2">
+    <section class="rounded-2xl border border-gray-200 bg-white p-6">
+      <h2 class="text-lg font-semibold text-gray-900">Readings</h2>
+      <ul class="mt-4 space-y-4">
+        @for (reading of detail.readings; track $index) {
+        <li>
+          <span lang="ja" class="text-xl">{{ reading.reading }}</span>
+          @if (reading.isPrimary) {
+          <span class="ml-2 text-xs font-medium text-indigo-700">Primary</span>
+          }
+          @if (reading.pitchAccents.length) {
+          <p class="mt-1 text-sm text-gray-500">
+            Pitch accents: {{ reading.pitchAccents.join(', ') }}
+          </p>
+          }
+        </li>
+        } @empty {
+        <li class="text-gray-500">No readings available.</li>
+        }
+      </ul>
+    </section>
+    <section class="rounded-2xl border border-gray-200 bg-white p-6">
+      <h2 class="text-lg font-semibold text-gray-900">Meanings</h2>
+      <ul class="mt-4 space-y-4">
+        @for (meaning of detail.meanings; track $index) {
+        <li>
+          <span class="mr-2 text-xs font-semibold uppercase text-gray-500">{{
+            meaning.languageCode
+            }}</span>
+          <span [attr.lang]="meaning.languageCode">{{ meaning.meaning }}</span>
+          @if (meaning.isPrimary) {
+          <span class="ml-2 text-xs font-medium text-indigo-700">Primary</span>
+          }
+        </li>
+        } @empty {
+        <li class="text-gray-500">No meanings available.</li>
+        }
+      </ul>
+    </section>
+  </div>
+  <section class="rounded-2xl border border-gray-200 bg-white p-6">
+    <h2 class="text-lg font-semibold text-gray-900">Kanji</h2>
+    <div class="mt-4 grid gap-4 sm:grid-cols-2">
+      @for (kanji of detail.kanji; track $index) {
+      <div class="rounded-xl bg-gray-50 p-5">
+        <h3 lang="ja" class="text-3xl font-semibold text-gray-900">{{ kanji.character }}</h3>
+        <p class="mt-2 text-sm text-gray-500">{{ kanji.strokeCount }} strokes</p>
+        <p lang="en" class="mt-2">{{ kanji.meaningEn }}</p>
+        <p lang="vi">{{ kanji.meaningVi }}</p>
+        <ul class="mt-3 space-y-1 text-sm">
+          @for (reading of kanji.readings; track $index) {
+          <li>
+            {{ reading.readingType }}: <span lang="ja">{{ reading.reading }}</span>
+          </li>
+          }
+        </ul>
+      </div>
+      } @empty {
+      <p class="text-gray-500">No kanji information available.</p>
+      }
+    </div>
+  </section>
+  <section class="rounded-2xl border border-gray-200 bg-white p-6">
+    <h2 class="text-lg font-semibold text-gray-900">Examples</h2>
+    <ul class="mt-4 space-y-6">
+      @for (example of detail.examples; track $index) {
+      <li class="border-l-2 border-indigo-200 pl-4">
+        <p lang="ja" class="text-lg font-medium text-gray-900">{{ example.japaneseText }}</p>
+        <p lang="ja" class="mt-1 text-gray-500">{{ example.japaneseReading }}</p>
+        <p lang="en" class="mt-2">{{ example.meaningEn }}</p>
+        <p lang="vi">{{ example.meaningVi }}</p>
+        @if (example.targetText) {
+        <p class="mt-2 text-sm text-indigo-700">
+          Target: <span lang="ja">{{ example.targetText }}</span>
+        </p>
+        }
+      </li>
+      } @empty {
+      <li class="text-gray-500">No examples available.</li>
+      }
+    </ul>
+  </section>
+  <section class="rounded-2xl border border-gray-200 bg-white p-6">
+    <h2 class="text-lg font-semibold text-gray-900">Lessons</h2>
+    <ul class="mt-4 space-y-4">
+      @for (lesson of detail.lessons; track $index) {
+      <li>
+        <p class="text-sm text-indigo-700">
+          {{ lesson.levelName }} / Lesson {{ lesson.lessonNumber }}
+        </p>
+        <h3 class="mt-1 font-medium text-gray-900">{{ lesson.title }}</h3>
+        <p class="mt-1 text-gray-500">{{ lesson.description }}</p>
+      </li>
+      } @empty {
+      <li class="text-gray-500">No lessons available.</li>
+      }
+    </ul>
+  </section>
+</article>
