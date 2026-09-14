@@ -1,33 +1,52 @@
 <div class="mx-auto max-w-5xl px-6 py-8">
-    <a routerLink="/flashcards" class="text-sm font-medium text-gray-500 hover:text-indigo-600">
-        ← Back to levels
-    </a>
+  <a routerLink="/flashcards" class="text-sm font-medium text-gray-500 hover:text-indigo-600">
+    &larr; Back to levels
+  </a>
 
-    @if (level) {
-    <div class="mt-6">
-        <p class="text-sm font-medium text-indigo-600">
-            Flashcard / {{ level.code }}
-        </p>
+  @let current = state();
+  @if (current.status === 'invalid') {
+  <h1 class="mt-6 text-3xl font-bold text-gray-900">Lessons</h1>
+  <p role="alert" class="mt-4 text-gray-600">Invalid JLPT level. Please choose a level.</p>
+  } @else {
+  <div class="mt-6">
+    <p class="text-sm font-medium text-indigo-600">
+      Flashcard / {{ current.levelId.toUpperCase() }}
+    </p>
+    <h1 class="mt-2 text-3xl font-bold text-gray-900">
+      JLPT {{ current.levelId.toUpperCase() }}
+    </h1>
+    @if (current.status === 'loaded') {
+    <p class="mt-2 text-gray-500">
+      {{ current.lessons.length }}
+      {{ current.lessons.length === 1 ? 'lesson' : 'lessons' }} available.
+    </p>
+    }
+  </div>
 
-        <h1 class="mt-2 text-3xl font-bold text-gray-900">
-            {{ level.name }}
-        </h1>
-
-        <p class="mt-2 text-gray-500">
-            {{ level.lessonCount }} lessons available.
-        </p>
+  <section class="mt-8 space-y-4" aria-label="Lessons" [attr.aria-busy]="current.status === 'loading'">
+    @switch (current.status) {
+    @case ('loading') {
+    <p role="status" class="py-12 text-center text-gray-500">Loading lessons...</p>
+    }
+    @case ('error') {
+    <div class="rounded-xl border border-red-200 bg-red-50 p-8 text-center">
+      <p role="alert" class="text-red-700">Unable to load lessons. Please try again.</p>
+      <button type="button" (click)="retry()"
+        class="mt-4 rounded-lg bg-indigo-600 px-5 py-2 font-medium text-white hover:bg-indigo-700 focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-indigo-600">
+        Try again
+      </button>
     </div>
     }
-
-    <div class="mt-8 space-y-4">
-        @for (lesson of lessons; track lesson.id) {
-        <app-lesson-card [lesson]="lesson" [levelId]="levelId" />
-        } @empty {
-        <div class="rounded-xl border border-dashed border-gray-300 p-12 text-center">
-            <p class="text-gray-500">
-                No lessons available.
-            </p>
-        </div>
-        }
-    </div>
+    @case ('loaded') {
+    @for (lesson of current.lessons; track lesson.id) {
+    <app-lesson-card [lesson]="lesson" [levelId]="current.levelId" />
+    } @empty {
+    <p role="status" class="rounded-xl border border-dashed border-gray-300 p-12 text-center text-gray-500">
+      No lessons available.
+    </p>
+    }
+    }
+    }
+  </section>
+  }
 </div>

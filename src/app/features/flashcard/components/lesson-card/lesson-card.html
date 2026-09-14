@@ -1,40 +1,15 @@
-<a [routerLink]="[
-    '/flashcards',
-    levelId(),
-    'lessons',
-    lesson().id
-  ]"
-    class="block rounded-xl border border-gray-200 bg-white p-5 shadow-sm transition hover:border-indigo-300 hover:shadow-md">
-    <div class="flex items-center justify-between">
-        <div class="flex items-center gap-4">
-            <div
-                class="flex h-12 w-12 items-center justify-center rounded-lg bg-indigo-50 text-sm font-bold text-indigo-600">
-                {{ lesson().lessonNumber }}
-            </div>
-
-            <div>
-                <h3 class="font-semibold text-gray-900">
-                    Lesson {{ lesson().lessonNumber }}
-                </h3>
-
-                <p class="text-sm text-gray-500">
-                    {{ lesson().title }}
-                </p>
-            </div>
-        </div>
-
-        <div class="text-right">
-            <p class="text-sm font-medium text-gray-700">
-                {{ lesson().vocabularyCount }}
-            </p>
-
-            <p class="text-xs text-gray-400">
-                words
-            </p>
-        </div>
+<a [routerLink]="['/flashcards', levelId(), 'lessons', lesson().id]"
+  class="block rounded-xl border border-gray-200 bg-white p-5 shadow-sm transition hover:border-indigo-300 hover:shadow-md focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-indigo-600">
+  <div class="flex items-center gap-4">
+    <div
+      class="flex h-12 w-12 shrink-0 items-center justify-center rounded-lg bg-indigo-50 text-sm font-bold text-indigo-600"
+      aria-hidden="true">
+      {{ lesson().lessonNumber }}
     </div>
-
-    <p class="mt-4 text-sm text-gray-500">
-        {{ lesson().description }}
-    </p>
+    <div class="min-w-0">
+      <h2 class="font-semibold text-gray-900">Lesson {{ lesson().lessonNumber }}</h2>
+      <p class="break-words text-sm text-gray-500">{{ lesson().title }}</p>
+    </div>
+  </div>
+  <p class="mt-4 break-words text-sm text-gray-500">{{ lesson().description }}</p>
 </a>
