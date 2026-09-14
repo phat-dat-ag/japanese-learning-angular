@@ -1,169 +1,916 @@
 # AGENTS.md
 
-Repository guide for AI coding agents. Applies to this Angular workspace and its descendants unless a more specific AGENTS.md applies. Follow the user's task and higher-priority instructions first.
+## Project Overview
 
-## Start here: minimize repeated exploration
+This repository contains the Angular frontend for the Japanese Learning application.
 
-- Read this guide once per session, then open only files relevant to the task. Do not reread the whole source tree or README for routine changes.
-- Run `git status --short` before editing; preserve unrelated user changes.
-- Use the task-to-file table below. Read a component's TypeScript and HTML together; read CSS only if it is attached or relevant.
-- Use scoped `rg` searches. Avoid dumping `package-lock.json`, `node_modules/`, `.angular/`, or generated output. Inspect installed package metadata only for a specific tooling question.
-- This is a source-derived snapshot, not a substitute for the files being edited. Verify relevant details locally when they conflict with this guide.
-- Keep changes focused. Do not automatically fix the known limitations listed below.
-- Update affected sections of this guide when changing architecture, commands, routes, data contracts, or documented limitations. Keep it a navigation reference, not a chronological work log.
+The application communicates with the Quarkus backend and follows modern Angular standalone and reactive patterns.
 
-## Project and tooling
+Primary goals for all changes:
 
-Japanese Learning is a browser Angular application with a shared layout, a minimal home page, and a flashcard learning feature. The frontend loads JLPT levels from Quarkus; lesson/study data remains in-memory samples. Authentication, further backend integration, vocabulary management, and persistent learning progress are planned. The backend implementation is outside this workspace; shared frontend API contracts live in `core/api/`.
+- Correctness
+- Clean Code
+- SOLID principles where appropriate
+- Readability and maintainability
+- Strong typing
+- Accessibility
+- Consistency with existing architecture
+- Minimal and focused changes
+- Efficient repository exploration
 
-Declared tooling in `package.json`:
-- Angular 22.1.x; Angular CLI/build 22.1.x.
-- TypeScript ~6.0.2, RxJS ~7.8.0.
-- Tailwind CSS 4.1.x through PostCSS.
-- Vitest 4.0.x and jsdom 28.x.
-- npm is the package manager; `packageManager` specifies npm@11.12.1. README prerequisites are Node.js 24.x and npm 11.x. Exact resolved dependencies live in `package-lock.json`.
+Follow the user's task and higher-priority instructions first.
 
-Run commands from the directory containing `package.json` and `angular.json`:
+---
 
-| Task | Command / notes |
-| --- | --- |
-| Install locked dependencies | `npm ci` when dependency installation is needed |
-| Start development server | `npm start`; default URL `http://localhost:4200` |
-| Production build | `npm run build` |
-| Development build | `npm run build -- --configuration development` |
-| Watch development build | `npm run watch` |
-| Run tests once | `npm test -- --watch=false` |
-| Run one test file | `npm test -- --watch=false --include=src/app/app.spec.ts` |
-| Interactive test command | `npm test`; explicitly disable watch for unattended checks |
-| Check formatting of selected files | `npx --no-install prettier --check <files>` |
-| Format selected files | `npx --no-install prettier --write <files>` |
+## Tech Stack
 
-There is no lint script, ESLint configuration, end-to-end test setup, or custom Vitest configuration in the current tree. Use Angular's test builder rather than assuming a direct Vitest invocation handles Angular compilation. Its default runner is Vitest, using jsdom when no browsers are configured.
+- Angular 22
+- TypeScript 6
+- RxJS
+- Angular Signals
+- Angular Router
+- Angular HttpClient
+- Tailwind CSS 4
+- Vitest / jsdom
+- npm
 
-## Architecture and file map
+Do not introduce alternative frameworks, state-management libraries, UI libraries, or dependencies when Angular or the existing project already provides sufficient functionality.
 
-Paths are relative to this workspace. Component folders normally contain matching `.ts`, `.html`, and empty `.css` files; only some currently contain `.spec.ts`.
+---
 
-| Task / concern | Start with |
-| --- | --- |
-| Bootstrap and application providers | `src/main.ts`, `src/app/app.config.ts` |
-| Root outlet and application routing | `src/app/app.ts`, `src/app/app.html`, `src/app/app.routes.ts` |
-| Shell and sidebar visibility | `src/app/core/layout/main-layout/main-layout.ts` and `.html` |
-| Header, profile placeholder, toggle event | `src/app/core/layout/header/header.ts` and `.html` |
-| Navigation links and active styles | `src/app/core/layout/sidebar/sidebar.html` and `.ts` |
-| Footer | `src/app/core/layout/footer/footer.html` |
-| Home page | `src/app/features/home/home.ts` and `.html` |
-| Flashcard URLs | `src/app/features/flashcard/flashcard.routes.ts` |
-| Level selection | `src/app/features/flashcard/pages/level-list/`, `components/level-card/` within the same feature |
-| Lesson selection | `src/app/features/flashcard/pages/lesson-list/`, `components/lesson-card/` within the same feature |
-| Study sequencing and progress | `src/app/features/flashcard/pages/study/study.ts` and `.html` |
-| Individual card display and reveal | `src/app/features/flashcard/components/flashcard/flashcard.ts` and `.html` |
-| JLPT API retrieval | `src/app/features/flashcard/services/jlpt-level.service.ts` |
-| Shared API contracts, validation, configuration, and errors | `src/app/core/api/`, `proxy.conf.json` |
-| Sample lesson/study data and retrieval | `src/app/features/flashcard/services/flashcard.service.ts` |
-| Domain types | `src/app/features/flashcard/models/` |
-| Global styles and Tailwind integration | `src/styles.css`, `.postcssrc.json` |
-| Document title, base URL, favicon | `src/index.html`, `public/favicon.ico` |
-| Build, test, compiler settings | `angular.json`, `tsconfig*.json`, `package.json` |
+## Architecture
 
-Execution flow:
-1. `src/main.ts` calls `bootstrapApplication(App, appConfig)`.
-2. `app.config.ts` provides browser global error listeners and `provideRouter(routes)`. `provideHttpClient()` registers HTTP support.
-3. `App` renders only a router outlet.
-4. The empty-path route lazily loads `MainLayout`; its child outlet hosts Home and flashcard pages.
-5. `MainLayout` renders Header, an optional Sidebar, the child outlet, and Footer. Its `isSidebarOpen` signal starts true. Header's `toggleSidebarFromHeader` output calls the layout's `toggleSidebar()`.
+Follow the existing project structure and conventions.
 
-Keep application-wide layout in `core/layout/`. Put feature pages, UI components, models, service logic, and route definitions inside `features/<feature>/`. There are no NgModules or shared state libraries in the current implementation.
+Typical flow:
 
-## Routing contract
+```text
+Page / Component
+      ↓
+Feature Service
+      ↓
+ApiClient
+      ↓
+Quarkus Backend
+```
 
-| URL | Component / behavior |
-| --- | --- |
-| `/` | `Home` inside `MainLayout` |
-| `/flashcards` | `LevelList` |
-| `/flashcards/:level` | `LessonList` |
-| `/flashcards/:level/lessons/:lessonId` | `Study` |
-| Unmatched URL | Root wildcard redirects to `/` |
+Responsibilities:
 
-The root router lazy-loads `FLASHCARD_ROUTES`; feature pages use `loadComponent`. Preserve this lazy-loading pattern when adding routes.
+- Page: route orchestration, page state, feature composition
+- Component: presentation, interaction, local UI state
+- Feature Service: feature logic, API calls, payload validation/mapping
+- ApiClient: HTTP transport, response envelope, timeout, normalized errors
+- Model / DTO: typed contracts
 
-Level URL parameters are lowercase IDs such as `n5`; display codes are uppercase such as `N5`. Lesson IDs look like `n5-lesson-01`. A populated study URL is `/flashcards/n5/lessons/n5-lesson-01`.
+Rules:
 
-Both LessonList and Study read `ActivatedRoute.snapshot.paramMap` once during instance initialization. This does not react to parameter changes if Angular reuses the same component instance. Account for this when implementing navigation between levels or lessons without leaving the page type.
+- Keep components focused on UI responsibilities.
+- Keep backend/API access in services.
+- Keep shared HTTP concerns in `core/api/`.
+- Keep page-level orchestration in feature pages.
+- Do not introduce new architectural layers unless clearly required.
+- Do not introduce NgModules for routine features.
+- Preserve lazy loading.
+- Prefer existing project patterns over introducing new ones.
 
-## Flashcard data and state
+---
 
-All paths below are under `src/app/features/flashcard/`.
+## Project Structure
 
-Models:
-- `models/flashcard-level.model.ts`: `FlashcardLevelCode = 'N1' | 'N2' | 'N3' | 'N4' | 'N5'`; `FlashcardLevel` has `id, code, name, description, lessonCount`.
-- `models/flashcard-lesson.model.ts`: `FlashcardLesson` has `id, levelId, lessonNumber, title, description, vocabularyCount`.
-- `models/flashcard.model.ts`: `Flashcard` has required `id, lessonId, word, reading, meaning`; optional `exampleSentence, exampleTranslation, audioUrl`.
+Keep application-wide concerns under:
 
-`JlptLevelService.getLevels()` returns `Observable<readonly JlptLevel[]>` from the backend. `JlptLevel` contains only `code` and `name`; transport validation rejects malformed rows, blank codes/names, and duplicate codes. The service then filters to supported uppercase N1–N5 codes, so additional codes such as n6 do not fail the entire list. An entirely unsupported list renders the empty state. LevelCard derives the lowercase route ID and does not invent counts or descriptions.
+```text
+src/app/core/
+```
 
-`FlashcardService` remains root-provided and synchronous for sample lesson/study pages:
-- `getLevelById(levelId): FlashcardLevel | undefined`
-- `getLessonsByLevel(levelId): FlashcardLesson[]`
-- `getLessonById(lessonId): FlashcardLesson | undefined`
-- `getFlashcardsByLesson(lessonId): Flashcard[]`
+Keep feature-specific code under:
 
-Sample service objects are not persisted and refer to the service's arrays; avoid mutating them from display components. The legacy level metadata remains only for lesson/study headings. The level-selection page uses backend data exclusively.
+```text
+src/app/features/<feature>/
+```
 
-Current sample data includes five levels (N5 through N1), three N5 lessons, and three cards belonging only to `n5-lesson-01`. Displayed lesson/vocabulary counts are sample metadata and do not match actual array lengths. Japanese words/readings, English meanings, and Vietnamese example translations coexist intentionally in the source.
+Typical feature structure:
 
-Page/component responsibilities:
-- `LevelList` uses `JlptLevelService`, `toSignal`, and a discriminated loading/loaded/error state. Retry triggers `switchMap`; stale requests and requests on page destruction are cancelled. The loaded state distinguishes empty data. LevelCard receives a required `JlptLevel` input. Both components use OnPush.
-- `LessonList` retrieves a level and its lessons; LessonCard takes required `lesson` and `levelId` inputs and builds the study link.
-- `Study` retrieves level, lesson, and cards. `currentIndex` starts at zero; `currentCard` and `progress` are computed signals. Progress is `(index + 1) / cardCount * 100`, or zero for an empty deck. `nextCard()` stops at the last card.
-- The Flashcard UI component takes required `card` input. Its local `revealed` signal starts false; `reveal()` sets it true and emits `revealedChange(true)`. The template always shows word/reading and conditionally shows meaning/examples.
-- The component class and domain interface are both named `Flashcard`; the component imports the interface as `FlashcardModel`.
+```text
+components/
+pages/
+services/
+models/
+*.routes.ts
+```
 
-## Backend API conventions
+Shared API infrastructure belongs in:
 
-- `ApiClient` in `core/api/` owns HTTP transport, timeout, envelope validation, and normalized errors. Feature services own endpoints and payload validation. Components own presentation state. Avoid a catch-all interceptor that changes unrelated HTTP traffic or a generic CRUD abstraction without a use case.
-- `ApiResponse<T>` is a discriminated union: `{ success: true, data, meta }` or `{ success: false, error: { code, message, details }, meta }`. Metadata contains `timestamp`, `traceId`, and `correlationId`; validation details contain `field` and `message`. Runtime guards validate the envelope and feature payloads.
-- `ApiClient.get(path, isData)` returns `Observable<ApiSuccess<T>>`, retaining success metadata. `ApiError` retains backend code/message, validation details, metadata, and HTTP status for both non-2xx and `success: false` 2xx responses. Network, timeout, invalid response, and unstructured HTTP errors are normalized. Pages show safe user-facing messages rather than internal diagnostics.
-- `API_CONFIG` defaults to `/api/v1` and 15,000 ms. Override through dependency injection when necessary. No automatic retries or persistent cache are configured; the page offers manual retry.
-- Confirmed endpoint: `GET /api/v1/jlpt-levels`; fields are `code` and `name`. Preserve server ordering. Lowercase URLs remain compatible with the sample lesson pages.
-- `angular.json` configures `proxy.conf.json` for `ng serve`: `/api/**` forwards to `http://localhost:8080`. Restart the dev server after proxy edits. Production hosting must proxy `/api/**` itself and support SPA fallback, or override `API_CONFIG` for a separate HTTPS API with matching backend CORS. Never ship localhost as the production API origin.
-- On Windows PowerShell with restricted script execution, use `npm.cmd` / `npx.cmd` instead of changing execution policy.
+```text
+src/app/core/api/
+```
 
-## Implementation conventions
+Application layout belongs in:
 
-- Use standalone components with explicit template dependencies in `imports`. Current decorators omit `standalone: true`; do not introduce NgModules for routine additions.
-- Match existing naming: `study.ts`, `Study`, selector `app-study`; service/model files retain `.service.ts` / `.model.ts` suffixes.
-- Prefer existing Angular patterns: `inject()`, `signal()`, `computed()`, `input.required<T>()`, and `output<T>()`.
-- Use `@if`, `@for (...; track item.id)`, and `@empty` in templates. Keep domain retrieval in services and route orchestration in pages.
-- Use RouterLink arrays for parameterized internal links; import RouterLink in the consuming component.
-- Type model/service boundaries and handle absent lookup results and empty arrays. Do not introduce global compiler strictness changes incidentally: the current configs enable selected checks, but do not explicitly enable `strict` or `strictTemplates`.
-- Styling is predominantly Tailwind utilities in HTML: gray surfaces, indigo accents, rounded cards, subtle borders/shadows, and responsive breakpoints. Global CSS imports `tailwindcss`; PostCSS uses `@tailwindcss/postcss`. There is no Tailwind config file.
-- Existing component CSS files are empty. Most decorators do not attach them. If adding local CSS, wire it through `styleUrl`; simply editing an unattached file has no effect.
-- Preserve semantic buttons/links and accessible labels when editing interactions.
-- Formatting: UTF-8, two spaces, final newline, single quotes in TypeScript; Prettier print width 100 and Angular HTML parser. Some existing files differ; avoid unrelated formatting churn.
-- In Windows PowerShell, read multilingual files with `Get-Content -Encoding utf8`. Do not mistake terminal decoding artifacts for corrupt source.
+```text
+src/app/core/layout/
+```
 
-## Known limitations to consider when relevant
+Do not move feature logic into `core/` based only on hypothetical future reuse.
 
-These are source observations, not a request to fix them on every task.
+Do not create generic shared abstractions without actual reuse.
 
-- Revealing a card does not reset `revealed` when Study supplies the next card to the same child instance. Study does not consume `revealedChange`, and Next does not require reveal.
-- Empty study decks show an empty-state message and zero progress, but the counter still renders `1 / 0`.
-- Lesson lookup uses only lesson ID; Study does not validate that the selected lesson belongs to the URL's level.
-- Invalid level/lesson parameters have no dedicated error route. LessonList falls back to an empty list, while Study can show missing metadata or an empty deck.
-- Sidebar links to `/lessons`, `/vocabulary`, `/grammar`, and `/kanji` have no routes and fall through to Home. Daily Practice and Progress use `href="#"`.
-- Flashcards navigation uses exact active matching, so it is not marked active on nested lesson/study URLs.
-- Header streak/user details are static. `navigateToProfile()` only logs to the console.
-- No audio playback, previous-card action, completion flow, spaced repetition, or saved progress currently exists.
+---
 
-## Validation and delivery
+## Clean Code and SOLID
 
-- For behavior changes, add or update focused tests and run them with the Angular test command. Before a PR, README calls for tests and a production build; use `npm test -- --watch=false` and `npm run build`.
-- Existing specs cover App, Home, Header, Sidebar, Footer, and MainLayout, and only assert creation. Additional tests in `core/api/api-client.service.spec.ts` and `features/flashcard/pages/level-list/level-list.spec.ts` cover API envelopes, network errors, timeout, payload validation, links, loading/empty/error/retry, and cancellation. Other flashcard pages and the sample service remain untested.
-- Tests use Angular TestBed with standalone components in `imports`, Vitest globals, and `fixture.whenStable()`. Provide router dependencies (e.g. `provideRouter([])`) when a tested component requires routing. Set required signal inputs through `fixture.componentRef.setInput(...)` before rendering.
-- Relevant flashcard checks include reveal behavior across card changes, index bounds, empty decks, missing IDs, and route parameter changes. Test changed behavior rather than duplicating implementation details.
-- For UI changes, manually check the populated N5 study URL, N4's empty lesson list, N5 lesson 02's empty deck, back links, sidebar toggle, and narrow viewport behavior as applicable.
-- Production budgets: initial bundle warning 500 kB/error 1 MB; individual component styles warning 4 kB/error 8 kB. Investigate budget failures rather than raising limits automatically.
-- Documentation-only changes need path/content review and a diff check; do not run builds or add tests solely for prose.
-- Report what changed, checks actually run, and any remaining blocker. Do not claim an unrun build or test passed.
-- README describes feature branches named `feature/<name>`, PRs targeting `develop`, and conventional commit prefixes (`feat`, `fix`, `refactor`, `style`, `test`, `docs`, `chore`). Follow the requested Git scope; do not automatically switch branches, commit, or push.
+All new or modified code must be:
+
+- readable
+- simple
+- maintainable
+- testable
+- strongly typed
+- focused
+- easy to understand
+
+Apply SOLID pragmatically.
+
+Rules:
+
+- A component, service, class, or method should have one clear responsibility.
+- Keep methods focused and reasonably small.
+- Use clear and descriptive names.
+- Prefer early returns when they reduce nesting.
+- Avoid deeply nested logic.
+- Avoid duplicated logic.
+- Avoid magic values when constants or typed values are appropriate.
+- Avoid `any` unless genuinely necessary.
+- Avoid unsafe type assertions.
+- Keep interfaces and models focused.
+- Keep templates readable.
+- Move complex logic out of templates.
+- Prefer straightforward code over clever code.
+- Avoid unnecessary comments; comment intent or constraints, not obvious code.
+- Avoid premature abstraction.
+- Avoid speculative functionality.
+- Do not over-engineer simple behavior.
+- Refactor only when it directly supports the requested task.
+
+Do not split simple code into unnecessary layers merely to satisfy theoretical SOLID rules.
+
+Code should be understandable by another developer without extensive explanation.
+
+---
+
+## Existing Code Is the Source of Truth
+
+When implementation details are not explicitly specified:
+
+1. Find the closest existing implementation.
+2. Inspect one or two similar examples.
+3. Follow existing conventions.
+4. Reuse existing components before creating new ones.
+
+Before creating a new:
+
+- service
+- model / DTO
+- component / page
+- pipe / directive
+- helper
+- error type
+- API wrapper
+- state abstraction
+
+search for an existing equivalent first.
+
+Prefer actual repository code over assumptions.
+
+If this guide conflicts with current implementation, verify the relevant source code before making a broad change.
+
+---
+
+## Angular Conventions
+
+Use modern Angular patterns already present in the project.
+
+Prefer:
+
+```typescript
+inject()
+signal()
+computed()
+input.required<T>()
+output<T>()
+```
+
+Use modern template control flow:
+
+```html
+@if (...) {
+}
+
+@for (item of items; track item.id) {
+}
+
+@empty {
+}
+```
+
+Rules:
+
+- Use standalone components.
+- Keep template dependencies explicit in `imports`.
+- Do not introduce NgModules for routine additions.
+- Use signals for appropriate synchronous UI state.
+- Use `computed()` for derived state.
+- Avoid redundant state.
+- Avoid unnecessary `effect()`.
+- Preserve `OnPush` where currently used.
+- Use Angular dependency injection instead of manual service construction.
+- Do not convert working RxJS flows to signals or vice versa without a concrete reason.
+
+---
+
+## TypeScript
+
+Keep TypeScript strongly typed.
+
+Rules:
+
+- Avoid `any`.
+- Prefer specific types and unions.
+- Type API and service boundaries explicitly.
+- Handle `undefined` and missing results intentionally.
+- Avoid unsafe type assertions.
+- Avoid broad `object`, `Function`, or loosely typed dictionaries without reason.
+- Reuse existing models instead of duplicating them.
+- Separate transport DTOs from UI/domain models only when they genuinely differ.
+- Use `readonly` where consistent with existing immutable contracts.
+
+Do not introduce repository-wide compiler configuration changes as part of an unrelated task.
+
+---
+
+## Components and Pages
+
+Components should focus on presentation and interaction.
+
+Rules:
+
+- Keep components small and understandable.
+- Use required signal inputs where appropriate.
+- Use outputs for explicit child-to-parent communication.
+- Do not fetch backend data directly from reusable display components.
+- Do not mutate inputs.
+- Avoid storing values that can be derived.
+- Keep complex transformations out of templates.
+- Keep local state local unless it genuinely needs to be shared.
+
+Feature pages may coordinate:
+
+- route parameters
+- services
+- loading/error/empty states
+- page-level state
+- child components
+
+Do not let pages become containers for unrelated logic.
+
+---
+
+## State Management
+
+Use the smallest appropriate mechanism:
+
+```text
+Local UI state       -> signal
+Derived state        -> computed
+Async HTTP flow      -> Observable / RxJS
+Shared feature state -> focused service when needed
+```
+
+Rules:
+
+- Prefer one source of truth.
+- Avoid redundant state.
+- Avoid unnecessary `effect()`.
+- Keep state transitions explicit.
+- Do not introduce NgRx or another global state library unless explicitly required.
+
+---
+
+## RxJS
+
+Use RxJS deliberately.
+
+Rules:
+
+- Avoid nested subscriptions.
+- Prefer operator composition.
+- Preserve request cancellation when relevant.
+- Use `switchMap` when stale requests should be replaced.
+- Avoid manual subscriptions when Angular/template/signal integration can manage lifecycle safely.
+- Avoid unnecessary operators.
+- Avoid difficult-to-read operator chains.
+- Handle errors where they can be meaningfully interpreted.
+
+Follow nearby implementations before introducing a new reactive pattern.
+
+---
+
+## Routing
+
+Preserve existing lazy-loading and `loadComponent` patterns.
+
+Rules:
+
+- Use RouterLink arrays for parameterized internal navigation.
+- Avoid manual URL concatenation when router APIs provide a safer option.
+- Handle invalid/missing route parameters intentionally.
+- Do not assume `ActivatedRoute.snapshot.paramMap` reacts to parameter changes.
+- Use reactive route APIs when the same component may remain mounted while parameters change.
+
+Do not hardcode current route structures into new abstractions when existing route definitions can be inspected directly.
+
+---
+
+## API Integration
+
+Use the existing API architecture:
+
+```text
+Component / Page
+      ↓
+Feature Service
+      ↓
+ApiClient
+      ↓
+Backend
+```
+
+`ApiClient` owns common transport concerns such as:
+
+- HTTP transport
+- timeout
+- API envelope validation
+- normalized errors
+- response metadata
+
+Feature services own:
+
+- endpoint paths
+- query parameters
+- request payloads
+- feature payload validation
+- feature-specific mapping
+
+Rules:
+
+- Do not make direct `HttpClient` calls from components when the existing API abstraction should be used.
+- Do not duplicate `ApiClient` responsibilities in feature services.
+- Do not introduce another API response wrapper.
+- Reuse existing response types and runtime guards.
+- Preserve backend metadata and normalized errors.
+- Validate external data at appropriate boundaries.
+- Do not trust API data merely because TypeScript types compile.
+- Do not introduce generic CRUD abstractions without a concrete use case.
+- Do not add global retries or persistent caching unless explicitly required.
+
+---
+
+## API Configuration
+
+Use existing API configuration and proxy infrastructure.
+
+Do not hardcode development backend URLs into production application code.
+
+Development currently uses the project proxy configuration for `/api/**`.
+
+When configuration behavior matters, inspect:
+
+```text
+src/app/core/api/
+proxy.conf.json
+```
+
+Production API origins must use the project's deployment/configuration strategy rather than hardcoded localhost values.
+
+---
+
+## Validation and Error Handling
+
+Validate data at the appropriate boundary.
+
+Possible validation areas:
+
+- user input
+- route parameters
+- API response envelopes
+- feature payloads
+
+Rules:
+
+- Do not duplicate validation across layers.
+- Keep feature payload validation in the relevant service/API boundary.
+- Normalize transport errors through existing API infrastructure.
+- Keep feature-specific error interpretation in the feature layer.
+- Display safe user-facing messages.
+- Do not expose backend stack traces or internal diagnostics.
+- Do not silently swallow errors.
+- Avoid catch blocks that only rethrow the same error.
+- Preserve trace/correlation metadata when the existing design requires it.
+
+Handle errors at the layer where they can be meaningfully interpreted.
+
+---
+
+## UI States
+
+Backend-driven pages should intentionally handle relevant states:
+
+```text
+loading
+loaded
+empty
+error
+```
+
+Do not treat empty data as a request failure.
+
+Prefer existing discriminated state patterns over multiple overlapping booleans when appropriate.
+
+---
+
+## Styling and Accessibility
+
+The project primarily uses Tailwind CSS utilities.
+
+Rules:
+
+- Follow existing visual patterns.
+- Prefer existing Tailwind utilities.
+- Avoid introducing another CSS framework.
+- Avoid unnecessary custom CSS.
+- Avoid unrelated UI redesign.
+- Preserve responsive behavior.
+- Preserve accessible contrast.
+
+Accessibility is part of correctness.
+
+When editing UI:
+
+- use semantic HTML
+- use buttons for actions
+- use links for navigation
+- preserve keyboard interaction
+- provide accessible labels
+- preserve focus behavior
+- avoid click-only non-semantic elements
+- preserve useful ARIA attributes
+
+If adding component CSS, verify that the stylesheet is actually attached to the component.
+
+---
+
+## Security
+
+Anything bundled into the Angular application must be considered visible to users.
+
+Rules:
+
+- Never embed secrets or API credentials.
+- Do not expose internal backend diagnostics.
+- Treat backend data as untrusted input.
+- Avoid bypassing Angular sanitization.
+- Do not render untrusted HTML without a clear reason.
+- Do not log sensitive user data.
+- Preserve existing authentication/security boundaries.
+
+---
+
+## Performance
+
+Avoid premature optimization, but do not introduce obvious inefficiencies.
+
+Rules:
+
+- Preserve lazy loading.
+- Avoid unnecessary subscriptions.
+- Avoid accidental repeated HTTP calls.
+- Use appropriate `track` expressions in `@for`.
+- Avoid heavy template logic.
+- Avoid duplicate large state.
+- Avoid large dependencies for small utilities.
+- Consider bundle impact when adding dependencies.
+
+Do not sacrifice readability for speculative performance improvements.
+
+---
+
+## Formatting
+
+Follow existing formatting conventions:
+
+- UTF-8
+- 2-space indentation
+- single quotes in TypeScript
+- final newline
+- Prettier
+- Angular HTML formatting
+
+Avoid unrelated formatting churn.
+
+Format/check only relevant files when appropriate:
+
+```bash
+npx --no-install prettier --check <files>
+npx --no-install prettier --write <files>
+```
+
+---
+
+## Testing
+
+Use the existing Angular test infrastructure and conventions.
+
+Rules:
+
+- Add or update tests when behavior changes.
+- Prefer focused tests.
+- Test meaningful behavior rather than implementation details.
+- Cover important success, failure, empty, and affected edge cases.
+- Reuse existing TestBed patterns.
+- Do not modify unrelated tests merely to make them pass.
+- Do not blindly change expected values.
+
+When a test fails:
+
+1. Determine whether the implementation or test is wrong.
+2. Understand the intended behavior.
+3. Fix the root cause.
+
+During implementation, run the smallest relevant test set first:
+
+```bash
+npm test -- --watch=false --include=<spec-file>
+```
+
+Run the full suite only when justified by broader/cross-cutting changes or explicitly requested:
+
+```bash
+npm test -- --watch=false
+```
+
+Do not run the full test suite after every small change.
+
+---
+
+## Build Verification
+
+Run a production build when appropriate for the scope:
+
+```bash
+npm run build
+```
+
+Do not run full builds unnecessarily for documentation-only or trivial changes.
+
+Investigate build or bundle-budget failures instead of automatically weakening limits.
+
+Never claim an unrun test or build passed.
+
+---
+
+## Git Safety
+
+Before editing:
+
+```bash
+git branch --show-current
+git status --short
+```
+
+Preserve unrelated user changes.
+
+Do not:
+
+- commit
+- push
+- pull
+- create/switch branches
+- rebase
+- reset
+- clean
+- stash
+- discard changes
+- open pull requests
+
+unless explicitly requested.
+
+Never overwrite unrelated uncommitted work.
+
+---
+
+## Scope Control
+
+Keep every task narrowly scoped.
+
+Rules:
+
+- Implement only the requested behavior.
+- Prefer the smallest correct change.
+- Do not fix unrelated issues automatically.
+- Do not refactor unrelated code.
+- Do not rename unrelated files, classes, selectors, methods, or models.
+- Do not restructure folders without a concrete reason.
+- Do not redesign unrelated UI.
+- Do not upgrade dependencies unless required.
+- Do not reformat unrelated files.
+- Do not introduce global configuration changes for local problems.
+
+If an unrelated issue is discovered, report it instead of automatically fixing it.
+
+---
+
+## Repository Exploration
+
+Use progressive discovery.
+
+Do not scan the entire repository by default.
+
+Preferred workflow:
+
+1. Read this guide once.
+2. Understand the task.
+3. Inspect files explicitly mentioned by the task.
+4. Inspect the nearest related implementation.
+5. Inspect at most one or two similar examples if needed.
+6. Use targeted searches for missing information.
+7. Expand scope only when current context is insufficient.
+
+For component work, usually start with:
+
+```text
+component.ts
+component.html
+component.spec.ts if relevant
+```
+
+For API work, usually start with:
+
+```text
+feature service
+relevant model / DTO
+relevant page/component
+closest similar API integration
+relevant tests
+```
+
+Inspect CSS only when styling is relevant.
+
+Do not preload large parts of the repository "for context."
+
+---
+
+## Context and Command Efficiency
+
+Minimize unnecessary context usage.
+
+Rules:
+
+- Read only relevant sections of files.
+- Prefer targeted `rg` searches.
+- Avoid repeatedly reading unchanged files.
+- Avoid repository-wide exploration when a nearby example is sufficient.
+- Do not load unrelated documentation.
+- Do not inspect generated output unless debugging requires it.
+- Avoid large command outputs.
+- Do not repeat commands when results are already known.
+- Use existing code as documentation whenever possible.
+
+Prefer targeted commands:
+
+```bash
+git status --short
+git branch --show-current
+git diff --stat
+git diff
+rg "<search-term>" src
+```
+
+Do not routinely scan:
+
+```text
+node_modules/
+.angular/
+dist/
+coverage/
+package-lock.json
+generated output
+```
+
+Inspect dependency metadata only when a specific tooling/dependency question requires it.
+
+---
+
+## Before Coding
+
+Before modifying files:
+
+1. Understand the requested behavior.
+2. Inspect Git state.
+3. Identify the smallest relevant file set.
+4. Find the closest existing implementation.
+5. Check existing conventions.
+6. Determine the minimal change.
+7. Identify the smallest useful verification step.
+
+Ask for clarification only when ambiguity could significantly affect:
+
+- architecture
+- API contracts
+- routing
+- shared state
+- security
+- backend compatibility
+- public behavior
+
+For small implementation details, follow existing conventions rather than asking unnecessary questions.
+
+---
+
+## During Coding
+
+While implementing:
+
+- Keep changes minimal.
+- Write clean, readable, maintainable code.
+- Apply SOLID where appropriate.
+- Preserve Angular conventions.
+- Preserve existing architecture.
+- Keep components focused.
+- Keep API logic out of components.
+- Keep state predictable.
+- Avoid duplication.
+- Avoid unnecessary dependencies.
+- Avoid unnecessary abstractions.
+- Avoid speculative functionality.
+- Preserve accessibility.
+- Do not modify generated files.
+- Do not perform unrelated cleanup.
+
+Do not trade readability for fewer lines.
+
+Do not over-engineer simple behavior.
+
+---
+
+## After Coding
+
+After implementation:
+
+1. Run relevant focused tests.
+2. Run formatting/build checks when appropriate.
+3. Inspect the final diff.
+4. Confirm no unrelated files changed.
+5. Remove debug code or accidental `console` logging.
+6. Verify code remains readable and maintainable.
+7. Report actual verification results.
+
+Use:
+
+```bash
+git diff --stat
+git diff
+```
+
+Do not commit or push unless explicitly requested.
+
+---
+
+## Review Tasks
+
+When asked only to review:
+
+- Treat the task as read-only.
+- Do not modify files.
+- Review the current diff first when applicable.
+- Inspect surrounding code only when needed.
+- Avoid expensive commands unless necessary.
+
+Focus on:
+
+- correctness and regressions
+- Clean Code / SOLID
+- readability and maintainability
+- Angular conventions
+- component responsibilities
+- RxJS and signal correctness
+- API compatibility
+- routing
+- error handling
+- accessibility
+- security
+- performance regressions
+- test coverage
+- unnecessary complexity
+
+Prioritize concrete defects and maintainability risks over subjective style preferences.
+
+---
+
+## Windows Notes
+
+When PowerShell script execution prevents npm/npx wrappers, use:
+
+```text
+npm.cmd
+npx.cmd
+```
+
+Do not change the user's PowerShell execution policy solely to run project commands.
+
+Preserve UTF-8 for multilingual files.
+
+Verify source content before assuming terminal rendering artifacts indicate file corruption.
+
+---
+
+## Documentation
+
+Keep `AGENTS.md` focused on stable agent instructions.
+
+Update it only when changes materially affect:
+
+- architecture
+- project conventions
+- API conventions
+- important tooling
+- testing workflow
+- persistent implementation constraints
+
+Do not turn this file into:
+
+- project documentation
+- a route catalog
+- a feature status report
+- a known-bug backlog
+- a chronological work log
+
+Implementation details that can be discovered from source code should generally remain in source code.
+
+---
+
+## Response Style
+
+Keep final responses concise.
+
+For implementation tasks, report:
+
+- what changed
+- files changed
+- tests/build actually executed
+- result
+- important risks or unresolved issues
+
+Do not:
+
+- repeat code already written to files
+- narrate repository exploration
+- list every command
+- provide long theoretical explanations unless requested
+- claim unrun tests or builds passed
+
+Example:
+
+```text
+Implemented lesson API integration.
+
+Changed:
+- lesson.service.ts
+- lesson-list.ts
+- lesson-list.spec.ts
+
+Verification:
+- lesson-list.spec.ts: PASS
+- npm run build: PASS
+
+No unrelated files changed.
+```
+
+---
+
+## Definition of Done
+
+A task is complete when:
+
+- requested behavior is implemented correctly
+- code is clean, readable, and maintainable
+- SOLID is respected where appropriate
+- Angular conventions and architecture are preserved
+- state and API boundaries remain clear
+- accessibility and security are preserved
+- relevant tests pass
+- build passes when appropriate
+- no unrelated files were modified
+- final Git diff was reviewed
+- important risks or limitations were reported
+
+Do not commit or push unless explicitly requested.
