@@ -7,10 +7,12 @@
   <section class="mt-6" aria-label="Lesson" [attr.aria-busy]="current.status === 'loading'">
     @switch (current.status) {
     @case ('loading') {
-    <p role="status" class="py-12 text-center text-gray-500">Loading lesson...</p>
+    <p role="status" class="py-12 text-center text-gray-500">Loading lesson flashcards...</p>
     }
     @case ('error') {
-    <p role="alert" class="text-red-700">Unable to load lesson. Please try again.</p>
+    <p role="alert" class="text-red-700">
+      Unable to load lesson or flashcards. Please try again.
+    </p>
     <button type="button" (click)="retry()"
       class="mt-4 rounded-lg bg-indigo-600 px-5 py-2 font-medium text-white hover:bg-indigo-700 focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-indigo-600">
       Try again
@@ -26,9 +28,45 @@
     </p>
     <h1 class="mt-1 text-xl font-bold text-gray-900">{{ current.lesson.title }}</h1>
     <p class="mt-2 text-gray-500">{{ current.lesson.description }}</p>
-    <p role="status" class="mt-12 rounded-xl border border-dashed border-gray-300 p-12 text-center text-gray-500">
-      No flashcards available for this lesson.
+    <h2 class="mt-8 text-lg font-semibold text-gray-900">Flashcards</h2>
+    <p class="mt-2 text-sm text-gray-500" role="status">
+      {{ current.cards.totalElements }} flashcards
     </p>
+    <ul class="mt-4 grid gap-4 sm:grid-cols-2 lg:grid-cols-3">
+      @for (card of current.cards.flashcardItems; track card.id) {
+      <li>
+        <a [routerLink]="['/flashcards', 'detail', card.id]"
+          [queryParams]="{ lesson: current.lesson.id, level: current.levelId }"
+          class="block rounded-xl border border-gray-200 bg-white p-6 shadow-sm hover:border-indigo-300 hover:shadow-md focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-indigo-600">
+          <span lang="ja" class="break-words text-2xl font-semibold text-gray-900">{{
+            card.word
+            }}</span>
+          <span class="mt-3 block text-sm font-medium text-indigo-600">View details &rarr;</span>
+        </a>
+      </li>
+      } @empty {
+      <li class="col-span-full rounded-xl border border-dashed border-gray-300 p-12 text-center text-gray-500"
+        role="status">
+        No flashcards available for this lesson.
+      </li>
+      }
+    </ul>
+    @if (current.cards.totalPages > 1) {
+    <nav aria-label="Flashcard pagination" class="mt-6 flex items-center justify-between gap-4">
+      <button type="button" (click)="changePage(current.cards.page - 1)" [disabled]="current.cards.page === 0"
+        class="rounded-lg border border-gray-300 px-4 py-2 text-sm font-medium hover:bg-gray-50 disabled:cursor-not-allowed disabled:opacity-50 focus-visible:outline-2 focus-visible:outline-indigo-600">
+        Previous
+      </button>
+      <p class="text-sm text-gray-500">
+        Page {{ current.cards.page + 1 }} of {{ current.cards.totalPages }}
+      </p>
+      <button type="button" (click)="changePage(current.cards.page + 1)"
+        [disabled]="current.cards.page + 1 >= current.cards.totalPages"
+        class="rounded-lg border border-gray-300 px-4 py-2 text-sm font-medium hover:bg-gray-50 disabled:cursor-not-allowed disabled:opacity-50 focus-visible:outline-2 focus-visible:outline-indigo-600">
+        Next
+      </button>
+    </nav>
+    }
     }
     }
   </section>

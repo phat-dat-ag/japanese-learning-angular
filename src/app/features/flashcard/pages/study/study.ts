@@ -3,12 +3,19 @@ import { toSignal } from '@angular/core/rxjs-interop';
 import { ActivatedRoute, RouterLink } from '@angular/router';
 import { catchError, map, of, startWith, Subject, switchMap } from 'rxjs';
 
+import { FlashcardPage } from '../../models/flashcard-page.model';
+import { FlashcardService } from '../../services/flashcard.service';
 import { FlashcardLesson } from '../../models/flashcard-lesson.model';
 import { LessonService } from '../../services/lesson.service';
 
 type StudyState =
   | { readonly status: 'loading'; readonly levelId: string }
-  | { readonly status: 'loaded'; readonly levelId: string; readonly lesson: FlashcardLesson }
+  | {
+    readonly status: 'loaded';
+    readonly levelId: string;
+    readonly lesson: FlashcardLesson;
+    readonly cards: FlashcardPage;
+  }
   | { readonly status: 'missing'; readonly levelId: string }
   | { readonly status: 'error'; readonly levelId: string };
 
@@ -21,6 +28,8 @@ type StudyState =
 export class Study {
   private readonly route = inject(ActivatedRoute);
   private readonly lessonService = inject(LessonService);
+  private readonly flashcardService = inject(FlashcardService);
+  private readonly pageChanges = new Subject<number>();
   private readonly reload = new Subject<void>();
 
   readonly state = toSignal(
@@ -35,11 +44,23 @@ export class Study {
           startWith(undefined),
           switchMap(() =>
             this.lessonService.getLessons(levelId).pipe(
-              map((response): StudyState => {
+              switchMap((response) => {
                 const lesson = response.data.find((item) => item.id === lessonId);
-                return lesson
-                  ? { status: 'loaded', levelId, lesson }
-                  : { status: 'missing', levelId };
+                if (!lesson) return of<StudyState>({ status: 'missing', levelId });
+                return this.pageChanges.pipe(
+                  startWith(0),
+                  switchMap((page) =>
+                    this.flashcardService.getFlashcards(lessonId, levelId, page).pipe(
+                      map((cards): StudyState => ({
+                        status: 'loaded',
+                        levelId,
+                        lesson,
+                        cards: cards.data,
+                      })),
+                      startWith<StudyState>({ status: 'loading', levelId }),
+                    ),
+                  ),
+                );
               }),
               catchError(() => of<StudyState>({ status: 'error', levelId })),
               startWith<StudyState>({ status: 'loading', levelId }),
@@ -50,6 +71,19 @@ export class Study {
     ),
     { initialValue: { status: 'loading', levelId: '' } as StudyState },
   );
+
+  changePage(page: number): void {
+    const current = this.state();
+    if (
+      current.status !== 'loaded' ||
+      !Number.isSafeInteger(page) ||
+      page < 0 ||
+      page >= current.cards.totalPages ||
+      page === current.cards.page
+    )
+      return;
+    this.pageChanges.next(page);
+  }
 
   retry(): void {
     this.reload.next();
