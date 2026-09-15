@@ -86,7 +86,6 @@ describe('Flashcard detail', () => {
     expect(element.querySelector('h1')?.textContent?.trim()).toBe('会社');
     for (const text of [
       'かいしゃ',
-      'No pitch drop',
       'company',
       'công ty',
       'Noun',
@@ -298,9 +297,9 @@ describe('Flashcard detail', () => {
         Array.from(back.querySelectorAll('.accented-mora'), (mora) => mora.textContent),
       ).toEqual(highlighted);
       expect(back.querySelectorAll('.reading')).toHaveLength(Math.max(1, accents.length));
-      if (accents.includes(0)) expect(back.textContent).toContain('No pitch drop');
-      if (!accents.length || accents[0] === 9)
-        expect(back.textContent).toContain('Pitch accent unavailable');
+      expect(back.textContent).not.toContain('No pitch drop');
+      expect(back.textContent).not.toContain('Pitch accent unavailable');
+      expect(back.textContent).not.toContain('Pitch drops after mora');
     },
   );
 

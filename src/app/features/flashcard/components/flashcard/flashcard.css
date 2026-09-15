@@ -62,7 +62,6 @@
   display: flex;
   flex-direction: column;
   min-width: 0;
-  min-height: 36rem;
   padding: 1.25rem 1.25rem 3.25rem;
   border-radius: 1.5rem;
   backface-visibility: hidden;
@@ -78,6 +77,7 @@
 }
 
 .card-back {
+  font-size: 0.875rem;
   transform: rotateY(180deg);
   border: 1px solid #e0e7ff;
   background: linear-gradient(145deg, #ffffff, #eef2ff);
@@ -90,6 +90,11 @@
   text-transform: uppercase;
 }
 
+.card-back .eyebrow,
+.flip-label-back {
+  font-size: 0.625rem;
+}
+
 .word-block {
   margin-block: auto;
   padding-block: 1rem;
@@ -97,7 +102,7 @@
 }
 
 .vocabulary-word {
-  font-size: clamp(2.5rem, 7vw, 4rem);
+  font-size: clamp(5rem, 14vw, 8rem);
   line-height: 1.25;
   font-weight: 800;
   text-shadow: 0 4px 24px rgb(0 0 0 / 15%);
@@ -121,7 +126,7 @@
   display: inline-flex;
   flex-wrap: wrap;
   color: #3730a3;
-  font-size: clamp(1.25rem, 4vw, 1.625rem);
+  font-size: clamp(1rem, 3.2vw, 1.3rem);
   line-height: 1.6;
 }
 
