@@ -91,9 +91,6 @@ describe('Flashcard detail', () => {
       'Noun',
       'Danh từ',
       'JLPT N5',
-      '6 strokes',
-      'カイ',
-      'KUN',
       '会社へ行きます。',
       'Bài 1 tiếng Nhật',
     ]) {
@@ -102,6 +99,23 @@ describe('Flashcard detail', () => {
     expect(element.querySelector('a')?.getAttribute('href')).toBe('/flashcards');
   });
 
+  it('places readings beneath focusable words and removes kanji connections', () => {
+    http.expectOne('/api/v1/flashcards/1').flush({ success: true, data: card, meta });
+    fixture.detectChanges();
+    const words = element.querySelector('.card-front .word-block')!;
+    expect(words.querySelector('.vocabulary-readings')?.textContent).toContain('かいしゃ');
+    for (const selector of ['.vocabulary-word', '.normalized-word']) {
+      const word = words.querySelector<HTMLElement>(selector)!;
+      expect(word.tabIndex).toBe(0);
+      word.focus();
+      expect(document.activeElement).toBe(word);
+    }
+    expect(element.querySelector('.card-back [aria-label="Readings"]')).toBeNull();
+    expect(element.textContent).not.toContain('Kanji connections');
+    expect(element.textContent).not.toContain('6 strokes');
+    expect(element.querySelectorAll('.example-panel li')).toHaveLength(1);
+    expect(element.querySelectorAll('.example-readings li')).toHaveLength(1);
+  });
   it('renders empty collections without invented content', () => {
     http.expectOne('/api/v1/flashcards/1').flush({
       success: true,
@@ -118,7 +132,7 @@ describe('Flashcard detail', () => {
       meta,
     });
     fixture.detectChanges();
-    for (const text of ['No readings', 'No meanings', 'No kanji', 'No examples'])
+    for (const text of ['No readings', 'No meanings', 'No examples'])
       expect(element.textContent).toContain(text);
     expect(element.querySelector('[role="alert"]')).toBeNull();
   });
@@ -285,18 +299,18 @@ describe('Flashcard detail', () => {
       fixture.detectChanges();
       const front = element.querySelector('.card-front')!;
       const back = element.querySelector('.card-back')!;
-      expect(front.querySelector('.reading')).toBeNull();
+      expect(back.querySelector('.reading')).toBeNull();
       expect(front.textContent).not.toContain('Pitch accents:');
       expect(
         Array.from(
-          back.querySelector('.reading-morae')!.querySelectorAll('.mora'),
+          front.querySelector('.reading-morae')!.querySelectorAll('.mora'),
           (mora) => mora.textContent,
         ),
       ).toEqual(morae);
       expect(
-        Array.from(back.querySelectorAll('.accented-mora'), (mora) => mora.textContent),
+        Array.from(front.querySelectorAll('.accented-mora'), (mora) => mora.textContent),
       ).toEqual(highlighted);
-      expect(back.querySelectorAll('.reading')).toHaveLength(Math.max(1, accents.length));
+      expect(front.querySelectorAll('.reading')).toHaveLength(Math.max(1, accents.length));
       expect(back.textContent).not.toContain('No pitch drop');
       expect(back.textContent).not.toContain('Pitch accent unavailable');
       expect(back.textContent).not.toContain('Pitch drops after mora');
