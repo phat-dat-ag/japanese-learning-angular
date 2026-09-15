@@ -36,6 +36,7 @@
       @for (card of current.cards.flashcardItems; track card.id) {
       <li>
         <a [routerLink]="['/flashcards', 'detail', card.id]"
+          [queryParams]="{ lesson: current.lesson.id, level: current.levelId }"
           class="block rounded-xl border border-gray-200 bg-white p-6 shadow-sm hover:border-indigo-300 hover:shadow-md focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-indigo-600">
           <span lang="ja" class="break-words text-2xl font-semibold text-gray-900">{{
             card.word

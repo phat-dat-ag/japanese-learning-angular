@@ -1,121 +1,143 @@
 @let detail = card();
-<article class="space-y-6 text-gray-700">
-  <header class="rounded-2xl border border-gray-200 bg-white p-8 shadow-sm">
-    <p class="text-sm font-medium text-indigo-600">Vocabulary</p>
-    <h1 lang="ja" class="mt-4 break-words text-5xl font-bold text-gray-900">
-      {{ detail.vocabulary.word }}
-    </h1>
-    <p class="mt-3 text-sm text-gray-500">
-      Normalized word: <span lang="ja">{{ detail.vocabulary.normalizedWord }}</span>
-    </p>
-    <div class="mt-4 flex flex-wrap gap-2">
-      @for (level of detail.levels; track $index) {
-      <span class="rounded-full bg-indigo-50 px-3 py-1 text-sm font-medium text-indigo-700">{{
-        level.name
-        }}</span>
-      }
-      @for (part of detail.partsOfSpeech; track $index) {
-      <span class="rounded-full bg-gray-100 px-3 py-1 text-sm">{{ part.nameEn }} / <span lang="vi">{{ part.nameVi
-          }}</span></span>
-      }
-    </div>
-  </header>
-  <div class="grid gap-6 md:grid-cols-2">
-    <section class="rounded-2xl border border-gray-200 bg-white p-6">
-      <h2 class="text-lg font-semibold text-gray-900">Readings</h2>
-      <ul class="mt-4 space-y-4">
-        @for (reading of detail.readings; track $index) {
-        <li>
-          <span lang="ja" class="text-xl">{{ reading.reading }}</span>
-          @if (reading.isPrimary) {
-          <span class="ml-2 text-xs font-medium text-indigo-700">Primary</span>
-          }
-          @if (reading.pitchAccents.length) {
-          <p class="mt-1 text-sm text-gray-500">
-            Pitch accents: {{ reading.pitchAccents.join(', ') }}
-          </p>
-          }
-        </li>
-        } @empty {
-        <li class="text-gray-500">No readings available.</li>
-        }
-      </ul>
-    </section>
-    <section class="rounded-2xl border border-gray-200 bg-white p-6">
-      <h2 class="text-lg font-semibold text-gray-900">Meanings</h2>
-      <ul class="mt-4 space-y-4">
-        @for (meaning of detail.meanings; track $index) {
-        <li>
-          <span class="mr-2 text-xs font-semibold uppercase text-gray-500">{{
-            meaning.languageCode
+<article class="flashcard" aria-label="Vocabulary flashcard" (click)="flip()">
+  <div class="card-turn" [class.is-flipped]="flipped()">
+    <section class="card-face card-front" [attr.inert]="flipped() ? '' : null" [attr.aria-hidden]="flipped()">
+      <header class="flex flex-wrap items-center justify-between gap-3">
+        <p class="eyebrow">Recall the meaning</p>
+        <div class="flex flex-wrap gap-2">
+          @for (level of detail.levels; track $index) {
+          <span class="rounded-full border border-white/30 px-3 py-1 text-xs font-semibold">{{
+            level.name
             }}</span>
-          <span [attr.lang]="meaning.languageCode">{{ meaning.meaning }}</span>
-          @if (meaning.isPrimary) {
-          <span class="ml-2 text-xs font-medium text-indigo-700">Primary</span>
           }
-        </li>
-        } @empty {
-        <li class="text-gray-500">No meanings available.</li>
-        }
-      </ul>
+        </div>
+      </header>
+      <div class="word-block">
+        <h1 lang="ja" class="vocabulary-word">{{ detail.vocabulary.word }}</h1>
+        <p lang="ja" class="normalized-word">{{ detail.vocabulary.normalizedWord }}</p>
+      </div>
+      <section class="example-panel">
+        <h2 class="eyebrow mb-4">In context</h2>
+        <ul class="space-y-4">
+          @for (example of examples(); track $index) {
+          <li lang="ja" class="example-text">{{ example.japaneseText }}</li>
+          } @empty {
+          <li class="text-indigo-100">No examples available.</li>
+          }
+        </ul>
+      </section>
     </section>
-  </div>
-  <section class="rounded-2xl border border-gray-200 bg-white p-6">
-    <h2 class="text-lg font-semibold text-gray-900">Kanji</h2>
-    <div class="mt-4 grid gap-4 sm:grid-cols-2">
-      @for (kanji of detail.kanji; track $index) {
-      <div class="rounded-xl bg-gray-50 p-5">
-        <h3 lang="ja" class="text-3xl font-semibold text-gray-900">{{ kanji.character }}</h3>
-        <p class="mt-2 text-sm text-gray-500">{{ kanji.strokeCount }} strokes</p>
-        <p lang="en" class="mt-2">{{ kanji.meaningEn }}</p>
-        <p lang="vi">{{ kanji.meaningVi }}</p>
-        <ul class="mt-3 space-y-1 text-sm">
-          @for (reading of kanji.readings; track $index) {
+    <section class="card-face card-back" [attr.inert]="flipped() ? null : ''" [attr.aria-hidden]="!flipped()">
+      <header class="flex flex-wrap items-center justify-between gap-3">
+        <p class="eyebrow text-indigo-700">Make it memorable</p>
+        <span lang="ja" class="text-2xl font-bold text-indigo-700">{{
+          detail.vocabulary.word
+          }}</span>
+      </header>
+      <section class="mt-3 rounded-xl border border-indigo-100 bg-white/80 p-3">
+        <h2 class="text-sm font-semibold text-slate-500">Reading &amp; pitch accent</h2>
+        <p class="mt-1 text-xs text-slate-500">The highlighted mora is followed by a pitch drop.</p>
+        <ul class="mt-4 space-y-3">
+          @for (reading of readings(); track $index) {
+          @for (accent of reading.accents; track $index) {
+          <li class="reading">
+            <span lang="ja" class="reading-morae" [attr.aria-label]="reading.text">
+              @for (mora of reading.morae; track $index) {
+              <span class="mora" [class.accented-mora]="accent === $index + 1" [textContent]="mora"></span>
+              }
+            </span>
+            <span class="text-xs text-slate-600">
+              @if (accent === 0) {
+              No pitch drop
+              } @else if (accent === null) {
+              Pitch accent unavailable
+              } @else {
+              Pitch drops after mora {{ accent }}
+              }
+            </span>
+          </li>
+          }
+          } @empty {
+          <li class="text-slate-500">No readings available.</li>
+          }
+        </ul>
+      </section>
+
+      <section class="mt-3">
+        <h2 class="text-sm font-semibold text-slate-500">Meanings</h2>
+        <ul class="mt-3 space-y-3">
+          @for (meaning of detail.meanings; track $index) {
+          <li class="flex items-baseline gap-3">
+            <span class="rounded-md bg-indigo-100 px-2 py-1 text-xs font-bold uppercase text-indigo-800">{{
+              meaning.languageCode }}</span>
+            <span [attr.lang]="meaning.languageCode" class="text-lg font-semibold text-slate-900 sm:text-xl">{{
+              meaning.meaning }}</span>
+          </li>
+          } @empty {
+          <li class="text-slate-500">No meanings available.</li>
+          }
+        </ul>
+        <div class="mt-5 flex flex-wrap gap-2">
+          @for (part of detail.partsOfSpeech; track $index) {
+          <span class="rounded-full bg-teal-50 px-3 py-1 text-sm font-medium text-teal-800">{{ part.nameEn }} / <span
+              lang="vi">{{ part.nameVi }}</span></span>
+          }
+        </div>
+      </section>
+      <section class="mt-3 border-t border-indigo-100 pt-3">
+        <h2 class="text-sm font-semibold text-slate-500">Kanji connections</h2>
+        <div class="mt-3 grid gap-3 sm:grid-cols-2">
+          @for (kanji of detail.kanji; track $index) {
+          <div class="rounded-2xl border border-indigo-100 bg-white/80 p-4">
+            <div class="flex items-center gap-3">
+              <h3 lang="ja" class="text-2xl font-bold text-indigo-700">{{ kanji.character }}</h3>
+              <span class="text-xs text-slate-500">{{ kanji.strokeCount }} strokes</span>
+            </div>
+            <p lang="en" class="mt-3 font-medium text-slate-800">{{ kanji.meaningEn }}</p>
+            <p lang="vi" class="text-sm text-slate-600">{{ kanji.meaningVi }}</p>
+            <ul class="mt-2 flex flex-wrap gap-x-3 gap-y-1 text-sm text-slate-600">
+              @for (reading of kanji.readings; track $index) {
+              <li>
+                {{ reading.readingType }}: <span lang="ja">{{ reading.reading }}</span>
+              </li>
+              }
+            </ul>
+          </div>
+          } @empty {
+          <p class="text-slate-500">No kanji information available.</p>
+          }
+        </div>
+      </section>
+      @if (examples().length) {
+      <section class="example-readings mt-3 border-t border-indigo-100 pt-3">
+        <h2 class="text-sm font-semibold text-slate-500">Example readings</h2>
+        <ol class="mt-3 list-inside list-decimal space-y-3 text-indigo-800">
+          @for (example of examples(); track $index) {
           <li>
-            {{ reading.readingType }}: <span lang="ja">{{ reading.reading }}</span>
+            <span lang="ja" class="text-lg">{{ example.japaneseReading }}</span>
+          </li>
+          }
+        </ol>
+      </section>
+      }
+
+      @if (detail.lessons.length) {
+      <section class="mt-5">
+        <h2 class="text-sm font-semibold text-slate-500">Lessons</h2>
+        <ul class="mt-2 space-y-1 text-sm text-slate-600">
+          @for (lesson of detail.lessons; track $index) {
+          <li>
+            {{ lesson.levelName }} · Lesson {{ lesson.lessonNumber }} · {{ lesson.title }}
           </li>
           }
         </ul>
-      </div>
-      } @empty {
-      <p class="text-gray-500">No kanji information available.</p>
+      </section>
       }
-    </div>
-  </section>
-  <section class="rounded-2xl border border-gray-200 bg-white p-6">
-    <h2 class="text-lg font-semibold text-gray-900">Examples</h2>
-    <ul class="mt-4 space-y-6">
-      @for (example of detail.examples; track $index) {
-      <li class="border-l-2 border-indigo-200 pl-4">
-        <p lang="ja" class="text-lg font-medium text-gray-900">{{ example.japaneseText }}</p>
-        <p lang="ja" class="mt-1 text-gray-500">{{ example.japaneseReading }}</p>
-        <p lang="en" class="mt-2">{{ example.meaningEn }}</p>
-        <p lang="vi">{{ example.meaningVi }}</p>
-        @if (example.targetText) {
-        <p class="mt-2 text-sm text-indigo-700">
-          Target: <span lang="ja">{{ example.targetText }}</span>
-        </p>
-        }
-      </li>
-      } @empty {
-      <li class="text-gray-500">No examples available.</li>
-      }
-    </ul>
-  </section>
-  <section class="rounded-2xl border border-gray-200 bg-white p-6">
-    <h2 class="text-lg font-semibold text-gray-900">Lessons</h2>
-    <ul class="mt-4 space-y-4">
-      @for (lesson of detail.lessons; track $index) {
-      <li>
-        <p class="text-sm text-indigo-700">
-          {{ lesson.levelName }} / Lesson {{ lesson.lessonNumber }}
-        </p>
-        <h3 class="mt-1 font-medium text-gray-900">{{ lesson.title }}</h3>
-        <p class="mt-1 text-gray-500">{{ lesson.description }}</p>
-      </li>
-      } @empty {
-      <li class="text-gray-500">No lessons available.</li>
-      }
-    </ul>
-  </section>
+    </section>
+    <button type="button" class="flip-control" (click)="$event.stopPropagation(); flip()"
+      [attr.aria-pressed]="flipped()" [attr.aria-label]="flipped() ? 'Show vocabulary' : 'Reveal meanings'">
+      <span class="flip-label flip-label-front" aria-hidden="true">↻ Flip card · Enter or Space</span>
+      <span class="flip-label flip-label-back" aria-hidden="true">↻ Flip card · Enter or Space</span>
+    </button>
+  </div>
 </article>

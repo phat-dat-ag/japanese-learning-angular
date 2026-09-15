@@ -115,7 +115,7 @@ describe('Study lesson metadata', () => {
       meta,
     });
     fixture.detectChanges();
-    expect(element.querySelector('li a')?.getAttribute('href')).toBe('/flashcards/detail/7');
+    expect(element.querySelector('li a')?.getAttribute('href')).toBe('/flashcards/detail/7?lesson=1&level=n5');
     expect(element.textContent).toContain('会社');
     expect(element.textContent).toContain('Page 1 of 2');
     const buttons = element.querySelectorAll<HTMLButtonElement>('nav button');

@@ -1,26 +1,59 @@
-<div class="mx-auto max-w-5xl px-6 py-8">
+<div class="mx-auto max-w-3xl px-0 py-1 sm:px-3">
   <a [routerLink]="['/flashcards']" class="text-sm font-medium text-gray-500 hover:text-indigo-600">&larr; Back to
     flashcards</a>
   @let current = state();
-  <section class="mt-6" aria-label="Flashcard detail" [attr.aria-busy]="current.status === 'loading'">
-    @switch (current.status) {
-    @case ('loading') {
-    <p role="status" class="py-12 text-center text-gray-500">Loading flashcard...</p>
+  <section class="mt-3" aria-label="Flashcard detail" [attr.aria-busy]="current.status === 'loading'">
+    <div class="card-navigation-layout" [class.has-navigation]="navigation() !== null">
+      <div class="card-stage" [class.previous]="direction() === 'previous'">
+        @switch (current.status) {
+        @case ('loading') {
+        <p role="status" class="py-12 text-center text-gray-500">Loading flashcard...</p>
+        }
+        @case ('missing') {
+        <h1 class="text-xl font-bold text-gray-900">Flashcard not found</h1>
+        <p role="status" class="mt-4 text-gray-500">Check the flashcard ID and try again.</p>
+        }
+        @case ('error') {
+        <p role="alert" class="text-red-700">Unable to load flashcard. Please try again.</p>
+        <button type="button" (click)="retry()" class="navigation-button mt-4">
+          Try again
+        </button>
+        }
+        @case ('loaded') {
+        <app-flashcard class="card-arrival" [card]="current.card" />
+        }
+        }
+      </div>
+      @if (navigation()) {
+      <nav aria-label="Flashcard navigation" class="card-navigation">
+        <button type="button" (click)="move('previous')" [disabled]="moving() || current.status === 'loading'"
+          class="navigation-button card-navigation-button" aria-label="Previous flashcard" title="Previous flashcard">
+          <span aria-hidden="true">Previous</span>
+        </button>
+        <button type="button" (click)="move('next')" [disabled]="moving() || current.status === 'loading'"
+          class="navigation-button card-navigation-button" aria-label="Next flashcard" title="Next flashcard">
+          <span aria-hidden="true">Next</span>
+        </button>
+      </nav>
+      }
+    </div>
+    @if (navigationState().status === 'loading') {
+    <p role="status" class="mt-3 text-center text-sm text-slate-500">
+      Loading flashcard navigation...
+    </p>
     }
-    @case ('missing') {
-    <h1 class="text-xl font-bold text-gray-900">Flashcard not found</h1>
-    <p role="status" class="mt-4 text-gray-500">Check the flashcard ID and try again.</p>
+    @if (navigationState().status === 'error') {
+    <div class="mt-3 text-center">
+      <p role="alert" class="text-sm text-red-700">Unable to load flashcard navigation.</p>
+      <button type="button" (click)="retryNavigation()" class="navigation-button mt-2">
+        Retry navigation
+      </button>
+    </div>
     }
-    @case ('error') {
-    <p role="alert" class="text-red-700">Unable to load flashcard. Please try again.</p>
-    <button type="button" (click)="retry()"
-      class="mt-4 rounded-lg bg-indigo-600 px-5 py-2 font-medium text-white hover:bg-indigo-700 focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-indigo-600">
-      Try again
-    </button>
-    }
-    @case ('loaded') {
-    <app-flashcard [card]="current.card" />
-    }
+    @if (navigationFailed()) {
+    <p role="alert" class="mt-3 text-center text-sm text-red-700">
+      Unable to open the flashcard. Please try again.
+    </p>
     }
   </section>
 </div>
