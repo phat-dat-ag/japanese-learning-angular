@@ -8,8 +8,4 @@ import { RouterLink } from '@angular/router';
 })
 export class Header {
   toggleSidebarFromHeader = output<void>();
-
-  navigateToProfile() {
-    console.log("Navigate to my profile");
-  }
 }

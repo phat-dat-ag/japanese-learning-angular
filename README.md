@@ -35,17 +35,42 @@ Start the backend Docker Compose stack with the NGINX API Gateway exposed on `ht
 
 ## API configuration
 
-All backend requests use `ApiClient` and the single `API_CONFIG` token in `src/app/core/api/api.config.ts`. Its default `baseUrl` is `/api` with a 15-second timeout. Feature paths include their version where required: `v1/jlpt-levels`, `v1/lessons`, and `v1/flashcards`. Unversioned routes such as `auth/login` and `vocabularies` share the same API root; do not repeat `/api` in feature paths.
+All backend requests use the single `API_CONFIG` token in `src/app/core/api/api.config.ts`. The default `baseUrl` is `/api` with a 15-second timeout. Feature paths include their version where required: `v1/jlpt-levels`, `v1/lessons`, and `v1/flashcards`. Unversioned routes such as `auth/login` and `vocabularies` share the same API root; do not repeat `/api` in feature paths.
 
 During development, the existing `proxy.conf.json` forwards only `/api/**` to `http://localhost:8080` (the Gateway), preserving paths. `angular.json` enables this for `npm start`. Browser requests remain same-origin, for example `/api/v1/flashcards`; the proxy forwards them to the Gateway. Restart `npm start` after changing proxy settings. Backend debugging ports must not be used by Angular.
 
 For production, configure the frontend/edge server to forward `/api/**` to the Gateway and serve Angular routes through `index.html`. The development proxy is not included in the production build. No development hostname is bundled into the application. If deployment needs a separate Gateway origin, override `API_CONFIG` in `app.config.ts` with a base such as `https://gateway.example/api` and the timeout; allow only the required frontend origin at the Gateway.
 
-Shared response validation, metadata, timeout, and normalized errors remain in `src/app/core/api/`. HTTP 401 (missing/invalid/expired authentication) and 403 (insufficient permission) retain their distinct status values. Pages currently show safe generic error/retry states; neither status triggers automatic logout or redirects.
+Quarkus services keep the existing `ApiClient` envelope validation, metadata, timeout, and normalized errors. Authentication uses `AuthApi` with Angular `HttpClient` because .NET returns plain success bodies. It reuses `API_CONFIG`, runtime validation, the configured timeout, and `normalizeApiError`; no Quarkus response contract is changed.
 
-There is no login UI, auth API service, token storage, or usable token lifecycle yet. No Authorization interceptor is installed and no Bearer header is fabricated. Protected endpoints require later authentication work, including centralized token access and a Gateway-scoped interceptor. Do not store passwords or log tokens.
+## Authentication
 
-To check integration with the stack running, run `npm start`, browse levels, open a lesson, page through its cards, and open a card detail. In browser developer tools, verify requests use `/api/**` on the frontend origin and return backend data through the Gateway. Authentication and authenticated 401/403 UI flows require later manual verification once auth is implemented.
+The Account link opens `/login`. Sign in with an existing account's email and password, then browse Flashcards. The page provides loading and generic error states, clears the password field when submitting, and offers sign-out for the current session. Registration is not part of this UI.
+
+The inspected .NET contract is:
+
+| Operation                | Request               | Success response                                |
+| ------------------------ | --------------------- | ----------------------------------------------- |
+| `POST /api/auth/login`   | `{ email, password }` | `{ accessToken, refreshToken, expiresIn }`      |
+| `POST /api/auth/refresh` | `{ refreshToken }`    | Same token fields, with a rotated refresh token |
+| `POST /api/auth/logout`  | `{ refreshToken }`    | 204, no body                                    |
+| `GET /api/auth/me`       | Bearer access token   | `{ userId, username?, email?, role? }`          |
+
+`expiresIn` is the access-token lifetime in seconds; the backend configures both access and refresh lifetimes. Refresh expiration is not returned to Angular. JWTs are not decoded by the frontend. Login loads `/me` as the authoritative current-user response.
+
+`AuthSession` keeps tokens and user state **in memory only**, isolated per page/tab. Reloading or closing the page requires signing in again; localStorage and sessionStorage are not used. Neither passwords nor tokens are persisted. This limits persistent token exposure and avoids cross-tab refresh-token rotation races, but JavaScript-accessible tokens remain vulnerable to XSS. Memory storage is **not equivalent to secure HttpOnly cookies**. The session abstraction allows later storage changes without involving feature components. Reloading discards tokens locally; it does not revoke the backend refresh session.
+
+`AuthService` coordinates login, current-user loading, refresh, and logout. The functional interceptor attaches Bearer only to the configured Gateway origin and API path boundary; unrelated URLs receive no session credentials. Login, refresh, and logout bypass the interceptor's token/refresh logic through an HTTP context flag (and endpoint exclusion). This prevents recursion while keeping regular Angular HTTP testing and transport. The interceptor depends on `AuthService`, which uses `AuthApi`; token requests exit before resolving `AuthService`, avoiding an injection cycle.
+
+A protected request returning 401 shares one in-flight refresh with other requests, replaces both tokens, and retries at most once. A late 401 from the old access token reuses an already completed rotation. Refresh continues if the initiating page is destroyed so a successful rotation is not lost. Refresh failure or a second 401 clears the local session. There is no timer or background polling. HTTP 403 never refreshes or clears the session. Other errors remain available to the existing safe page error/retry UI; there are no global redirects on HTTP failures.
+
+Logout waits for an active refresh, revokes the latest refresh token, and clears local state even if revocation fails. The UI reports when server sign-out cannot be confirmed. The backend's existing behavior leaves issued access tokens valid until expiration. The flashcard parent and child route guards redirect anonymous navigation to `/login`; they are UX controls, and backend authorization remains authoritative. No frontend role-based Admin UI is introduced.
+
+### Integration verification
+
+With Docker Compose running, start Angular and open Account. Verify invalid credentials show a generic error, successful login opens Flashcards, and levels, lessons, pagination, and details load. Browser Network requests must use the frontend's `/api/**` paths. Use an existing test account; never paste tokens into logs or source files.
+
+Check an expired access token causes one refresh and one retry, including concurrent API requests; a User must receive 403 from an Admin-only endpoint without refresh or logout. Sign out and verify the refresh session is revoked. Reloading the page must require login again. Automated tests cover these client behaviors with mocked HTTP. Live HTTP checks can establish backend routing and rotation, but do not replace browser UI checks.
 
 ## Development commands
 
@@ -76,7 +101,7 @@ The app uses standalone components and lazy-loaded routes. Feature services hand
 
 ## Development status
 
-Backend integration covers JLPT levels, lessons, paginated flashcards, and details. Authentication, vocabulary management, and saved progress are planned. Some sidebar links remain placeholders. Tests cover API response/error handling and the existing feature flows, alongside layout creation checks.
+Backend integration covers JLPT levels, lessons, paginated flashcards, and details. Authentication supports login, in-memory sessions, refresh rotation, and logout. Vocabulary management and saved progress are planned. Some sidebar links remain placeholders. Tests cover API response/error handling and the existing feature flows, alongside layout creation checks.
 
 ## Contributing
 
