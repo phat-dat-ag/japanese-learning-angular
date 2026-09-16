@@ -11,7 +11,7 @@ export class LessonService {
 
   getLessons(level: string): Observable<ApiSuccess<readonly FlashcardLesson[]>> {
     return this.api.get(
-      `lessons?level=${encodeURIComponent(level.toLowerCase())}`,
+      `v1/lessons?level=${encodeURIComponent(level.toLowerCase())}`,
       isFlashcardLessons,
     );
   }

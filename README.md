@@ -9,7 +9,7 @@ An Angular frontend for learning Japanese through JLPT levels, lessons, and voca
 - Reveal card answers and move through a lesson with a progress indicator.
 - Navigate through a shared header, collapsible sidebar, and footer.
 
-JLPT levels are loaded from the Quarkus API. Lessons and study cards still use local sample data: three N5 lessons, with three cards in the first lesson. Counts shown on lesson pages are placeholder metadata.
+JLPT levels, lessons, paginated flashcards, and card details are loaded through the API Gateway.
 
 ## Tech stack
 
@@ -31,15 +31,21 @@ npm start
 
 Open [localhost:4200](http://localhost:4200). The development server reloads when source files change.
 
-Start Quarkus on `http://localhost:8080`, then go to **Flashcards → N5 → Lesson 1** to try the sample deck.
+Start the backend Docker Compose stack with the NGINX API Gateway exposed on `http://localhost:8080`, then open **Flashcards** to browse the available levels and lessons.
 
 ## API configuration
 
-The level list calls `GET /api/v1/jlpt-levels`. During development, `proxy.conf.json` forwards `/api/**` to `http://localhost:8080`, avoiding cross-origin requests from the browser. Restart `npm start` after changing proxy settings.
+All backend requests use `ApiClient` and the single `API_CONFIG` token in `src/app/core/api/api.config.ts`. Its default `baseUrl` is `/api` with a 15-second timeout. Feature paths include their version where required: `v1/jlpt-levels`, `v1/lessons`, and `v1/flashcards`. Unversioned routes such as `auth/login` and `vocabularies` share the same API root; do not repeat `/api` in feature paths.
 
-Shared API types, runtime response validation, and error handling live in `src/app/core/api/`. `API_CONFIG` sets the base URL and a 15-second timeout. The level list provides loading, empty, error, and retry states.
+During development, the existing `proxy.conf.json` forwards only `/api/**` to `http://localhost:8080` (the Gateway), preserving paths. `angular.json` enables this for `npm start`. Browser requests remain same-origin, for example `/api/v1/flashcards`; the proxy forwards them to the Gateway. Restart `npm start` after changing proxy settings. Backend debugging ports must not be used by Angular.
 
-For production, configure the web server to proxy `/api/**` to Quarkus and serve Angular routes through `index.html`. The development proxy is not included in the production build. For a separate API origin, override `API_CONFIG` in `app.config.ts` and configure backend CORS for the frontend origin. Use HTTPS in production.
+For production, configure the frontend/edge server to forward `/api/**` to the Gateway and serve Angular routes through `index.html`. The development proxy is not included in the production build. No development hostname is bundled into the application. If deployment needs a separate Gateway origin, override `API_CONFIG` in `app.config.ts` with a base such as `https://gateway.example/api` and the timeout; allow only the required frontend origin at the Gateway.
+
+Shared response validation, metadata, timeout, and normalized errors remain in `src/app/core/api/`. HTTP 401 (missing/invalid/expired authentication) and 403 (insufficient permission) retain their distinct status values. Pages currently show safe generic error/retry states; neither status triggers automatic logout or redirects.
+
+There is no login UI, auth API service, token storage, or usable token lifecycle yet. No Authorization interceptor is installed and no Bearer header is fabricated. Protected endpoints require later authentication work, including centralized token access and a Gateway-scoped interceptor. Do not store passwords or log tokens.
+
+To check integration with the stack running, run `npm start`, browse levels, open a lesson, page through its cards, and open a card detail. In browser developer tools, verify requests use `/api/**` on the frontend origin and return backend data through the Gateway. Authentication and authenticated 401/403 UI flows require later manual verification once auth is implemented.
 
 ## Development commands
 
@@ -66,11 +72,11 @@ src/
 public/                # Static assets
 ```
 
-The app uses standalone components and lazy-loaded routes. Feature services handle domain data: `JlptLevelService` loads backend levels, while `FlashcardService` supplies sample lessons and study cards.
+The app uses standalone components and lazy-loaded routes. Feature services handle domain data: `JlptLevelService`, `LessonService`, and `FlashcardService` call the shared `ApiClient` through the Gateway.
 
 ## Development status
 
-Backend integration currently covers JLPT levels. Authentication, lesson/card API integration, vocabulary management, and saved progress are planned. Some sidebar links remain placeholders. Tests cover API response/error handling and the level-list flow, alongside layout creation checks.
+Backend integration covers JLPT levels, lessons, paginated flashcards, and details. Authentication, vocabulary management, and saved progress are planned. Some sidebar links remain placeholders. Tests cover API response/error handling and the existing feature flows, alongside layout creation checks.
 
 ## Contributing
 

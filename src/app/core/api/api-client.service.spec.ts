@@ -54,21 +54,24 @@ describe('ApiClient', () => {
     expect(next).toHaveBeenCalledWith({ success: true, data: ['N5'], meta });
   });
 
-  it.each([200, 400, 500])('preserves structured API errors with HTTP status %s', (status) => {
-    const error = vi.fn();
-    client.get('levels', isStrings).subscribe({ error });
-    http.expectOne('/api/v1/levels').flush(failure, { status, statusText: 'Response' });
-    expect(error).toHaveBeenCalledWith(
-      expect.objectContaining({
-        code: failure.error.code,
-        message: failure.error.message,
-        details: failure.error.details,
-        meta,
-        status,
-      }),
-    );
-    expect(error.mock.calls[0][0]).toBeInstanceOf(ApiError);
-  });
+  it.each([200, 400, 401, 403, 500])(
+    'preserves structured API errors with HTTP status %s',
+    (status) => {
+      const error = vi.fn();
+      client.get('levels', isStrings).subscribe({ error });
+      http.expectOne('/api/v1/levels').flush(failure, { status, statusText: 'Response' });
+      expect(error).toHaveBeenCalledWith(
+        expect.objectContaining({
+          code: failure.error.code,
+          message: failure.error.message,
+          details: failure.error.details,
+          meta,
+          status,
+        }),
+      );
+      expect(error.mock.calls[0][0]).toBeInstanceOf(ApiError);
+    },
+  );
 
   it.each([
     null,
@@ -105,6 +108,17 @@ describe('ApiClient', () => {
     expect(error.mock.calls[0][0].message).not.toContain('internal server diagnostic');
   });
 
+  it.each([401, 403])('preserves HTTP status %s without a structured error body', (status) => {
+    const error = vi.fn();
+    client.get('levels', isStrings).subscribe({ error });
+    http.expectOne('/api/v1/levels').flush('internal diagnostic', {
+      status,
+      statusText: 'Response',
+    });
+    expect(error).toHaveBeenCalledWith(expect.objectContaining({ code: 'HTTP_ERROR', status }));
+    expect(error.mock.calls[0][0].message).not.toContain('internal diagnostic');
+  });
+
   it('times out and cancels a stalled request', () => {
     vi.useFakeTimers();
     const error = vi.fn();
@@ -113,5 +127,35 @@ describe('ApiClient', () => {
     vi.advanceTimersByTime(1000);
     expect(error).toHaveBeenCalledWith(expect.objectContaining({ code: 'REQUEST_TIMEOUT' }));
     expect(request.cancelled).toBe(true);
+  });
+});
+
+describe('Gateway URL configuration', () => {
+  afterEach(() => TestBed.inject(HttpTestingController).verify());
+
+  it.each([
+    { baseUrl: '/api', path: 'v1/flashcards', expected: '/api/v1/flashcards' },
+    { baseUrl: '/api/', path: '/auth/session', expected: '/api/auth/session' },
+    { baseUrl: '/api', path: 'vocabularies', expected: '/api/vocabularies' },
+    {
+      baseUrl: 'https://gateway.example/api/',
+      path: '/v1/lessons?level=n5',
+      expected: 'https://gateway.example/api/v1/lessons?level=n5',
+    },
+  ])('constructs $expected from the configured API root', ({ baseUrl, path, expected }) => {
+    TestBed.configureTestingModule({
+      providers: [
+        provideHttpClient(),
+        provideHttpClientTesting(),
+        { provide: API_CONFIG, useValue: { baseUrl, timeoutMs: 1000 } },
+      ],
+    });
+    const next = vi.fn();
+    TestBed.inject(ApiClient).get(path, isStrings).subscribe(next);
+    const request = TestBed.inject(HttpTestingController).expectOne(expected);
+    expect(request.request.headers.get('Accept')).toBe('application/json');
+    expect(request.request.headers.has('Authorization')).toBe(false);
+    request.flush({ success: true, data: [], meta });
+    expect(next).toHaveBeenCalledWith({ success: true, data: [], meta });
   });
 });
