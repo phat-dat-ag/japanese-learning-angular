@@ -10,7 +10,7 @@ export class JlptLevelService {
 
   getLevels(): Observable<readonly JlptLevel[]> {
     return this.api
-      .get('jlpt-levels', isJlptLevelResponses)
+      .get('v1/jlpt-levels', isJlptLevelResponses)
       .pipe(map((response) => response.data.filter(isSupportedJlptLevel)));
   }
 }

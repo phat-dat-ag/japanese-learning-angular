@@ -11,7 +11,7 @@ export class FlashcardService {
 
   getFlashcards(lessonId: number, level: string, page = 0): Observable<ApiSuccess<FlashcardPage>> {
     return this.api.get(
-      `flashcards?lesson=${lessonId}&level=${encodeURIComponent(level.toUpperCase())}&page=${page}&size=20`,
+      `v1/flashcards?lesson=${lessonId}&level=${encodeURIComponent(level.toUpperCase())}&page=${page}&size=20`,
       isFlashcardPage,
     );
   }
@@ -35,6 +35,6 @@ export class FlashcardService {
   }
 
   getFlashcard(flashcardId: number): Observable<ApiSuccess<Flashcard>> {
-    return this.api.get(`flashcards/${flashcardId}`, isFlashcard);
+    return this.api.get(`v1/flashcards/${flashcardId}`, isFlashcard);
   }
 }
