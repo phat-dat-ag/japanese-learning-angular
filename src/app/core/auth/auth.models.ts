@@ -5,6 +5,29 @@ export interface LoginRequest {
   readonly password: string;
 }
 
+export interface RegisterRequest extends LoginRequest {
+  readonly username: string;
+}
+
+export interface RegisterResponse {
+  readonly id: string;
+  readonly username: string;
+  readonly email: string;
+  readonly createdAt: string;
+}
+
+export function isRegisterResponse(value: unknown): value is RegisterResponse {
+  return (
+    isRecord(value) &&
+    typeof value['id'] === 'string' &&
+    /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i.test(value['id']) &&
+    nonEmptyString(value['username']) &&
+    nonEmptyString(value['email']) &&
+    typeof value['createdAt'] === 'string' &&
+    Number.isFinite(Date.parse(value['createdAt']))
+  );
+}
+
 export interface TokenResponse {
   readonly accessToken: string;
   readonly refreshToken: string;

@@ -69,4 +69,12 @@ describe('Login', () => {
     expect(navigate).toHaveBeenCalledWith(['/flashcards']);
     expect(page.loading()).toBe(false);
   });
+  it('links to registration and rejects invalid email submission', () => {
+    const element: HTMLElement = fixture.nativeElement;
+    expect(element.querySelector('a')?.getAttribute('href')).toBe('/register');
+    fixture.componentInstance.email = 'invalid';
+    fixture.componentInstance.password = 'test-password';
+    fixture.componentInstance.submit();
+    http.expectNone('/api/auth/login');
+  });
 });

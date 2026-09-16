@@ -12,6 +12,7 @@ export class ApiError extends Error {
     readonly status: number,
     readonly details: ApiErrorBody['details'] = [],
     readonly meta?: ApiMeta,
+    readonly traceId?: string,
   ) {
     super(message);
   }
@@ -51,10 +52,10 @@ export function normalizeApiError(error: unknown): ApiError {
     return error.status === 0
       ? new ApiError('NETWORK_ERROR', 'Unable to connect to the server. Please try again.', 0)
       : new ApiError(
-        'HTTP_ERROR',
-        'The request could not be completed. Please try again.',
-        error.status,
-      );
+          'HTTP_ERROR',
+          'The request could not be completed. Please try again.',
+          error.status,
+        );
   }
 
   return new ApiError('UNEXPECTED_ERROR', 'Something went wrong. Please try again.', 0);

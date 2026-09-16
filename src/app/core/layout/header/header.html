@@ -1,26 +1,28 @@
 <header class="sticky top-0 z-40 h-16 border-b border-gray-200/80 bg-white/95 backdrop-blur">
   <div class="flex h-full items-center justify-between px-4 sm:px-6">
     <div class="flex items-center gap-3">
-      <button
-        type="button"
-        class="group flex h-10 w-10 items-center justify-center rounded-xl text-gray-500 transition-all duration-200 hover:bg-indigo-50 hover:text-indigo-600 active:scale-95"
-        aria-label="Toggle sidebar"
-        (click)="toggleSidebarFromHeader.emit()"
-      >
-        <svg
-          class="h-5 w-5 transition-transform duration-200 group-hover:scale-110"
-          fill="none"
-          stroke="currentColor"
-          viewBox="0 0 24 24"
+      @if (showNavigation()) {
+        <button
+          type="button"
+          class="group flex h-10 w-10 items-center justify-center rounded-xl text-gray-500 transition-all duration-200 hover:bg-indigo-50 hover:text-indigo-600 active:scale-95"
+          aria-label="Toggle sidebar"
+          (click)="toggleSidebarFromHeader.emit()"
         >
-          <path
-            stroke-linecap="round"
-            stroke-linejoin="round"
-            stroke-width="2"
-            d="M4 6h16M4 12h16M4 18h16"
-          />
-        </svg>
-      </button>
+          <svg
+            class="h-5 w-5 transition-transform duration-200 group-hover:scale-110"
+            fill="none"
+            stroke="currentColor"
+            viewBox="0 0 24 24"
+          >
+            <path
+              stroke-linecap="round"
+              stroke-linejoin="round"
+              stroke-width="2"
+              d="M4 6h16M4 12h16M4 18h16"
+            />
+          </svg>
+        </button>
+      }
 
       <a routerLink="/" class="group flex items-center gap-2">
         <div
@@ -37,29 +39,44 @@
       </a>
     </div>
 
-    <div class="flex items-center gap-2 sm:gap-4">
-      <div
-        class="hidden items-center gap-2 rounded-xl bg-orange-50 px-3 py-2 text-orange-600 sm:flex"
-      >
-        <span class="text-base">🔥</span>
-
-        <div class="text-xs">
-          <div class="font-bold">7 days</div>
-          <div class="text-orange-500">streak</div>
-        </div>
-      </div>
-
-      <div class="hidden text-right md:block">
-        <p class="text-xs text-gray-400">Welcome back</p>
-
-        <p class="text-sm font-semibold text-gray-700">Japanese Learner</p>
-      </div>
-
-      <a
-        routerLink="/login"
-        class="rounded-xl border border-gray-200 px-3 py-2 text-sm font-medium text-indigo-700 hover:bg-indigo-50"
-        >Account</a
-      >
+    <div class="flex min-w-0 items-center gap-3">
+      @if (auth.authenticated()) {
+        <p class="max-w-28 truncate text-sm font-medium text-gray-700 sm:max-w-48">
+          {{ auth.user()?.username ?? auth.user()?.email ?? 'Japanese learner' }}
+        </p>
+      }
+      @if (auth.authenticated() || signingOut()) {
+        <button
+          type="button"
+          (click)="logout()"
+          [disabled]="signingOut() || auth.busy()"
+          [attr.aria-busy]="signingOut()"
+          class="shrink-0 rounded-xl border border-gray-200 px-3 py-2 text-sm font-medium text-indigo-700 hover:bg-indigo-50 focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-indigo-600 disabled:opacity-50"
+        >
+          {{ signingOut() ? 'Signing out...' : 'Sign out' }}
+        </button>
+      } @else {
+        <a
+          [routerLink]="['/login']"
+          class="rounded-xl border border-gray-200 px-3 py-2 text-sm font-medium text-indigo-700 hover:bg-indigo-50 focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-indigo-600"
+          >Sign in</a
+        >
+      }
     </div>
   </div>
 </header>
+@if (logoutError()) {
+  <div
+    role="alert"
+    class="flex items-center justify-between gap-3 border-b border-amber-200 bg-amber-50 px-4 py-3 text-sm text-amber-900"
+  >
+    <p>{{ logoutError() }}</p>
+    <button
+      type="button"
+      (click)="logoutError.set('')"
+      class="rounded px-2 py-1 font-semibold focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-amber-900"
+    >
+      Dismiss
+    </button>
+  </div>
+}

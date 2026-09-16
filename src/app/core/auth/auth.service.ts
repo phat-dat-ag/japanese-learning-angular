@@ -14,7 +14,13 @@ import {
 import { ApiError } from '../api/api-error';
 import { AuthApi } from './auth-api.service';
 import { AuthSession } from './auth-session.service';
-import { AuthUser, LoginRequest, TokenResponse } from './auth.models';
+import {
+  AuthUser,
+  LoginRequest,
+  RegisterRequest,
+  RegisterResponse,
+  TokenResponse,
+} from './auth.models';
 
 @Injectable({ providedIn: 'root' })
 export class AuthService {
@@ -25,6 +31,10 @@ export class AuthService {
   readonly busy = this.working.asReadonly();
   readonly user = this.session.user;
   readonly authenticated = this.session.authenticated;
+
+  register(request: RegisterRequest): Observable<RegisterResponse> {
+    return this.api.register(request);
+  }
 
   login(request: LoginRequest): Observable<AuthUser> {
     return defer(() => {
