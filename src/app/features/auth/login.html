@@ -1,33 +1,50 @@
 <section
-  class="mx-auto max-w-md rounded-2xl border border-gray-200 bg-white p-6 shadow-sm"
+  class="mx-auto my-4 w-full max-w-md rounded-2xl border border-gray-200 bg-white p-6 shadow-sm sm:my-10 sm:p-8"
   aria-labelledby="login-title"
 >
-  <h1 id="login-title" class="mb-6 text-2xl font-bold text-gray-900">Sign in</h1>
-  @if (auth.authenticated()) {
-    <p class="mb-4 text-gray-700">Signed in as {{ auth.user()?.email ?? 'a Japanese learner' }}.</p>
-    <button
-      type="button"
-      (click)="logout()"
-      [disabled]="loading() || auth.busy()"
-      class="rounded-lg bg-indigo-600 px-4 py-2 font-semibold text-white disabled:opacity-50"
+  <div class="mb-6">
+    <p class="mb-2 text-sm font-semibold text-indigo-700">Japanese Learning</p>
+    <h1 id="login-title" class="text-2xl font-bold tracking-tight text-gray-900">Welcome back</h1>
+    <p class="mt-2 text-sm text-gray-600">Sign in to continue your Japanese journey.</p>
+  </div>
+  @if (registered()) {
+    <p
+      role="status"
+      class="mb-5 rounded-lg border border-green-200 bg-green-50 p-3 text-sm text-green-800"
     >
-      Sign out
-    </button>
-  } @else {
-    <form #form="ngForm" (ngSubmit)="submit()" [attr.aria-busy]="loading()">
-      <label for="email" class="mb-1 block font-medium text-gray-700">Email</label>
+      Your account has been created. Sign in to get started.
+    </p>
+  }
+  <form #form="ngForm" (ngSubmit)="submit()" [attr.aria-busy]="loading()" class="space-y-5">
+    <div>
+      <label for="email" class="mb-1.5 block text-sm font-medium text-gray-800">Email</label>
       <input
         id="email"
         name="email"
         type="email"
         autocomplete="username"
         required
-        email
+        pattern="[^@]+@[^@]+"
         [(ngModel)]="email"
+        #emailField="ngModel"
         [disabled]="loading()"
-        class="mb-4 w-full rounded-lg border border-gray-300 px-3 py-2 focus:outline-indigo-600"
+        [attr.aria-invalid]="!loading() && emailField.touched && emailField.invalid"
+        aria-describedby="email-hint"
+        class="w-full rounded-lg border border-gray-300 bg-white px-3 py-2.5 text-gray-900 focus:border-indigo-600 focus:outline-2 focus:outline-offset-2 focus:outline-indigo-600 disabled:bg-gray-50 disabled:text-gray-500 aria-invalid:border-red-600"
       />
-      <label for="password" class="mb-1 block font-medium text-gray-700">Password</label>
+      <p
+        id="email-hint"
+        [class]="
+          !loading() && emailField.touched && emailField.invalid
+            ? 'mt-1.5 text-sm text-red-700'
+            : 'mt-1.5 text-sm text-gray-600'
+        "
+      >
+        Enter the email address for your account.
+      </p>
+    </div>
+    <div>
+      <label for="password" class="mb-1.5 block text-sm font-medium text-gray-800">Password</label>
       <input
         id="password"
         name="password"
@@ -35,19 +52,44 @@
         autocomplete="current-password"
         required
         [(ngModel)]="password"
+        #passwordField="ngModel"
         [disabled]="loading()"
-        class="mb-6 w-full rounded-lg border border-gray-300 px-3 py-2 focus:outline-indigo-600"
+        [attr.aria-invalid]="
+          !loading() && passwordField.touched && (passwordField.invalid || !password.trim())
+        "
+        aria-describedby="password-hint"
+        class="w-full rounded-lg border border-gray-300 bg-white px-3 py-2.5 text-gray-900 focus:border-indigo-600 focus:outline-2 focus:outline-offset-2 focus:outline-indigo-600 disabled:bg-gray-50 disabled:text-gray-500 aria-invalid:border-red-600"
       />
-      <button
-        type="submit"
-        [disabled]="form.invalid || loading() || auth.busy()"
-        class="w-full rounded-lg bg-indigo-600 px-4 py-2 font-semibold text-white hover:bg-indigo-700 disabled:opacity-50"
+      <p
+        id="password-hint"
+        [class]="
+          !loading() && passwordField.touched && (passwordField.invalid || !password.trim())
+            ? 'mt-1.5 text-sm text-red-700'
+            : 'mt-1.5 text-sm text-gray-600'
+        "
       >
-        {{ loading() ? 'Signing in...' : 'Sign in' }}
-      </button>
-    </form>
-  }
-  @if (error()) {
-    <p role="alert" class="mt-4 text-sm text-red-700">{{ error() }}</p>
-  }
+        Enter your password.
+      </p>
+    </div>
+    @if (error()) {
+      <p role="alert" class="rounded-lg border border-red-200 bg-red-50 p-3 text-sm text-red-800">
+        {{ error() }}
+      </p>
+    }
+    <button
+      type="submit"
+      [disabled]="form.invalid || !email.trim() || !password.trim() || loading() || auth.busy()"
+      class="min-h-11 w-full rounded-lg bg-indigo-600 px-4 py-2.5 font-semibold text-white hover:bg-indigo-700 focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-indigo-600 disabled:cursor-not-allowed disabled:opacity-50"
+    >
+      {{ loading() ? 'Signing in...' : 'Sign in' }}
+    </button>
+  </form>
+  <p class="mt-6 text-center text-sm text-gray-600">
+    New to Japanese Learning?
+    <a
+      [routerLink]="['/register']"
+      class="rounded-sm font-semibold text-indigo-700 underline-offset-4 hover:underline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-indigo-600"
+      >Create account</a
+    >
+  </p>
 </section>

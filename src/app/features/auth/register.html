@@ -1,0 +1,155 @@
+<section
+  class="mx-auto my-4 w-full max-w-md rounded-2xl border border-gray-200 bg-white p-6 shadow-sm sm:my-10 sm:p-8"
+  aria-labelledby="register-title"
+>
+  <div class="mb-6">
+    <p class="mb-2 text-sm font-semibold text-indigo-700">Japanese Learning</p>
+    <h1 id="register-title" class="text-2xl font-bold tracking-tight text-gray-900">
+      Create your account
+    </h1>
+    <p class="mt-2 text-sm text-gray-600">Start learning Japanese, one step at a time.</p>
+  </div>
+  <form #form="ngForm" (ngSubmit)="submit()" [attr.aria-busy]="loading()" class="space-y-5">
+    <div>
+      <label for="username" class="mb-1.5 block text-sm font-medium text-gray-800">Username</label>
+      <input
+        id="username"
+        name="username"
+        type="text"
+        autocomplete="username"
+        required
+        maxlength="100"
+        [(ngModel)]="username"
+        #usernameField="ngModel"
+        [disabled]="loading()"
+        [attr.aria-invalid]="
+          !loading() && usernameField.touched && (!username.trim() || username.length > 100)
+        "
+        aria-describedby="username-hint"
+        class="w-full rounded-lg border border-gray-300 bg-white px-3 py-2.5 text-gray-900 focus:border-indigo-600 focus:outline-2 focus:outline-offset-2 focus:outline-indigo-600 disabled:bg-gray-50 disabled:text-gray-500 aria-invalid:border-red-600"
+      />
+      <p
+        id="username-hint"
+        [class]="
+          !loading() && usernameField.touched && (!username.trim() || username.length > 100)
+            ? 'mt-1.5 text-sm text-red-700'
+            : 'mt-1.5 text-sm text-gray-600'
+        "
+      >
+        Choose a username of up to 100 characters.
+      </p>
+    </div>
+    <div>
+      <label for="email" class="mb-1.5 block text-sm font-medium text-gray-800">Email</label>
+      <input
+        id="email"
+        name="email"
+        type="email"
+        autocomplete="email"
+        required
+        maxlength="255"
+        pattern="[^@]+@[^@]+"
+        [(ngModel)]="email"
+        #emailField="ngModel"
+        [disabled]="loading()"
+        [attr.aria-invalid]="!loading() && emailField.touched && emailField.invalid"
+        aria-describedby="email-hint"
+        class="w-full rounded-lg border border-gray-300 bg-white px-3 py-2.5 text-gray-900 focus:border-indigo-600 focus:outline-2 focus:outline-offset-2 focus:outline-indigo-600 disabled:bg-gray-50 disabled:text-gray-500 aria-invalid:border-red-600"
+      />
+      <p
+        id="email-hint"
+        [class]="
+          !loading() && emailField.touched && emailField.invalid
+            ? 'mt-1.5 text-sm text-red-700'
+            : 'mt-1.5 text-sm text-gray-600'
+        "
+      >
+        Enter a valid email address (up to 255 characters).
+      </p>
+    </div>
+    <div>
+      <label for="password" class="mb-1.5 block text-sm font-medium text-gray-800">Password</label>
+      <input
+        id="password"
+        name="password"
+        type="password"
+        autocomplete="new-password"
+        required
+        minlength="8"
+        maxlength="100"
+        [(ngModel)]="password"
+        #passwordField="ngModel"
+        [disabled]="loading()"
+        [attr.aria-invalid]="
+          !loading() && passwordField.touched && (passwordField.invalid || !password.trim())
+        "
+        aria-describedby="password-hint"
+        class="w-full rounded-lg border border-gray-300 bg-white px-3 py-2.5 text-gray-900 focus:border-indigo-600 focus:outline-2 focus:outline-offset-2 focus:outline-indigo-600 disabled:bg-gray-50 disabled:text-gray-500 aria-invalid:border-red-600"
+      />
+      <p
+        id="password-hint"
+        [class]="
+          !loading() && passwordField.touched && (passwordField.invalid || !password.trim())
+            ? 'mt-1.5 text-sm text-red-700'
+            : 'mt-1.5 text-sm text-gray-600'
+        "
+      >
+        Use 8-100 characters. Your password cannot be only spaces.
+      </p>
+    </div>
+    <div>
+      <label for="confirmPassword" class="mb-1.5 block text-sm font-medium text-gray-800"
+        >Confirm password</label
+      >
+      <input
+        id="confirmPassword"
+        name="confirmPassword"
+        type="password"
+        autocomplete="new-password"
+        required
+        [(ngModel)]="confirmPassword"
+        #confirmPasswordField="ngModel"
+        [disabled]="loading()"
+        [attr.aria-invalid]="
+          !loading() &&
+          confirmPasswordField.touched &&
+          (confirmPassword !== password || !confirmPassword)
+        "
+        aria-describedby="confirmPassword-hint"
+        class="w-full rounded-lg border border-gray-300 bg-white px-3 py-2.5 text-gray-900 focus:border-indigo-600 focus:outline-2 focus:outline-offset-2 focus:outline-indigo-600 disabled:bg-gray-50 disabled:text-gray-500 aria-invalid:border-red-600"
+      />
+      <p
+        id="confirmPassword-hint"
+        [class]="
+          !loading() &&
+          confirmPasswordField.touched &&
+          (confirmPassword !== password || !confirmPassword)
+            ? 'mt-1.5 text-sm text-red-700'
+            : 'mt-1.5 text-sm text-gray-600'
+        "
+      >
+        Enter the same password again.
+      </p>
+    </div>
+    @if (error()) {
+      <p role="alert" class="rounded-lg border border-red-200 bg-red-50 p-3 text-sm text-red-800">
+        {{ error() }}
+      </p>
+    }
+    <button
+      type="submit"
+      [disabled]="form.invalid || !valid || loading() || auth.busy()"
+      class="min-h-11 w-full rounded-lg bg-indigo-600 px-4 py-2.5 font-semibold text-white hover:bg-indigo-700 focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-indigo-600 disabled:cursor-not-allowed disabled:opacity-50"
+    >
+      {{ loading() ? 'Creating account...' : 'Create account' }}
+    </button>
+  </form>
+  <p class="mt-6 text-center text-sm text-gray-600">
+    Already have an account?
+    <a
+      [routerLink]="['/login']"
+      class="rounded-sm font-semibold text-indigo-700 underline-offset-4 hover:underline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-indigo-600"
+      >Sign in</a
+    >
+  </p>
+</section>

@@ -23,7 +23,7 @@ export const authInterceptor: HttpInterceptorFn = (request, next) => {
     target.origin !== root.origin ||
     !target.pathname.startsWith(root.pathname) ||
     request.context.get(SKIP_AUTH) ||
-    /^auth\/(login|refresh|logout)\/?$/.test(apiPath)
+    /^auth\/(register|login|refresh|logout)\/?$/.test(apiPath)
   ) {
     return next(request);
   }

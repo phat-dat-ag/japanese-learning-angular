@@ -45,22 +45,25 @@ Quarkus services keep the existing `ApiClient` envelope validation, metadata, ti
 
 ## Authentication
 
-The Account link opens `/login`. Sign in with an existing account's email and password, then browse Flashcards. The page provides loading and generic error states, clears the password field when submitting, and offers sign-out for the current session. Registration is not part of this UI.
+Use **Sign in** in the header to open `/login`, or **Create account** to open `/register`. Both forms provide accessible validation and submission states and clear password fields on submission. Registration creates an account, then opens Login with a success message; it does not authenticate or carry credentials between pages. Signed-in users are redirected from either auth page to Flashcards. The header shows the authoritative `/me` username (email as a fallback) and provides Sign out, with duplicate submissions disabled and safe feedback if server revocation cannot be confirmed.
 
 The inspected .NET contract is:
 
-| Operation                | Request               | Success response                                |
-| ------------------------ | --------------------- | ----------------------------------------------- |
-| `POST /api/auth/login`   | `{ email, password }` | `{ accessToken, refreshToken, expiresIn }`      |
-| `POST /api/auth/refresh` | `{ refreshToken }`    | Same token fields, with a rotated refresh token |
-| `POST /api/auth/logout`  | `{ refreshToken }`    | 204, no body                                    |
-| `GET /api/auth/me`       | Bearer access token   | `{ userId, username?, email?, role? }`          |
+| Operation                 | Request                         | Success response                                     |
+| ------------------------- | ------------------------------- | ---------------------------------------------------- |
+| `POST /api/auth/register` | `{ username, email, password }` | 201: `{ id, username, email, createdAt }`; no tokens |
+| `POST /api/auth/login`    | `{ email, password }`           | `{ accessToken, refreshToken, expiresIn }`           |
+| `POST /api/auth/refresh`  | `{ refreshToken }`              | Same token fields, with a rotated refresh token      |
+| `POST /api/auth/logout`   | `{ refreshToken }`              | 204, no body                                         |
+| `GET /api/auth/me`        | Bearer access token             | `{ userId, username?, email?, role? }`               |
+
+Registration requires a nonblank username (maximum 100 characters), a valid email (maximum 255 characters), and a nonblank password of 8-100 characters. Confirm password is frontend-only. Duplicate username/email return HTTP 409 with `USERNAME_ALREADY_EXISTS` / `EMAIL_ALREADY_EXISTS`; the UI maps these codes to safe messages. `AuthApi` adapts the .NET failure envelope (`success`, `error`, `traceId`) into the existing `ApiError`, preserving validation details and trace IDs. Other failures use generic UI messages.
 
 `expiresIn` is the access-token lifetime in seconds; the backend configures both access and refresh lifetimes. Refresh expiration is not returned to Angular. JWTs are not decoded by the frontend. Login loads `/me` as the authoritative current-user response.
 
 `AuthSession` keeps tokens and user state **in memory only**, isolated per page/tab. Reloading or closing the page requires signing in again; localStorage and sessionStorage are not used. Neither passwords nor tokens are persisted. This limits persistent token exposure and avoids cross-tab refresh-token rotation races, but JavaScript-accessible tokens remain vulnerable to XSS. Memory storage is **not equivalent to secure HttpOnly cookies**. The session abstraction allows later storage changes without involving feature components. Reloading discards tokens locally; it does not revoke the backend refresh session.
 
-`AuthService` coordinates login, current-user loading, refresh, and logout. The functional interceptor attaches Bearer only to the configured Gateway origin and API path boundary; unrelated URLs receive no session credentials. Login, refresh, and logout bypass the interceptor's token/refresh logic through an HTTP context flag (and endpoint exclusion). This prevents recursion while keeping regular Angular HTTP testing and transport. The interceptor depends on `AuthService`, which uses `AuthApi`; token requests exit before resolving `AuthService`, avoiding an injection cycle.
+`AuthService` coordinates login, current-user loading, refresh, and logout. The functional interceptor attaches Bearer only to the configured Gateway origin and API path boundary; unrelated URLs receive no session credentials. Register, login, refresh, and logout bypass the interceptor's token/refresh logic through an HTTP context flag (and endpoint exclusion). This prevents recursion while keeping regular Angular HTTP testing and transport. The interceptor depends on `AuthService`, which uses `AuthApi`; token requests exit before resolving `AuthService`, avoiding an injection cycle.
 
 A protected request returning 401 shares one in-flight refresh with other requests, replaces both tokens, and retries at most once. A late 401 from the old access token reuses an already completed rotation. Refresh continues if the initiating page is destroyed so a successful rotation is not lost. Refresh failure or a second 401 clears the local session. There is no timer or background polling. HTTP 403 never refreshes or clears the session. Other errors remain available to the existing safe page error/retry UI; there are no global redirects on HTTP failures.
 
@@ -101,7 +104,7 @@ The app uses standalone components and lazy-loaded routes. Feature services hand
 
 ## Development status
 
-Backend integration covers JLPT levels, lessons, paginated flashcards, and details. Authentication supports login, in-memory sessions, refresh rotation, and logout. Vocabulary management and saved progress are planned. Some sidebar links remain placeholders. Tests cover API response/error handling and the existing feature flows, alongside layout creation checks.
+Backend integration covers JLPT levels, lessons, paginated flashcards, and details. Authentication supports registration, login, in-memory sessions, refresh rotation, and header sign-out. Vocabulary management and saved progress are planned. Some sidebar links remain placeholders. Tests cover API response/error handling and the existing feature flows, alongside layout creation checks.
 
 ## Contributing
 
