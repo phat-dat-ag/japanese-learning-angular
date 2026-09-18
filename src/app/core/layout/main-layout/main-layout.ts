@@ -1,26 +1,17 @@
-import { Component, inject, signal } from '@angular/core';
-import { ActivatedRoute, NavigationEnd, Router, RouterOutlet } from '@angular/router';
-import { toSignal } from '@angular/core/rxjs-interop';
-import { filter, map, startWith } from 'rxjs';
+import { Component, signal } from '@angular/core';
+import { RouterOutlet } from '@angular/router';
 import { Header } from '../header/header';
 import { Sidebar } from '../sidebar/sidebar';
 import { Footer } from '../footer/footer';
+import { AuthenticatedLayout } from '../authenticated-layout.directive';
 
 @Component({
   selector: 'app-main-layout',
   imports: [RouterOutlet, Header, Sidebar, Footer],
+  hostDirectives: [AuthenticatedLayout],
   templateUrl: './main-layout.html',
 })
 export class MainLayout {
-  private readonly route = inject(ActivatedRoute);
-  readonly authPage = toSignal(
-    inject(Router).events.pipe(
-      filter((event) => event instanceof NavigationEnd),
-      startWith(null),
-      map(() => this.route.firstChild?.snapshot?.data['authPage'] === true),
-    ),
-    { initialValue: false },
-  );
   isSidebarOpen = signal(true);
 
   toggleSidebar() {
