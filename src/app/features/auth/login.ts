@@ -3,6 +3,7 @@ import { takeUntilDestroyed, toSignal } from '@angular/core/rxjs-interop';
 import { FormsModule } from '@angular/forms';
 import { ActivatedRoute, Router, RouterLink } from '@angular/router';
 import { finalize, map } from 'rxjs';
+import { authDestination } from '../../core/auth/auth-destination';
 import { AuthService } from '../../core/auth/auth.service';
 
 @Component({
@@ -43,8 +44,8 @@ export class Login {
         finalize(() => this.loading.set(false)),
       )
       .subscribe({
-        next: () => {
-          void this.router.navigate(['/flashcards']);
+        next: (user) => {
+          void this.router.navigate([authDestination(user)]);
         },
         error: () =>
           this.error.set('Unable to sign in. Check your email and password and try again.'),

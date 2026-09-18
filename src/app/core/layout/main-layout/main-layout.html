@@ -1,9 +1,9 @@
 <div class="flex min-h-screen flex-col bg-gray-50">
-  <app-header [showNavigation]="!authPage()" (toggleSidebarFromHeader)="toggleSidebar()" />
+  <app-header (toggleSidebarFromHeader)="toggleSidebar()" />
 
   <div class="flex flex-1">
-    @if (isSidebarOpen() && !authPage()) {
-      <app-sidebar />
+    @if (isSidebarOpen()) {
+    <app-sidebar />
     }
 
     <main class="min-w-0 flex-1 p-4 sm:p-6">

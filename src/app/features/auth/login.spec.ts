@@ -56,7 +56,10 @@ describe('Login', () => {
     http.expectOne('/api/auth/login').flush(null, { status: 401, statusText: 'Unauthorized' });
   });
 
-  it('navigates to protected flashcards after login and /me succeed', () => {
+  it.each([
+    ['User', '/flashcards'],
+    ['Admin', '/admin'],
+  ])('navigates %s to %s after login and /me succeed', (role, destination) => {
     const navigate = vi.spyOn(TestBed.inject(Router), 'navigate').mockResolvedValue(true);
     const page = fixture.componentInstance;
     page.email = 'learner@example.test';
@@ -65,8 +68,8 @@ describe('Login', () => {
     http
       .expectOne('/api/auth/login')
       .flush({ accessToken: 'access', refreshToken: 'refresh', expiresIn: 60 });
-    http.expectOne('/api/auth/me').flush({ userId: 'user-id', email: page.email });
-    expect(navigate).toHaveBeenCalledWith(['/flashcards']);
+    http.expectOne('/api/auth/me').flush({ userId: 'user-id', email: page.email, role });
+    expect(navigate).toHaveBeenCalledWith([destination]);
     expect(page.loading()).toBe(false);
   });
   it('links to registration and rejects invalid email submission', () => {
