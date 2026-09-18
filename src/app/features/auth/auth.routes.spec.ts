@@ -47,13 +47,31 @@ describe('Authentication routing', () => {
     session.setUser({ userId: 'id', username: 'Account name', role });
   }
 
-  it('shows a minimal guest home with login/register actions and no learning navigation', async () => {
+  it('shows the guest landing page with working auth links and no learning navigation', async () => {
     const harness = await RouterTestingHarness.create('/');
     expect(harness.routeNativeElement?.textContent).toContain('Welcome, guest');
     expect(harness.routeNativeElement?.querySelector('a[href="/login"]')).not.toBeNull();
     expect(harness.routeNativeElement?.querySelector('a[href="/register"]')).not.toBeNull();
     expect(harness.routeNativeElement?.querySelector('app-sidebar')).toBeNull();
     expect(harness.routeNativeElement?.querySelector('[aria-label="Toggle sidebar"]')).toBeNull();
+    const landing = harness.routeNativeElement;
+    expect(landing?.querySelector('h1')?.textContent).toContain('Learn Japanese');
+    expect(landing?.querySelector('header a[href="/login"]')?.textContent).toContain('Login');
+    expect(landing?.querySelector('header a[href="/register"]')?.textContent).toContain('Register');
+    expect(landing?.querySelector('main a[href="/register"]')?.textContent).toContain(
+      'Start learning',
+    );
+    expect(landing?.querySelector('footer')?.textContent).toContain('Japanese Learning');
+    expect(Array.from(landing?.querySelectorAll('h3') ?? []).map((heading) => heading.textContent?.trim()))
+      .toEqual(['JLPT levels', 'Lessons', 'Vocabulary flashcards']);
+    const startLearning = landing?.querySelector<HTMLAnchorElement>('main a[href="/register"]');
+    startLearning?.click();
+    await TestBed.inject(ApplicationRef).whenStable();
+    expect(TestBed.inject(Router).url).toBe('/register');
+    await harness.navigateByUrl('/');
+    harness.routeNativeElement?.querySelector<HTMLAnchorElement>('main a[href="/login"]')?.click();
+    await TestBed.inject(ApplicationRef).whenStable();
+    expect(TestBed.inject(Router).url).toBe('/login');
   });
 
   it('opens both public forms and shows registration success without credentials', async () => {
