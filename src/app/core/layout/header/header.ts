@@ -14,6 +14,7 @@ export class Header {
   private readonly router = inject(Router);
   private readonly destroyRef = inject(DestroyRef);
   readonly showNavigation = input(true);
+  readonly pageTitle = input('');
   readonly signingOut = signal(false);
   readonly logoutError = signal('');
   toggleSidebarFromHeader = output<void>();

@@ -1,0 +1,55 @@
+<div class="min-h-screen bg-gray-50 lg:flex">
+  <aside
+    class="border-b border-gray-200 bg-white lg:sticky lg:top-0 lg:h-screen lg:w-64 lg:shrink-0 lg:border-b-0 lg:border-r">
+    <div class="flex items-center justify-between gap-3 px-5 py-5">
+      <a [routerLink]="['/admin']"
+        class="flex items-center gap-3 rounded-lg focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-indigo-600">
+        <span aria-hidden="true"
+          class="flex h-10 w-10 items-center justify-center rounded-xl bg-indigo-600 text-lg font-bold text-white">日</span>
+        <span>
+          <span class="block text-sm font-bold text-gray-900">Japanese Learning</span>
+          <span class="mt-1 block text-xs font-semibold uppercase tracking-wider text-indigo-700">Admin</span>
+        </span>
+      </a>
+      <button #menuToggle type="button"
+        class="min-h-11 rounded-xl border border-gray-200 px-3 text-sm font-semibold text-indigo-700 hover:bg-indigo-50 focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-indigo-600 lg:hidden"
+        aria-controls="admin-navigation" [attr.aria-expanded]="menuOpen()" (click)="menuOpen.set(!menuOpen())">
+        Menu
+      </button>
+    </div>
+    <nav id="admin-navigation" aria-label="Admin navigation" [class.hidden]="!menuOpen()" class="px-3 pb-5 lg:block"
+      (keydown.escape)="menuOpen.set(false); menuToggle.focus()">
+      <p class="px-3 pb-3 pt-2 text-xs font-semibold uppercase tracking-wider text-gray-500">
+        Workspace
+      </p>
+      <ul class="space-y-1">
+        <li>
+          <a [routerLink]="['/admin']" routerLinkActive="bg-indigo-50 text-indigo-700"
+            [routerLinkActiveOptions]="{ exact: true }" ariaCurrentWhenActive="page"
+            (click)="menuOpen() && menuToggle.focus(); menuOpen.set(false)"
+            class="flex min-h-11 items-center rounded-xl px-3 py-3 text-sm font-medium text-gray-700 hover:bg-indigo-50 focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-indigo-600">Dashboard</a>
+        </li>
+        @for (section of sections; track section.path) {
+        <li>
+          <a [routerLink]="['/admin', section.path]" routerLinkActive="bg-indigo-50 text-indigo-700"
+            ariaCurrentWhenActive="page" (click)="menuOpen() && menuToggle.focus(); menuOpen.set(false)"
+            class="flex min-h-11 items-center rounded-xl px-3 py-3 text-sm font-medium text-gray-700 hover:bg-indigo-50 focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-indigo-600">{{
+            section.label }}</a>
+        </li>
+        }
+      </ul>
+      <div class="mt-8 rounded-xl bg-gray-50 p-4">
+        <p class="text-sm font-semibold text-gray-700">Room to grow</p>
+        <p class="mt-2 text-xs leading-relaxed text-gray-600">
+          Your administration tools will live here as they become available.
+        </p>
+      </div>
+    </nav>
+  </aside>
+  <div class="min-w-0 flex-1">
+    <app-header [showNavigation]="false" [pageTitle]="pageTitle()" />
+    <main class="mx-auto max-w-7xl p-4 sm:p-6 lg:p-8">
+      <router-outlet />
+    </main>
+  </div>
+</div>
