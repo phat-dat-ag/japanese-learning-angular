@@ -1,0 +1,75 @@
+<section class="rounded-2xl border border-indigo-100 bg-indigo-50 p-6 sm:p-8">
+  <p class="text-sm font-semibold text-indigo-700">Administration workspace</p>
+  <h1 class="mt-3 text-3xl font-bold tracking-tight text-gray-900 sm:text-4xl">
+    Welcome to your Admin Dashboard
+  </h1>
+  <p class="mt-4 max-w-2xl leading-relaxed text-gray-600">
+    A space for the content and people behind Japanese Learning. Explore the sections below as your
+    administration workspace takes shape.
+  </p>
+  <span
+    class="mt-5 inline-block rounded-full border border-indigo-200 bg-white px-3 py-1 text-xs font-semibold text-indigo-700">Management
+    tools coming soon</span>
+</section>
+
+<section aria-labelledby="overview-heading" class="mt-9">
+  <h2 id="overview-heading" class="text-xl font-bold text-gray-900">Application overview</h2>
+  <p class="mt-2 text-sm text-gray-600">The building blocks of the learning experience.</p>
+  <div class="mt-5 grid gap-4 sm:grid-cols-2 xl:grid-cols-4">
+    <article class="rounded-2xl border border-gray-200 bg-white p-6">
+      <span aria-hidden="true"
+        class="inline-flex h-11 w-11 items-center justify-center rounded-xl bg-indigo-50 text-xl text-indigo-700">字</span>
+      <h3 class="mt-4 font-semibold text-gray-900">Vocabulary</h3>
+      <p class="mt-2 text-sm leading-relaxed text-gray-600">
+        Japanese words and learning flashcards.
+      </p>
+      <a [routerLink]="['/admin', 'vocabulary']"
+        class="mt-5 inline-flex min-h-11 items-center rounded text-sm font-semibold text-indigo-700 underline underline-offset-4 focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-indigo-600">Manage
+        vocabulary &rarr;</a>
+    </article>
+    <article class="rounded-2xl border border-gray-200 bg-white p-6">
+      <span aria-hidden="true"
+        class="inline-flex h-11 w-11 items-center justify-center rounded-xl bg-violet-50 text-xl text-violet-700">本</span>
+      <h3 class="mt-4 font-semibold text-gray-900">Lessons</h3>
+      <p class="mt-2 text-sm leading-relaxed text-gray-600">
+        Focused collections of learning content.
+      </p>
+      <a [routerLink]="['/admin', 'lessons']"
+        class="mt-5 inline-flex min-h-11 items-center rounded text-sm font-semibold text-indigo-700 underline underline-offset-4 focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-indigo-600">Manage
+        lessons &rarr;</a>
+    </article>
+    <article class="rounded-2xl border border-gray-200 bg-white p-6">
+      <span aria-hidden="true"
+        class="inline-flex h-11 w-11 items-center justify-center rounded-xl bg-indigo-50 text-xl text-indigo-700">級</span>
+      <h3 class="mt-4 font-semibold text-gray-900">JLPT Levels</h3>
+      <p class="mt-2 text-sm leading-relaxed text-gray-600">
+        The level structure behind vocabulary lessons.
+      </p>
+      <p class="mt-5 text-sm font-medium text-gray-500">Level administration coming soon</p>
+    </article>
+    <article class="rounded-2xl border border-gray-200 bg-white p-6">
+      <span aria-hidden="true"
+        class="inline-flex h-11 w-11 items-center justify-center rounded-xl bg-violet-50 text-xl text-violet-700">人</span>
+      <h3 class="mt-4 font-semibold text-gray-900">Users</h3>
+      <p class="mt-2 text-sm leading-relaxed text-gray-600">
+        Accounts in the learning application.
+      </p>
+      <a [routerLink]="['/admin', 'users']"
+        class="mt-5 inline-flex min-h-11 items-center rounded text-sm font-semibold text-indigo-700 underline underline-offset-4 focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-indigo-600">Manage
+        users &rarr;</a>
+    </article>
+  </div>
+</section>
+
+<section aria-labelledby="workspace-heading"
+  class="mt-6 flex flex-col gap-4 rounded-2xl border border-gray-200 bg-white p-6 sm:flex-row sm:items-center sm:justify-between">
+  <div>
+    <h2 id="workspace-heading" class="font-semibold text-gray-900">Workspace settings</h2>
+    <p class="mt-2 text-sm text-gray-600">
+      A place for future application administration preferences.
+    </p>
+  </div>
+  <a [routerLink]="['/admin', 'settings']"
+    class="inline-flex min-h-11 shrink-0 items-center justify-center rounded-xl border border-gray-200 px-4 py-2 text-sm font-semibold text-indigo-700 hover:bg-indigo-50 focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-indigo-600">Explore
+    settings &rarr;</a>
+</section>
