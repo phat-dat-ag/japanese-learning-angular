@@ -31,7 +31,7 @@ npm start
 
 Open [localhost:4200](http://localhost:4200). The development server reloads when source files change.
 
-Start the backend Docker Compose stack with the NGINX API Gateway exposed on `http://localhost:8080`, then open **Flashcards** to browse the available levels and lessons.
+Start the root Docker Compose stack with the NGINX API Gateway exposed on `http://localhost:8080`, then open **Flashcards** to browse the available levels and lessons.
 
 ## API configuration
 
@@ -39,7 +39,7 @@ All backend requests use the single `API_CONFIG` token in `src/app/core/api/api.
 
 During development, the existing `proxy.conf.json` forwards only `/api/**` to `http://localhost:8080` (the Gateway), preserving paths. `angular.json` enables this for `npm start`. Browser requests remain same-origin, for example `/api/v1/flashcards`; the proxy forwards them to the Gateway. Restart `npm start` after changing proxy settings. Backend debugging ports must not be used by Angular.
 
-For production, configure the frontend/edge server to forward `/api/**` to the Gateway and serve Angular routes through `index.html`. The development proxy is not included in the production build. No development hostname is bundled into the application. If deployment needs a separate Gateway origin, override `API_CONFIG` in `app.config.ts` with a base such as `https://gateway.example/api` and the timeout; allow only the required frontend origin at the Gateway.
+The root `docker compose up -d --build` command builds the production frontend and serves it at http://localhost:8088 (configurable with `FRONTEND_PORT`). Complete the root README prerequisites first. The existing multi-stage Dockerfile uses digest-pinned Node 24 with `npm ci`, then copies only the compiled application into non-root NGINX. `nginx.conf` forwards `/api/**` to the Gateway and serves Angular routes through `index.html`; `/health` is the frontend process health endpoint. Use `docker compose ps -a`, `docker compose logs -f frontend`, and `docker compose down` from the repository root to inspect, follow logs, and stop/remove containers without deleting database volumes. The development proxy is not included in the production build. No development hostname is bundled into the application. If deployment needs a separate Gateway origin, override `API_CONFIG` in `app.config.ts` with a base such as `https://gateway.example/api` and the timeout; allow only the required frontend origin at the Gateway.
 
 Quarkus services keep the existing `ApiClient` envelope validation, metadata, timeout, and normalized errors. Authentication uses `AuthApi` with Angular `HttpClient` because .NET returns plain success bodies. It reuses `API_CONFIG`, runtime validation, the configured timeout, and `normalizeApiError`; no Quarkus response contract is changed.
 
