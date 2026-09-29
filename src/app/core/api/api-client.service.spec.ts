@@ -86,6 +86,37 @@ describe('ApiClient', () => {
     expect(error).toHaveBeenCalledWith(expect.objectContaining({ code: 'INVALID_RESPONSE' }));
   });
 
+  it('sends PUT JSON through the shared validated response pipeline', () => {
+    const next = vi.fn();
+    client.put('entry/42', { word: '日本' }, isStrings).subscribe(next);
+    const request = http.expectOne('/api/v1/entry/42');
+    expect(request.request.method).toBe('PUT');
+    expect(request.request.body).toEqual({ word: '日本' });
+    expect(request.request.detectContentTypeHeader()).toBe('application/json');
+    request.flush({ success: true, data: ['updated'], meta });
+    expect(next).toHaveBeenCalledWith({ success: true, data: ['updated'], meta });
+  });
+
+  it('normalizes PUT validation failures with details and metadata', () => {
+    const error = vi.fn();
+    client.put('entry/42', {}, isStrings).subscribe({ error });
+    http.expectOne('/api/v1/entry/42').flush(failure, { status: 400, statusText: 'Bad Request' });
+    expect(error).toHaveBeenCalledWith(
+      expect.objectContaining({
+        code: failure.error.code,
+        status: 400,
+        details: failure.error.details,
+        meta,
+      }),
+    );
+  });
+
+  it('rejects an invalid PUT success payload', () => {
+    const error = vi.fn();
+    client.put('entry/42', {}, isStrings).subscribe({ error });
+    http.expectOne('/api/v1/entry/42').flush({ success: true, data: 42, meta });
+    expect(error).toHaveBeenCalledWith(expect.objectContaining({ code: 'INVALID_RESPONSE', meta }));
+  });
   it('normalizes network failures', () => {
     const error = vi.fn();
     client.get('levels', isStrings).subscribe({ error });

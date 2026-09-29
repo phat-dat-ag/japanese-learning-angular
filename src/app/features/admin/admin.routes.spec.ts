@@ -5,6 +5,10 @@ import { TestBed } from '@angular/core/testing';
 import { provideRouter, Router } from '@angular/router';
 import { RouterTestingHarness } from '@angular/router/testing';
 import { routes } from '../../app.routes';
+import {
+  vocabularyDetailFixture,
+  vocabularyMeta,
+} from './vocabulary/testing/vocabulary-detail.fixture';
 import { AuthSession } from '../../core/auth/auth-session.service';
 
 @Component({ template: 'Destination' })
@@ -141,28 +145,39 @@ describe('Admin interface', () => {
     harness.routeNativeElement
       ?.querySelector<HTMLAnchorElement>('main a[href="/admin/vocabulary/42"]')
       ?.click();
+    await vi.waitFor(() => expect(TestBed.inject(Router).url).toBe('/admin/vocabulary/42'));
+    http
+      .expectOne('/api/v1/flashcards/42')
+      .flush({ success: true, data: vocabularyDetailFixture(), meta });
     await TestBed.inject(ApplicationRef).whenStable();
     harness.detectChanges();
-    expect(TestBed.inject(Router).url).toBe('/admin/vocabulary/42');
-    expect(harness.routeNativeElement?.textContent).toContain('Selected vocabulary · ID 42');
-    expect(harness.routeNativeElement?.textContent).toContain('Detail management is coming next');
+    expect(harness.routeNativeElement?.textContent).toContain('Vocabulary ID 42');
+    expect(harness.routeNativeElement?.textContent).toContain('Core Information');
     expect(
       harness.routeNativeElement?.querySelector('nav a[aria-current="page"]')?.getAttribute('href'),
     ).toBe('/admin/vocabulary');
     http.expectNone(() => true);
   });
 
-  it('supports direct detail navigation and reactive ID changes without fetching or inventing details', async () => {
+  it('loads direct detail navigation and reacts to ID changes', async () => {
     signIn();
+    const http = TestBed.inject(HttpTestingController);
     const harness = await RouterTestingHarness.create('/admin/vocabulary/42');
-    expect(harness.routeNativeElement?.textContent).toContain('Selected vocabulary · ID 42');
+    http
+      .expectOne('/api/v1/flashcards/42')
+      .flush({ success: true, data: vocabularyDetailFixture(), meta: vocabularyMeta });
+    harness.detectChanges();
+    expect(harness.routeNativeElement?.textContent).toContain('Vocabulary ID 42');
     await harness.navigateByUrl('/admin/vocabulary/73');
-    expect(harness.routeNativeElement?.textContent).toContain('Selected vocabulary · ID 73');
+    http
+      .expectOne('/api/v1/flashcards/73')
+      .flush({ success: true, data: vocabularyDetailFixture(73), meta: vocabularyMeta });
+    harness.detectChanges();
+    expect(harness.routeNativeElement?.textContent).toContain('Vocabulary ID 73');
     await harness.navigateByUrl('/admin/vocabulary/invalid');
     expect(harness.routeNativeElement?.textContent).toContain('Invalid vocabulary ID');
-    TestBed.inject(HttpTestingController).expectNone(() => true);
+    http.expectNone(() => true);
   });
-
   it('rechecks Admin authorization when navigating to a vocabulary child route', async () => {
     signIn();
     const harness = await RouterTestingHarness.create('/admin');

@@ -12,10 +12,28 @@ export class ApiClient {
   private readonly config = inject(API_CONFIG);
 
   get<T>(path: string, isData: (value: unknown) => value is T): Observable<ApiSuccess<T>> {
+    return this.request('GET', path, isData);
+  }
+
+  put<T>(
+    path: string,
+    body: unknown,
+    isData: (value: unknown) => value is T,
+  ): Observable<ApiSuccess<T>> {
+    return this.request('PUT', path, isData, body);
+  }
+
+  private request<T>(
+    method: 'GET' | 'PUT',
+    path: string,
+    isData: (value: unknown) => value is T,
+    body?: unknown,
+  ): Observable<ApiSuccess<T>> {
     const url = this.config.baseUrl.replace(/\/$/, '') + '/' + path.replace(/^\//, '');
 
     return this.http
-      .get<unknown>(url, {
+      .request<unknown>(method, url, {
+        body,
         observe: 'response',
         headers: { Accept: 'application/json' },
       })

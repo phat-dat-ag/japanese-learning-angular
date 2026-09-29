@@ -1,0 +1,47 @@
+<form #form="ngForm" (ngSubmit)="submit()" class="space-y-5">
+  <fieldset [disabled]="locked()" class="grid min-w-0 gap-5 sm:grid-cols-2">
+    <legend class="sr-only">Edit core information</legend>
+    <div>
+      <label for="core-word" class="mb-2 block text-sm font-medium text-gray-800">Word</label>
+      <input #wordInput #wordField="ngModel" id="core-word" name="word" lang="ja" type="text" required maxlength="100"
+        [(ngModel)]="word" [attr.aria-invalid]="(wordField.touched && !validText(word)) || !!fieldErrors().word"
+        aria-describedby="core-word-help"
+        class="min-h-11 w-full rounded-xl border border-gray-300 px-3 py-2 text-gray-900 focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-indigo-600 disabled:bg-gray-50 aria-invalid:border-red-600" />
+      <p id="core-word-help" class="mt-2 text-sm" [class]="
+          fieldErrors().word || (wordField.touched && !validText(word))
+            ? 'text-red-700'
+            : 'text-gray-600'
+        ">
+        {{ fieldErrors().word || 'Enter a nonblank word, up to 100 characters.' }}
+      </p>
+    </div>
+    <div>
+      <label for="core-normalized-word" class="mb-2 block text-sm font-medium text-gray-800">Normalized word</label>
+      <input #normalizedField="ngModel" id="core-normalized-word" name="normalizedWord" lang="ja" type="text" required
+        maxlength="100" [(ngModel)]="normalizedWord" [attr.aria-invalid]="
+          (normalizedField.touched && !validText(normalizedWord)) || !!fieldErrors().normalizedWord
+        " aria-describedby="core-normalized-help"
+        class="min-h-11 w-full rounded-xl border border-gray-300 px-3 py-2 text-gray-900 focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-indigo-600 disabled:bg-gray-50 aria-invalid:border-red-600" />
+      <p id="core-normalized-help" class="mt-2 text-sm" [class]="
+          fieldErrors().normalizedWord || (normalizedField.touched && !validText(normalizedWord))
+            ? 'text-red-700'
+            : 'text-gray-600'
+        ">
+        {{
+        fieldErrors().normalizedWord ||
+        'Enter the normalized form explicitly, up to 100 characters. This value must be unique.'
+        }}
+      </p>
+    </div>
+  </fieldset>
+  <div class="flex flex-wrap gap-3 border-t border-gray-100 pt-5">
+    <button type="submit" [disabled]="locked() || !valid || form.invalid"
+      class="min-h-11 rounded-xl bg-indigo-600 px-5 py-2 text-sm font-semibold text-white hover:bg-indigo-700 focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-indigo-600 disabled:cursor-not-allowed disabled:opacity-50">
+      Save changes
+    </button>
+    <button type="button" [disabled]="locked()" (click)="cancelled.emit()"
+      class="min-h-11 rounded-xl border border-gray-300 px-5 py-2 text-sm font-semibold text-gray-700 hover:bg-gray-50 focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-indigo-600 disabled:opacity-50">
+      Cancel
+    </button>
+  </div>
+</form>
