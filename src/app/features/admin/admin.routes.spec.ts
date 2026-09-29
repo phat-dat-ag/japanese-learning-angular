@@ -47,7 +47,7 @@ describe('Admin interface', () => {
     expect(page?.querySelector('header')?.textContent).toContain('Admin account');
     expect(page?.querySelector('header')?.textContent).toContain('Sign out');
     expect(page?.querySelector('main')?.textContent).toContain('JLPT Levels');
-    expect(page?.querySelector('main')?.textContent).toContain('Management tools coming soon');
+    expect(page?.querySelector('main')?.textContent).toContain('Vocabulary browsing available');
     expect(page?.querySelector('nav a[aria-current="page"]')?.textContent).toContain('Dashboard');
     for (const [path] of sections) {
       expect(page?.querySelector('main a[href="/admin/' + path + '"]')).not.toBeNull();
@@ -55,24 +55,27 @@ describe('Admin interface', () => {
     TestBed.inject(HttpTestingController).expectNone(() => true);
   });
 
-  it.each(sections)('renders the %s placeholder on direct navigation', async (path, title) => {
-    signIn();
-    const harness = await RouterTestingHarness.create('/admin/' + path);
-    const page = harness.routeNativeElement;
-    expect(page?.querySelector('h1')?.textContent).toBe(title);
-    expect(page?.querySelector('header')?.textContent).toContain(title);
-    expect(page?.querySelector('main')?.textContent).toContain('Coming soon');
-    expect(page?.querySelector('main')?.textContent).toContain(
-      'Management actions are not available yet',
-    );
-    expect(page?.querySelector('main form, main table')).toBeNull();
-    expect(page?.querySelector('nav a[aria-current="page"]')?.getAttribute('href')).toBe(
-      '/admin/' + path,
-    );
-    TestBed.inject(HttpTestingController).expectNone(() => true);
-  });
+  it.each(sections.filter(([path]) => path !== 'vocabulary'))(
+    'renders the %s placeholder on direct navigation',
+    async (path, title) => {
+      signIn();
+      const harness = await RouterTestingHarness.create('/admin/' + path);
+      const page = harness.routeNativeElement;
+      expect(page?.querySelector('h1')?.textContent).toBe(title);
+      expect(page?.querySelector('header')?.textContent).toContain(title);
+      expect(page?.querySelector('main')?.textContent).toContain('Coming soon');
+      expect(page?.querySelector('main')?.textContent).toContain(
+        'Management actions are not available yet',
+      );
+      expect(page?.querySelector('main form, main table')).toBeNull();
+      expect(page?.querySelector('nav a[aria-current="page"]')?.getAttribute('href')).toBe(
+        '/admin/' + path,
+      );
+      TestBed.inject(HttpTestingController).expectNone(() => true);
+    },
+  );
 
-  it.each(['/admin', ...sections.map(([path]) => '/admin/' + path)])(
+  it.each(['/admin', '/admin/vocabulary/42', ...sections.map(([path]) => '/admin/' + path)])(
     'blocks Guests and Users from %s',
     async (url) => {
       const harness = await RouterTestingHarness.create(url);
@@ -89,7 +92,7 @@ describe('Admin interface', () => {
     signIn();
     const harness = await RouterTestingHarness.create('/admin');
     const shell = harness.routeNativeElement;
-    for (const [path, title] of sections) {
+    for (const [path, title] of sections.filter(([path]) => path !== 'vocabulary')) {
       shell?.querySelector<HTMLAnchorElement>('nav a[href="/admin/' + path + '"]')?.click();
       await TestBed.inject(ApplicationRef).whenStable();
       harness.detectChanges();
@@ -104,6 +107,70 @@ describe('Admin interface', () => {
     expect(TestBed.inject(Router).url).toBe('/admin');
   });
 
+  it('opens the live vocabulary list from Admin navigation and follows an entry to its detail route', async () => {
+    signIn();
+    const harness = await RouterTestingHarness.create('/admin');
+    const link = harness.routeNativeElement?.querySelector<HTMLAnchorElement>(
+      'nav a[href="/admin/vocabulary"]',
+    );
+    expect(link?.textContent).toContain('Vocabulary Management');
+    link?.click();
+    await vi.waitFor(() => expect(TestBed.inject(Router).url).toBe('/admin/vocabulary'));
+    const http = TestBed.inject(HttpTestingController);
+    const meta = { timestamp: '2026-09-29', traceId: 'trace', correlationId: 'correlation' };
+    http.expectOne('/api/v1/jlpt-levels').flush({ success: true, data: [], meta });
+    http.expectOne('/api/v1/flashcards?page=0&size=20').flush({
+      success: true,
+      data: {
+        flashcardItems: [{ id: 42, word: '日本語' }],
+        page: 0,
+        size: 20,
+        totalElements: 1,
+        totalPages: 1,
+      },
+      meta,
+    });
+    await TestBed.inject(ApplicationRef).whenStable();
+    harness.detectChanges();
+    expect(harness.routeNativeElement?.querySelector('h1')?.textContent).toBe(
+      'Vocabulary Management',
+    );
+    expect(harness.routeNativeElement?.querySelector('header')?.textContent).toContain(
+      'Vocabulary Management',
+    );
+    harness.routeNativeElement
+      ?.querySelector<HTMLAnchorElement>('main a[href="/admin/vocabulary/42"]')
+      ?.click();
+    await TestBed.inject(ApplicationRef).whenStable();
+    harness.detectChanges();
+    expect(TestBed.inject(Router).url).toBe('/admin/vocabulary/42');
+    expect(harness.routeNativeElement?.textContent).toContain('Selected vocabulary · ID 42');
+    expect(harness.routeNativeElement?.textContent).toContain('Detail management is coming next');
+    expect(
+      harness.routeNativeElement?.querySelector('nav a[aria-current="page"]')?.getAttribute('href'),
+    ).toBe('/admin/vocabulary');
+    http.expectNone(() => true);
+  });
+
+  it('supports direct detail navigation and reactive ID changes without fetching or inventing details', async () => {
+    signIn();
+    const harness = await RouterTestingHarness.create('/admin/vocabulary/42');
+    expect(harness.routeNativeElement?.textContent).toContain('Selected vocabulary · ID 42');
+    await harness.navigateByUrl('/admin/vocabulary/73');
+    expect(harness.routeNativeElement?.textContent).toContain('Selected vocabulary · ID 73');
+    await harness.navigateByUrl('/admin/vocabulary/invalid');
+    expect(harness.routeNativeElement?.textContent).toContain('Invalid vocabulary ID');
+    TestBed.inject(HttpTestingController).expectNone(() => true);
+  });
+
+  it('rechecks Admin authorization when navigating to a vocabulary child route', async () => {
+    signIn();
+    const harness = await RouterTestingHarness.create('/admin');
+    signIn('User');
+    await harness.navigateByUrl('/admin/vocabulary/42');
+    expect(TestBed.inject(Router).url).toBe('/flashcards');
+    TestBed.inject(HttpTestingController).expectNone(() => true);
+  });
   it('expands and closes mobile navigation with accessible state and Escape focus', async () => {
     signIn();
     const harness = await RouterTestingHarness.create('/admin');

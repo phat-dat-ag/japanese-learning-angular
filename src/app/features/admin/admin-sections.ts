@@ -1,7 +1,7 @@
 export const ADMIN_SECTIONS = [
   {
     path: 'vocabulary',
-    label: 'Vocabulary',
+    label: 'Vocabulary Management',
     title: 'Vocabulary Management',
     description: 'A home for managing the Japanese vocabulary used in learning flashcards.',
   },

@@ -1,0 +1,62 @@
+import { provideHttpClient } from '@angular/common/http';
+import { HttpTestingController, provideHttpClientTesting } from '@angular/common/http/testing';
+import { TestBed } from '@angular/core/testing';
+import { ApiError } from '../../../../core/api/api-error';
+import { VocabularyService } from './vocabulary.service';
+
+const meta = { timestamp: '2026-09-29', traceId: 'trace', correlationId: 'correlation' };
+const data = {
+  flashcardItems: [{ id: 42, word: '日本語' }],
+  page: 2,
+  size: 50,
+  totalPages: 3,
+  totalElements: 101,
+};
+
+describe('VocabularyService read adapter', () => {
+  let service: VocabularyService;
+  let http: HttpTestingController;
+  beforeEach(() => {
+    TestBed.configureTestingModule({
+      providers: [provideHttpClient(), provideHttpClientTesting()],
+    });
+    service = TestBed.inject(VocabularyService);
+    http = TestBed.inject(HttpTestingController);
+  });
+  afterEach(() => http.verify());
+
+  it('maps list items, preserves pagination and metadata, and normalizes query parameters', () => {
+    const next = vi.fn();
+    service.getVocabularyList({ level: 'n5', lesson: 7, page: 2, size: 50 }).subscribe(next);
+    const request = http.expectOne('/api/v1/flashcards?lesson=7&level=N5&page=2&size=50');
+    expect(request.request.method).toBe('GET');
+    request.flush({ success: true, data, meta });
+    expect(next).toHaveBeenCalledWith({
+      success: true,
+      data: { items: data.flashcardItems, page: 2, size: 50, totalPages: 3, totalElements: 101 },
+      meta,
+    });
+  });
+
+  it('preserves normalized errors and correlation metadata', () => {
+    const error = vi.fn();
+    service.getVocabularyList({ page: 0, size: 20 }).subscribe({ error });
+    http.expectOne('/api/v1/flashcards?page=0&size=20').flush(
+      {
+        success: false,
+        error: { code: 'UNAVAILABLE', message: 'Diagnostic', details: [] },
+        meta,
+      },
+      { status: 503, statusText: 'Unavailable' },
+    );
+    expect(error).toHaveBeenCalledWith(
+      expect.objectContaining({
+        name: 'ApiError',
+        code: 'UNAVAILABLE',
+        status: 503,
+        meta,
+      }),
+    );
+    expect(error.mock.calls[0][0]).toBeInstanceOf(ApiError);
+  });
+});
