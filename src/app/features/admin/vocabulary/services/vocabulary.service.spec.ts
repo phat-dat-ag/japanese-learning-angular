@@ -68,7 +68,7 @@ describe('VocabularyService read adapter', () => {
       .flush({ success: true, data: vocabularyDetailFixture(), meta });
     expect(next).toHaveBeenCalledWith({
       success: true,
-      data: vocabularyDetailFixture().vocabulary,
+      data: { ...vocabularyDetailFixture().vocabulary, readings: [], meanings: [] },
       meta,
     });
   });
@@ -105,4 +105,85 @@ describe('VocabularyService read adapter', () => {
       );
     },
   );
+
+  it('preserves identity-incomplete child values from the validated GET', () => {
+    const next = vi.fn();
+    const detail = {
+      ...vocabularyDetailFixture(),
+      readings: [{ reading: 'にほんご', isPrimary: true, pitchAccents: [0] }],
+      meanings: [{ languageCode: 'en', meaning: 'Japanese language', isPrimary: false }],
+    };
+    service.getVocabularyDetail(42).subscribe(next);
+    http.expectOne('/api/v1/flashcards/42').flush({ success: true, data: detail, meta });
+    expect(next).toHaveBeenCalledWith({
+      success: true,
+      data: { ...detail.vocabulary, readings: detail.readings, meanings: detail.meanings },
+      meta,
+    });
+  });
+
+  it('posts a readings array and preserves IDs and metadata without caching identities', () => {
+    const next = vi.fn();
+    const requests = [
+      { reading: 'にほんご', isPrimary: true, displayOrder: 0 },
+      { reading: 'にっぽんご', isPrimary: false, displayOrder: 2 },
+    ];
+    service.addReadings(42, requests).subscribe(next);
+    const request = http.expectOne('/api/v1/admin/vocabularies/42/readings');
+    expect(request.request.method).toBe('POST');
+    expect(request.request.body).toEqual(requests);
+    request.flush({ success: true, data: [{ readingId: 10 }, { readingId: 11 }], meta });
+    expect(next).toHaveBeenCalledWith({
+      success: true,
+      data: [{ readingId: 10 }, { readingId: 11 }],
+      meta,
+    });
+  });
+
+  it('posts a meanings array using language rather than languageCode', () => {
+    const next = vi.fn();
+    const requests = [
+      { language: 'vi' as const, meaning: 'Tiếng Nhật', isPrimary: false, displayOrder: 0 },
+    ];
+    service.addMeanings(42, requests).subscribe(next);
+    const request = http.expectOne('/api/v1/admin/vocabularies/42/meanings');
+    expect(request.request.method).toBe('POST');
+    expect(request.request.body).toEqual(requests);
+    request.flush({ success: true, data: [{ meaningId: 10 }], meta });
+    expect(next).toHaveBeenCalledWith({ success: true, data: [{ meaningId: 10 }], meta });
+  });
+
+  it.each(
+    [
+      [],
+      [{}],
+      [{ readingId: '10' }],
+      [{ readingId: 0 }],
+      [{ readingId: 10 }, { readingId: 11 }],
+    ].map((data) => ({ data })),
+  )('rejects malformed or mismatched reading results %j', ({ data }) => {
+    const error = vi.fn();
+    service
+      .addReadings(42, [{ reading: 'a', isPrimary: true, displayOrder: 0 }])
+      .subscribe({ error });
+    http.expectOne('/api/v1/admin/vocabularies/42/readings').flush({ success: true, data, meta });
+    expect(error).toHaveBeenCalledWith(expect.objectContaining({ code: 'INVALID_RESPONSE', meta }));
+  });
+
+  it.each(
+    [
+      [],
+      [{}],
+      [{ meaningId: '10' }],
+      [{ meaningId: 0 }],
+      [{ meaningId: 10 }, { meaningId: 11 }],
+    ].map((data) => ({ data })),
+  )('rejects malformed or mismatched meaning results %j', ({ data }) => {
+    const error = vi.fn();
+    service
+      .addMeanings(42, [{ language: 'en', meaning: 'a', isPrimary: false, displayOrder: 0 }])
+      .subscribe({ error });
+    http.expectOne('/api/v1/admin/vocabularies/42/meanings').flush({ success: true, data, meta });
+    expect(error).toHaveBeenCalledWith(expect.objectContaining({ code: 'INVALID_RESPONSE', meta }));
+  });
 });

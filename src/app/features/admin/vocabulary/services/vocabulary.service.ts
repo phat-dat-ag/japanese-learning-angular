@@ -1,10 +1,18 @@
+import { VocabularyDetailData } from '../models/vocabulary-detail.model';
+import {
+  isReadingResults,
+  isMeaningResults,
+  VocabularyReadingUpdateRequest,
+  VocabularyReadingResult,
+  VocabularyMeaningUpdateRequest,
+  VocabularyMeaningResult,
+} from '../models/vocabulary-children.model';
 import { inject, Injectable } from '@angular/core';
 import { map, Observable } from 'rxjs';
 import { ApiClient } from '../../../../core/api/api-client.service';
 import { ApiError } from '../../../../core/api/api-error';
 import {
   isVocabularyCoreResult,
-  VocabularyCore,
   VocabularyCoreResult,
   VocabularyCoreUpdateRequest,
 } from '../models/vocabulary-core.model';
@@ -26,12 +34,19 @@ export class VocabularyService {
     );
   }
 
-  getVocabularyDetail(vocabularyId: number): Observable<ApiSuccess<VocabularyCore>> {
+  getVocabularyDetail(vocabularyId: number): Observable<ApiSuccess<VocabularyDetailData>> {
     return this.flashcards.getFlashcard(vocabularyId).pipe(
       map((response) => {
         if (response.data.vocabulary.id !== vocabularyId)
           throw ApiError.invalidResponse(200, response.meta);
-        return { ...response, data: response.data.vocabulary };
+        return {
+          ...response,
+          data: {
+            ...response.data.vocabulary,
+            readings: response.data.readings,
+            meanings: response.data.meanings,
+          },
+        };
       }),
     );
   }
@@ -49,6 +64,59 @@ export class VocabularyService {
       .pipe(
         map((response) => {
           if (response.data.vocabularyId !== vocabularyId)
+            throw ApiError.invalidResponse(200, response.meta);
+          return response;
+        }),
+      );
+  }
+
+  addReadings(
+    vocabularyId: number,
+    requests: readonly VocabularyReadingUpdateRequest[],
+  ): Observable<ApiSuccess<readonly VocabularyReadingResult[]>> {
+    return this.api
+      .post(
+        `v1/admin/vocabularies/${vocabularyId}/readings`,
+        requests.map(({ reading, isPrimary, displayOrder }) => ({
+          reading,
+          isPrimary,
+          displayOrder,
+        })),
+        isReadingResults,
+      )
+      .pipe(
+        map((response) => {
+          if (
+            response.data.length !== requests.length ||
+            new Set(response.data.map((item) => item.readingId)).size !== response.data.length
+          )
+            throw ApiError.invalidResponse(200, response.meta);
+          return response;
+        }),
+      );
+  }
+
+  addMeanings(
+    vocabularyId: number,
+    requests: readonly VocabularyMeaningUpdateRequest[],
+  ): Observable<ApiSuccess<readonly VocabularyMeaningResult[]>> {
+    return this.api
+      .post(
+        `v1/admin/vocabularies/${vocabularyId}/meanings`,
+        requests.map(({ language, meaning, isPrimary, displayOrder }) => ({
+          language,
+          meaning,
+          isPrimary,
+          displayOrder,
+        })),
+        isMeaningResults,
+      )
+      .pipe(
+        map((response) => {
+          if (
+            response.data.length !== requests.length ||
+            new Set(response.data.map((item) => item.meaningId)).size !== response.data.length
+          )
             throw ApiError.invalidResponse(200, response.meta);
           return response;
         }),

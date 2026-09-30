@@ -23,8 +23,16 @@ export class ApiClient {
     return this.request('PUT', path, isData, body);
   }
 
+  post<T>(
+    path: string,
+    body: unknown,
+    isData: (value: unknown) => value is T,
+  ): Observable<ApiSuccess<T>> {
+    return this.request('POST', path, isData, body);
+  }
+
   private request<T>(
-    method: 'GET' | 'PUT',
+    method: 'GET' | 'PUT' | 'POST',
     path: string,
     isData: (value: unknown) => value is T,
     body?: unknown,

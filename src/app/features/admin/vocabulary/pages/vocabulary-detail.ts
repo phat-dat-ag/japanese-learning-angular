@@ -1,4 +1,11 @@
 import {
+  VocabularyDetailData,
+  VocabularyReading,
+  VocabularyMeaning,
+} from '../models/vocabulary-detail.model';
+import { VocabularyReadings } from '../components/vocabulary-readings';
+import { VocabularyMeanings } from '../components/vocabulary-meanings';
+import {
   afterNextRender,
   ChangeDetectionStrategy,
   Component,
@@ -20,6 +27,7 @@ import {
   Observable,
   of,
   skip,
+  scan,
   startWith,
   Subject,
   switchMap,
@@ -33,21 +41,27 @@ import { VocabularyCoreForm } from '../components/vocabulary-core-form';
 import {
   CoreFieldErrors,
   validCoreText,
-  VocabularyCore,
   VocabularyCoreUpdateRequest,
 } from '../models/vocabulary-core.model';
 import { VocabularyService } from '../services/vocabulary.service';
 
 type DetailState =
   | { readonly status: 'invalid' | 'loading' | 'missing' | 'error' }
-  | { readonly status: 'loaded'; readonly core: VocabularyCore };
+  | { readonly status: 'loaded'; readonly core: VocabularyDetailData };
 type SaveState =
   | { readonly status: 'idle' | 'saving' | 'refreshing' | 'saved' | 'refresh-error' }
   | { readonly status: 'error'; readonly message: string; readonly fields: CoreFieldErrors };
 
 @Component({
   selector: 'app-admin-vocabulary-detail',
-  imports: [RouterLink, VocabularyHeader, VocabularySection, VocabularyCoreForm],
+  imports: [
+    RouterLink,
+    VocabularyHeader,
+    VocabularySection,
+    VocabularyCoreForm,
+    VocabularyReadings,
+    VocabularyMeanings,
+  ],
   templateUrl: './vocabulary-detail.html',
   changeDetection: ChangeDetectionStrategy.OnPush,
 })
@@ -57,7 +71,7 @@ export class VocabularyDetail {
   private readonly destroyRef = inject(DestroyRef);
   private readonly injector = inject(Injector);
   private readonly reload = new Subject<void>();
-  private readonly updated = new Subject<VocabularyCore>();
+  private readonly updated = new Subject<(detail: VocabularyDetailData) => VocabularyDetailData>();
   private readonly editButton = viewChild<ElementRef<HTMLButtonElement>>('editButton');
   readonly editing = signal(false);
   readonly saveState = signal<SaveState>({ status: 'idle' });
@@ -97,12 +111,32 @@ export class VocabularyDetail {
               ),
             ),
           ),
-          this.updated.pipe(map((core): DetailState => ({ status: 'loaded', core }))),
+          this.updated,
+        ).pipe(
+          scan(
+            (
+              state: DetailState,
+              update: DetailState | ((detail: VocabularyDetailData) => VocabularyDetailData),
+            ): DetailState => {
+              if (typeof update !== 'function') return update;
+              if (state.status !== 'loaded') return state;
+              return { status: 'loaded', core: update(state.core) };
+            },
+            { status: 'loading' } as DetailState,
+          ),
         );
       }),
     ),
     { initialValue: { status: 'loading' } as DetailState },
   );
+
+  updateReadings(readings: readonly VocabularyReading[]): void {
+    this.updated.next((detail) => ({ ...detail, readings }));
+  }
+
+  updateMeanings(meanings: readonly VocabularyMeaning[]): void {
+    this.updated.next((detail) => ({ ...detail, meanings }));
+  }
 
   retry(): void {
     this.reload.next();
@@ -148,12 +182,13 @@ export class VocabularyDetail {
     this.observeUpdate(this.service.getVocabularyDetail(state.core.id));
   }
 
-  private observeUpdate(request: Observable<ApiSuccess<VocabularyCore>>): void {
+  private observeUpdate(request: Observable<ApiSuccess<VocabularyDetailData>>): void {
     request
       .pipe(takeUntil(this.route.paramMap.pipe(skip(1))), takeUntilDestroyed(this.destroyRef))
       .subscribe({
         next: (response) => {
-          this.updated.next(response.data);
+          const { id, word, normalizedWord } = response.data;
+          this.updated.next((detail) => ({ ...detail, id, word, normalizedWord }));
           this.saveState.set({ status: 'saved' });
           this.finishEditing();
         },

@@ -1,0 +1,96 @@
+<form #form="ngForm" (ngSubmit)="submit()" class="mt-5 space-y-5">
+  <fieldset [disabled]="locked()" class="grid min-w-0 gap-5 sm:grid-cols-2">
+    <legend class="sr-only">Add reading</legend>
+    <div class="sm:col-span-2">
+      <label for="new-reading" class="mb-2 block text-sm font-medium text-gray-800">Reading</label>
+      <input
+        type="text"
+        lang="ja"
+        #textInput
+        #textField="ngModel"
+        id="new-reading"
+        name="reading"
+        required
+        maxlength="100"
+        [(ngModel)]="reading"
+        [attr.aria-invalid]="
+          (textField.touched && !validText(reading, 100)) || !!fieldErrors().reading
+        "
+        aria-describedby="reading-text-help"
+        class="min-h-11 w-full rounded-xl border border-gray-300 bg-white px-3 py-2 text-gray-900 focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-indigo-600 disabled:bg-gray-50 aria-invalid:border-red-600"
+      />
+      <p id="reading-text-help" class="mt-2 text-sm text-gray-600">
+        {{ fieldErrors().reading || 'Enter a nonblank reading, up to 100 characters.' }}
+      </p>
+    </div>
+
+    <div>
+      <label for="reading-order" class="mb-2 block text-sm font-medium text-gray-800"
+        >Display order</label
+      >
+      <input
+        #orderField="ngModel"
+        id="reading-order"
+        name="displayOrder"
+        type="number"
+        min="0"
+        max="2147483647"
+        step="1"
+        required
+        [(ngModel)]="displayOrder"
+        [attr.aria-invalid]="
+          (orderField.touched && !validOrder(displayOrder)) || !!fieldErrors().displayOrder
+        "
+        aria-describedby="reading-order-help"
+        class="min-h-11 w-full rounded-xl border border-gray-300 bg-white px-3 py-2 text-gray-900 focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-indigo-600 disabled:bg-gray-50 aria-invalid:border-red-600"
+      />
+      <p id="reading-order-help" class="mt-2 text-sm text-gray-600">
+        {{
+          fieldErrors().displayOrder ||
+            'Enter a whole number from 0 to 2147483647. Existing display orders are not available.'
+        }}
+      </p>
+    </div>
+    <div class="sm:col-span-2">
+      <label class="inline-flex min-h-11 items-center gap-3 text-sm font-medium text-gray-800">
+        <input
+          type="checkbox"
+          name="isPrimary"
+          [attr.aria-invalid]="!!fieldErrors().isPrimary"
+          [(ngModel)]="isPrimary"
+          aria-describedby="reading-primary-help"
+          class="h-5 w-5 accent-indigo-600 focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-indigo-600"
+        />
+        Primary reading
+      </label>
+      <p id="reading-primary-help" class="mt-1 text-sm text-gray-600">
+        {{
+          fieldErrors().isPrimary ||
+            'At least one primary reading is required. Multiple primary readings are allowed; existing readings are not demoted.'
+        }}
+      </p>
+      @if (!hasPrimary() && !isPrimary) {
+        <p class="mt-2 text-sm text-gray-700">
+          There is no primary reading yet. Mark this reading as primary to continue.
+        </p>
+      }
+    </div>
+  </fieldset>
+  <div class="flex flex-wrap gap-3 border-t border-gray-100 pt-5">
+    <button
+      type="submit"
+      [disabled]="locked() || !valid || form.invalid"
+      class="min-h-11 rounded-xl bg-indigo-600 px-5 py-2 text-sm font-semibold text-white hover:bg-indigo-700 focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-indigo-600 disabled:opacity-50"
+    >
+      Save reading
+    </button>
+    <button
+      type="button"
+      [disabled]="locked()"
+      (click)="cancelled.emit()"
+      class="min-h-11 rounded-xl border border-gray-300 px-5 py-2 text-sm font-semibold text-gray-700 hover:bg-gray-50 focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-indigo-600 disabled:opacity-50"
+    >
+      Cancel
+    </button>
+  </div>
+</form>

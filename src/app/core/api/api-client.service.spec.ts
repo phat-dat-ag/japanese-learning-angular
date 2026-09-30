@@ -86,6 +86,16 @@ describe('ApiClient', () => {
     expect(error).toHaveBeenCalledWith(expect.objectContaining({ code: 'INVALID_RESPONSE' }));
   });
 
+  it('sends POST arrays through the shared validated response pipeline', () => {
+    const next = vi.fn();
+    client.post('entry/42/readings', [{ reading: '日本語' }], isStrings).subscribe(next);
+    const request = http.expectOne('/api/v1/entry/42/readings');
+    expect(request.request.method).toBe('POST');
+    expect(request.request.body).toEqual([{ reading: '日本語' }]);
+    expect(request.request.detectContentTypeHeader()).toBe('application/json');
+    request.flush({ success: true, data: ['added'], meta });
+    expect(next).toHaveBeenCalledWith({ success: true, data: ['added'], meta });
+  });
   it('sends PUT JSON through the shared validated response pipeline', () => {
     const next = vi.fn();
     client.put('entry/42', { word: '日本' }, isStrings).subscribe(next);

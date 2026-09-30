@@ -1,3 +1,4 @@
+import { validVocabularyText } from './vocabulary-validation';
 import { isRecord } from '../../../../core/api/api-response.model';
 
 export interface VocabularyCore {
@@ -27,12 +28,6 @@ export function isVocabularyCoreResult(value: unknown): value is VocabularyCoreR
   );
 }
 
-// Jakarta NotBlank uses Java whitespace, which differs from JavaScript trim (for example NBSP).
 export function validCoreText(value: string): boolean {
-  return (
-    value.length <= 100 &&
-    /[^\u0009-\u000d\u001c-\u0020\u1680\u2000-\u2006\u2008-\u200a\u2028\u2029\u205f\u3000]/u.test(
-      value,
-    )
-  );
+  return validVocabularyText(value, 100);
 }
