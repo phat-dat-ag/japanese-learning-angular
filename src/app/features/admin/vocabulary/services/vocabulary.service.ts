@@ -1,3 +1,11 @@
+import {
+  identityResult,
+  VocabularyPitchAccentUpdateRequest,
+  AssignmentOrderUpdateRequest,
+  LevelAssignmentAddRequest,
+  LessonAssignmentAddRequest,
+  PartOfSpeechAssignmentAddRequest,
+} from '../models/vocabulary-metadata.model';
 import { VocabularyDetailData } from '../models/vocabulary-detail.model';
 import {
   isReadingResults,
@@ -45,6 +53,16 @@ export class VocabularyService {
             ...response.data.vocabulary,
             readings: response.data.readings,
             meanings: response.data.meanings,
+            pitchAccents: response.data.readings.flatMap((reading) =>
+              reading.pitchAccentDetails.map((accent) => ({
+                ...accent,
+                readingId: reading.readingId,
+                reading: reading.reading,
+              })),
+            ),
+            levels: response.data.levels,
+            lessons: response.data.lessons,
+            partsOfSpeech: response.data.partsOfSpeech,
           },
         };
       }),
@@ -169,5 +187,110 @@ export class VocabularyService {
           return response;
         }),
       );
+  }
+
+  addPitchAccents(vocabularyId: number, requests: readonly VocabularyPitchAccentUpdateRequest[]) {
+    return this.addMetadata(
+      vocabularyId,
+      'pitch-accents',
+      requests.map(({ readingId, accentPattern }) => ({ readingId, accentPattern })),
+      'pitchAccentId',
+    );
+  }
+
+  updatePitchAccent(
+    vocabularyId: number,
+    pitchAccentId: number,
+    request: VocabularyPitchAccentUpdateRequest,
+  ) {
+    return this.updateMetadata(
+      vocabularyId,
+      'pitch-accents',
+      pitchAccentId,
+      { readingId: request.readingId, accentPattern: request.accentPattern },
+      'pitchAccentId',
+    );
+  }
+
+  addLevels(vocabularyId: number, requests: readonly LevelAssignmentAddRequest[]) {
+    return this.addMetadata(
+      vocabularyId,
+      'levels',
+      requests.map(({ level, displayOrder }) => ({ level, displayOrder })),
+      'levelId',
+    );
+  }
+
+  updateLevel(vocabularyId: number, levelId: number, request: AssignmentOrderUpdateRequest) {
+    return this.updateMetadata(
+      vocabularyId,
+      'levels',
+      levelId,
+      { displayOrder: request.displayOrder },
+      'levelId',
+    );
+  }
+
+  addLessons(vocabularyId: number, requests: readonly LessonAssignmentAddRequest[]) {
+    return this.addMetadata(
+      vocabularyId,
+      'lessons',
+      requests.map(({ lessonId, displayOrder }) => ({ lessonId, displayOrder })),
+      'lessonId',
+    );
+  }
+
+  updateLesson(vocabularyId: number, lessonId: number, request: AssignmentOrderUpdateRequest) {
+    return this.updateMetadata(
+      vocabularyId,
+      'lessons',
+      lessonId,
+      { displayOrder: request.displayOrder },
+      'lessonId',
+    );
+  }
+
+  addPartsOfSpeech(vocabularyId: number, requests: readonly PartOfSpeechAssignmentAddRequest[]) {
+    return this.addMetadata(
+      vocabularyId,
+      'parts-of-speech',
+      requests.map(({ code }) => ({ code })),
+      'partOfSpeechId',
+    );
+  }
+
+  private addMetadata<K extends string>(
+    vocabularyId: number,
+    path: string,
+    requests: readonly unknown[],
+    key: K,
+  ): Observable<ApiSuccess<readonly Readonly<Record<K, number>>[]>> {
+    const valid = identityResult(key);
+    return this.api.post(
+      'v1/admin/vocabularies/' + vocabularyId + '/' + path,
+      requests,
+      (value): value is readonly Readonly<Record<K, number>>[] =>
+        Array.isArray(value) &&
+        value.length >= 1 &&
+        value.length <= 100 &&
+        value.length === requests.length &&
+        value.every(valid) &&
+        new Set(value.map((item) => item[key])).size === value.length,
+    );
+  }
+
+  private updateMetadata<K extends string>(
+    vocabularyId: number,
+    path: string,
+    id: number,
+    request: unknown,
+    key: K,
+  ): Observable<ApiSuccess<Readonly<Record<K, number>>>> {
+    const valid = identityResult(key);
+    return this.api.put(
+      'v1/admin/vocabularies/' + vocabularyId + '/' + path + '/' + id,
+      request,
+      (value): value is Readonly<Record<K, number>> => valid(value) && value[key] === id,
+    );
   }
 }

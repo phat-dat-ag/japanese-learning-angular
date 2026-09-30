@@ -10,16 +10,25 @@ const meta = { timestamp: '2026-09-14T14:52:10Z', traceId: 'trace', correlationI
 const card: Flashcard = {
   vocabulary: { id: 1, word: '会社', normalizedWord: '会社' },
   readings: [
-    { readingId: 111, displayOrder: 17, reading: 'かいしゃ', isPrimary: true, pitchAccents: [0] },
+    {
+      readingId: 111,
+      displayOrder: 17,
+      reading: 'かいしゃ',
+      isPrimary: true,
+      pitchAccentDetails: [],
+      pitchAccents: [0],
+    },
   ],
   meanings: [
     { meaningId: 135, displayOrder: 29, languageCode: 'en', meaning: 'company', isPrimary: true },
     { meaningId: 148, displayOrder: 29, languageCode: 'vi', meaning: 'công ty', isPrimary: true },
   ],
   partsOfSpeech: [{ code: 'NOUN', nameVi: 'Danh từ', nameEn: 'Noun' }],
-  levels: [{ code: 'N5', name: 'JLPT N5' }],
+  levels: [{ levelId: 51, displayOrder: 19, code: 'N5', name: 'JLPT N5' }],
   lessons: [
     {
+      lessonId: 81,
+      assignmentDisplayOrder: 27,
       levelCode: 'N5',
       levelName: 'JLPT N5',
       lessonNumber: 1,
@@ -193,6 +202,7 @@ describe('Flashcard detail', () => {
           displayOrder: 17,
           reading: 'かいしゃ',
           isPrimary: true,
+          pitchAccentDetails: [],
           pitchAccents: ['0'],
         },
       ],
@@ -314,7 +324,14 @@ describe('Flashcard detail', () => {
         data: {
           ...card,
           readings: [
-            { readingId: 311, displayOrder: 17, reading, isPrimary: true, pitchAccents: accents },
+            {
+              readingId: 311,
+              displayOrder: 17,
+              reading,
+              isPrimary: true,
+              pitchAccentDetails: [],
+              pitchAccents: accents,
+            },
           ],
         },
         meta,

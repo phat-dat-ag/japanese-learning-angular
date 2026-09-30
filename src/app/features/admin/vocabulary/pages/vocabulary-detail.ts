@@ -1,3 +1,5 @@
+import { VocabularyMetadataSection } from '../components/vocabulary-metadata-section';
+import { MetadataKind, MetadataUpdate } from '../models/vocabulary-metadata.model';
 import {
   VocabularyDetailData,
   VocabularyReading,
@@ -61,6 +63,7 @@ type SaveState =
     VocabularyCoreForm,
     VocabularyReadings,
     VocabularyMeanings,
+    VocabularyMetadataSection,
   ],
   templateUrl: './vocabulary-detail.html',
   changeDetection: ChangeDetectionStrategy.OnPush,
@@ -130,8 +133,47 @@ export class VocabularyDetail {
     { initialValue: { status: 'loading' } as DetailState },
   );
 
+  readonly metadataSections: readonly MetadataKind[] = [
+    'pitch-accents',
+    'levels',
+    'lessons',
+    'parts-of-speech',
+  ];
+
+  updateMetadata(update: MetadataUpdate): void {
+    this.updated.next((detail) => {
+      switch (update.kind) {
+        case 'pitch-accents':
+          return {
+            ...detail,
+            pitchAccents: update.items.map((accent) => ({
+              ...accent,
+              reading:
+                detail.readings.find((reading) => reading.readingId === accent.readingId)
+                  ?.reading ?? accent.reading,
+            })),
+          };
+        case 'levels':
+          return { ...detail, levels: update.items };
+        case 'lessons':
+          return { ...detail, lessons: update.items };
+        case 'parts-of-speech':
+          return { ...detail, partsOfSpeech: update.items };
+      }
+    });
+  }
+
   updateReadings(readings: readonly VocabularyReading[]): void {
-    this.updated.next((detail) => ({ ...detail, readings }));
+    this.updated.next((detail) => ({
+      ...detail,
+      readings,
+      pitchAccents: detail.pitchAccents.map((accent) => ({
+        ...accent,
+        reading:
+          readings.find((reading) => reading.readingId === accent.readingId)?.reading ??
+          accent.reading,
+      })),
+    }));
   }
 
   updateMeanings(meanings: readonly VocabularyMeaning[]): void {

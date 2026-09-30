@@ -12,6 +12,10 @@ export interface Flashcard {
     readonly reading: string;
     readonly isPrimary: boolean;
     readonly pitchAccents: readonly number[];
+    readonly pitchAccentDetails: readonly {
+      readonly pitchAccentId: number;
+      readonly accentPattern: number;
+    }[];
   }[];
   readonly meanings: readonly {
     readonly meaningId: number;
@@ -25,8 +29,15 @@ export interface Flashcard {
     readonly nameVi: string;
     readonly nameEn: string;
   }[];
-  readonly levels: readonly { readonly code: string; readonly name: string }[];
+  readonly levels: readonly {
+    readonly levelId: number;
+    readonly code: string;
+    readonly name: string;
+    readonly displayOrder: number;
+  }[];
   readonly lessons: readonly {
+    readonly lessonId: number;
+    readonly assignmentDisplayOrder: number;
     readonly levelCode: string;
     readonly levelName: string;
     readonly lessonNumber: number;
@@ -69,6 +80,9 @@ export function isFlashcard(value: unknown): value is Flashcard {
   if (!isRecord(value)) return false;
   const readingIds = new Set<number>();
   const meaningIds = new Set<number>();
+  const levelIds = new Set<number>();
+  const lessonIds = new Set<number>();
+  const accentIds = new Set<number>();
   const validChild = (item: Record<string, unknown>, key: string, ids: Set<number>): boolean => {
     const id = item[key];
     const order = item['displayOrder'];
@@ -95,7 +109,22 @@ export function isFlashcard(value: unknown): value is Flashcard {
         hasStrings(item, ['reading']) &&
         validChild(item, 'readingId', readingIds) &&
         typeof item['isPrimary'] === 'boolean' &&
-        isArrayOf(item['pitchAccents'], isNonNegativeInteger),
+        isArrayOf(item['pitchAccents'], isNonNegativeInteger) &&
+        isArrayOf(item['pitchAccentDetails'], (accent) => {
+          if (!isRecord(accent)) return false;
+          const id = accent['pitchAccentId'];
+          const pattern = accent['accentPattern'];
+          if (
+            !isNonNegativeInteger(id) ||
+            id === 0 ||
+            accentIds.has(id) ||
+            !isNonNegativeInteger(pattern) ||
+            pattern > 65535
+          )
+            return false;
+          accentIds.add(id);
+          return true;
+        }),
     ) &&
     isArrayOf(
       value['meanings'],
@@ -105,11 +134,18 @@ export function isFlashcard(value: unknown): value is Flashcard {
         typeof item['isPrimary'] === 'boolean',
     ) &&
     isArrayOf(value['partsOfSpeech'], (item) => hasStrings(item, ['code', 'nameVi', 'nameEn'])) &&
-    isArrayOf(value['levels'], (item) => hasStrings(item, ['code', 'name'])) &&
+    isArrayOf(
+      value['levels'],
+      (item) => hasStrings(item, ['code', 'name']) && validChild(item, 'levelId', levelIds),
+    ) &&
     isArrayOf(
       value['lessons'],
       (item) =>
         hasStrings(item, ['levelCode', 'levelName', 'title', 'description']) &&
+        validChild(item, 'lessonId', lessonIds) &&
+        isNonNegativeInteger(item['assignmentDisplayOrder']) &&
+        item['assignmentDisplayOrder'] >= 1 &&
+        item['assignmentDisplayOrder'] <= 2147483647 &&
         isNonNegativeInteger(item['lessonNumber']) &&
         item['lessonNumber'] > 0 &&
         isNonNegativeInteger(item['displayOrder']),

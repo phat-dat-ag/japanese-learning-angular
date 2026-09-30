@@ -1,6 +1,16 @@
 import { ApiError } from '../../../../core/api/api-error';
 
-export type AdditionField = 'reading' | 'meaning' | 'language' | 'isPrimary' | 'displayOrder';
+export type AdditionField =
+  | 'reading'
+  | 'meaning'
+  | 'language'
+  | 'isPrimary'
+  | 'displayOrder'
+  | 'readingId'
+  | 'accentPattern'
+  | 'level'
+  | 'lessonId'
+  | 'code';
 export type AdditionErrors = Readonly<Partial<Record<AdditionField, string>>>;
 export type AdditionState =
   | { readonly status: 'idle' | 'saving' | 'refreshing' | 'saved' | 'refresh-error' }
@@ -8,7 +18,13 @@ export type AdditionState =
 
 export function additionError(
   error: unknown,
-  kind: 'reading' | 'meaning',
+  kind:
+    | 'reading'
+    | 'meaning'
+    | 'pitch accent'
+    | 'level assignment'
+    | 'lesson assignment'
+    | 'part of speech',
   operation: 'add' | 'edit' = 'add',
 ): AdditionState {
   const fields: Partial<Record<AdditionField, string>> = {};
@@ -24,10 +40,18 @@ export function additionError(
         message =
           kind === 'reading'
             ? 'Check the reading fields. The vocabulary must retain at least one primary reading.'
-            : 'Check the meaning fields and try again.';
+            : kind === 'lesson assignment'
+              ? 'Check the assignment fields. Assign the lesson’s JLPT level to this vocabulary first.'
+              : 'Check the ' + kind + ' fields and try again.';
         for (const detail of error.details) {
           if (
-            detail.field === kind ||
+            (detail.field === 'reading' && kind === 'reading') ||
+            (detail.field === 'meaning' && kind === 'meaning') ||
+            detail.field === 'readingId' ||
+            detail.field === 'accentPattern' ||
+            detail.field === 'level' ||
+            detail.field === 'lessonId' ||
+            detail.field === 'code' ||
             detail.field === 'isPrimary' ||
             detail.field === 'displayOrder' ||
             (kind === 'meaning' && detail.field === 'language')
@@ -48,13 +72,17 @@ export function additionError(
             ? 'This ' +
               kind +
               ' or its vocabulary is no longer available. Return to Vocabulary Management.'
-            : 'This vocabulary no longer exists. Return to Vocabulary Management.';
+            : kind === 'reading' || kind === 'meaning'
+              ? 'This vocabulary no longer exists. Return to Vocabulary Management.'
+              : 'The vocabulary or selected master-data entry is no longer available. Check the selection and try again.';
         break;
       case 409:
         message =
           kind === 'reading'
             ? 'This reading already exists for the vocabulary.'
-            : 'This meaning already exists for the selected language.';
+            : kind === 'meaning'
+              ? 'This meaning already exists for the selected language.'
+              : 'This ' + kind + ' already exists for the vocabulary.';
         break;
     }
   }

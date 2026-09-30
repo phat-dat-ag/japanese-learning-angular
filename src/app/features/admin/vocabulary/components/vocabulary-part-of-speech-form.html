@@ -1,0 +1,50 @@
+<form #form="ngForm" (ngSubmit)="submit()" novalidate>
+  <fieldset [disabled]="locked()" class="space-y-5">
+    <legend class="mb-4 text-lg font-semibold text-gray-900">Adding Part of Speech</legend>
+
+    <div>
+      <label for="part-of-speech-code" class="text-sm font-medium text-gray-700"
+        >Master-data code</label
+      >
+      <input
+        #first
+        id="part-of-speech-code"
+        name="code"
+        [(ngModel)]="code"
+        #codeControl="ngModel"
+        required
+        maxlength="50"
+        aria-describedby="pos-help pos-error"
+        class="mt-2 block min-h-11 w-full rounded-xl border border-gray-300 bg-white px-3 py-2 text-gray-900 focus-visible:outline-2 focus-visible:outline-indigo-600"
+      />
+      <p id="pos-help" class="mt-2 text-sm text-gray-600">
+        Enter an existing part-of-speech code. The server checks that the code exists.
+      </p>
+      <p id="pos-error" class="mt-2 text-sm text-red-700">
+        {{
+          fieldErrors().code ||
+            ((codeControl.touched || form.submitted) && !valid
+              ? 'Enter a nonblank code, up to 50 characters.'
+              : '')
+        }}
+      </p>
+    </div>
+
+    <div class="flex flex-wrap gap-3">
+      <button
+        type="submit"
+        [disabled]="locked() || !valid"
+        class="min-h-11 rounded-xl border border-gray-300 px-4 py-2 text-sm font-semibold focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-indigo-600 disabled:opacity-50 bg-indigo-600 text-white"
+      >
+        Save
+      </button>
+      <button
+        type="button"
+        (click)="cancelled.emit()"
+        class="min-h-11 rounded-xl border border-gray-300 px-4 py-2 text-sm font-semibold focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-indigo-600 disabled:opacity-50 bg-white text-gray-700"
+      >
+        Cancel
+      </button>
+    </div>
+  </fieldset>
+</form>

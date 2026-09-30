@@ -146,6 +146,15 @@
               (updated)="updateMeanings($event)"
             />
           </div>
+          @for (kind of metadataSections; track kind) {
+            <div class="mt-6">
+              <app-vocabulary-metadata-section
+                [kind]="kind"
+                [detail]="detail"
+                (updated)="updateMetadata($event)"
+              />
+            </div>
+          }
         }
       }
     }

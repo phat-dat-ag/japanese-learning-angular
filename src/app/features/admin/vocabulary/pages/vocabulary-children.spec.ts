@@ -12,7 +12,14 @@ import {
 const existing = {
   ...vocabularyDetailFixture(73),
   readings: [
-    { readingId: 111, displayOrder: 17, reading: 'にほんご', isPrimary: true, pitchAccents: [0] },
+    {
+      readingId: 111,
+      displayOrder: 17,
+      reading: 'にほんご',
+      isPrimary: true,
+      pitchAccentDetails: [],
+      pitchAccents: [0],
+    },
   ],
   meanings: [
     {
@@ -103,6 +110,7 @@ describe.each(['reading', 'meaning'] as const)('Vocabulary %s additions', (kind)
                 displayOrder: 17,
                 reading: 'Backend reading',
                 isPrimary: false,
+                pitchAccentDetails: [],
                 pitchAccents: [],
               },
             ],
@@ -363,6 +371,7 @@ describe('Independent vocabulary sections', () => {
             displayOrder: 17,
             reading: 'New authoritative reading',
             isPrimary: true,
+            pitchAccentDetails: [],
             pitchAccents: [],
           },
         ],
@@ -443,6 +452,7 @@ describe('Independent vocabulary sections', () => {
             displayOrder: 17,
             reading: 'Refreshed reading',
             isPrimary: true,
+            pitchAccentDetails: [],
             pitchAccents: [],
           },
         ],

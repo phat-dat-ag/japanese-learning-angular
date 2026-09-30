@@ -1,0 +1,97 @@
+<form #form="ngForm" (ngSubmit)="submit()" novalidate>
+  <fieldset [disabled]="locked()" class="space-y-5">
+    <legend class="mb-4 text-lg font-semibold text-gray-900">
+      {{ initial() ? 'Editing Lesson Assignment' : 'Adding Lesson Assignment' }}
+    </legend>
+
+    @if (initial(); as item) {
+      <p class="text-gray-700">
+        {{ item.levelCode }} · Lesson {{ item.lessonNumber }}: {{ item.title }}
+      </p>
+    } @else {
+      <div>
+        <label for="lesson-level" class="text-sm font-medium text-gray-700"
+          >Assigned JLPT level</label
+        >
+        <select
+          #first
+          id="lesson-level"
+          name="level"
+          [ngModel]="level"
+          (ngModelChange)="changeLevel($event)"
+          class="mt-2 block min-h-11 w-full rounded-xl border border-gray-300 bg-white px-3 py-2 text-gray-900 focus-visible:outline-2 focus-visible:outline-indigo-600"
+        >
+          <option value="">Choose an assigned level</option>
+          @for (item of levels(); track item.levelId) {
+            <option [value]="item.code">{{ item.name }}</option>
+          }
+        </select>
+        <p class="mt-2 text-sm text-gray-600">
+          Assign the lesson’s JLPT level to this vocabulary first.
+        </p>
+      </div>
+      <div>
+        <label for="assignment-lesson" class="text-sm font-medium text-gray-700">Lesson</label>
+        <select
+          id="assignment-lesson"
+          name="lessonId"
+          [(ngModel)]="lessonId"
+          required
+          aria-describedby="assignment-lesson-error"
+          class="mt-2 block min-h-11 w-full rounded-xl border border-gray-300 bg-white px-3 py-2 text-gray-900 focus-visible:outline-2 focus-visible:outline-indigo-600"
+        >
+          <option [ngValue]="null">Choose a lesson</option>
+          @for (item of options(); track item.id) {
+            <option [ngValue]="item.id">Lesson {{ item.lessonNumber }}: {{ item.title }}</option>
+          }
+        </select>
+        <p id="assignment-lesson-error" class="mt-2 text-sm text-red-700">
+          {{ fieldErrors().lessonId }}
+        </p>
+      </div>
+    }
+    <div>
+      <label for="lesson-assignment-order" class="text-sm font-medium text-gray-700"
+        >Assignment display order</label
+      >
+      <input
+        #orderInput
+        id="lesson-assignment-order"
+        name="displayOrder"
+        type="number"
+        min="1"
+        max="2147483647"
+        step="1"
+        required
+        [(ngModel)]="displayOrder"
+        #order="ngModel"
+        aria-describedby="lesson-order-error"
+        class="mt-2 block min-h-11 w-full rounded-xl border border-gray-300 bg-white px-3 py-2 text-gray-900 focus-visible:outline-2 focus-visible:outline-indigo-600"
+      />
+      <p id="lesson-order-error" class="mt-2 text-sm text-red-700">
+        {{
+          fieldErrors().displayOrder ||
+            ((order.touched || form.submitted) && !validOrder(displayOrder)
+              ? 'Enter a whole number from 1 to 2147483647.'
+              : '')
+        }}
+      </p>
+    </div>
+    <div class="flex flex-wrap gap-3">
+      <button
+        type="submit"
+        [disabled]="locked() || !valid"
+        class="min-h-11 rounded-xl border border-gray-300 px-4 py-2 text-sm font-semibold focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-indigo-600 disabled:opacity-50 bg-indigo-600 text-white"
+      >
+        Save
+      </button>
+      <button
+        type="button"
+        (click)="cancelled.emit()"
+        class="min-h-11 rounded-xl border border-gray-300 px-4 py-2 text-sm font-semibold focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-indigo-600 disabled:opacity-50 bg-white text-gray-700"
+      >
+        Cancel
+      </button>
+    </div>
+  </fieldset>
+</form>

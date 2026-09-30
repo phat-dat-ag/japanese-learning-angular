@@ -12,8 +12,22 @@ import {
 const detail = {
   ...vocabularyDetailFixture(73),
   readings: [
-    { readingId: 415, reading: 'にほんご', isPrimary: true, displayOrder: 17, pitchAccents: [0] },
-    { readingId: 887, reading: 'にっぽんご', isPrimary: false, displayOrder: 43, pitchAccents: [] },
+    {
+      readingId: 415,
+      reading: 'にほんご',
+      isPrimary: true,
+      displayOrder: 17,
+      pitchAccentDetails: [],
+      pitchAccents: [0],
+    },
+    {
+      readingId: 887,
+      reading: 'にっぽんご',
+      isPrimary: false,
+      displayOrder: 43,
+      pitchAccentDetails: [],
+      pitchAccents: [],
+    },
   ],
   meanings: [
     { meaningId: 529, languageCode: 'en', meaning: 'Japanese', isPrimary: false, displayOrder: 23 },

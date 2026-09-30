@@ -68,7 +68,15 @@ describe('VocabularyService read adapter', () => {
       .flush({ success: true, data: vocabularyDetailFixture(), meta });
     expect(next).toHaveBeenCalledWith({
       success: true,
-      data: { ...vocabularyDetailFixture().vocabulary, readings: [], meanings: [] },
+      data: {
+        ...vocabularyDetailFixture().vocabulary,
+        readings: [],
+        meanings: [],
+        pitchAccents: [],
+        levels: [],
+        lessons: [],
+        partsOfSpeech: [],
+      },
       meta,
     });
   });
@@ -116,6 +124,7 @@ describe('VocabularyService read adapter', () => {
           displayOrder: 17,
           reading: 'にほんご',
           isPrimary: true,
+          pitchAccentDetails: [],
           pitchAccents: [0],
         },
       ],
@@ -133,7 +142,15 @@ describe('VocabularyService read adapter', () => {
     http.expectOne('/api/v1/flashcards/42').flush({ success: true, data: detail, meta });
     expect(next).toHaveBeenCalledWith({
       success: true,
-      data: { ...detail.vocabulary, readings: detail.readings, meanings: detail.meanings },
+      data: {
+        ...detail.vocabulary,
+        readings: detail.readings,
+        meanings: detail.meanings,
+        pitchAccents: [],
+        levels: [],
+        lessons: [],
+        partsOfSpeech: [],
+      },
       meta,
     });
   });
@@ -284,6 +301,7 @@ describe('VocabularyService read adapter', () => {
             reading: 'a',
             isPrimary: true,
             displayOrder: 43,
+            pitchAccentDetails: [],
             pitchAccents: [],
             ...patch,
           },
@@ -334,6 +352,7 @@ describe('VocabularyService read adapter', () => {
       reading: 'a',
       isPrimary: true,
       displayOrder: 43,
+      pitchAccentDetails: [],
       pitchAccents: [],
     };
     service.getVocabularyDetail(73).subscribe({ error });
