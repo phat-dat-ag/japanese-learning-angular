@@ -1,9 +1,11 @@
+import { VocabularyMeaning } from '../models/vocabulary-detail.model';
 import {
   afterNextRender,
   ChangeDetectionStrategy,
   Component,
   ElementRef,
   input,
+  OnInit,
   output,
   viewChild,
 } from '@angular/core';
@@ -21,7 +23,8 @@ import { validVocabularyText } from '../models/vocabulary-validation';
   templateUrl: './vocabulary-meaning-form.html',
   changeDetection: ChangeDetectionStrategy.OnPush,
 })
-export class VocabularyMeaningForm {
+export class VocabularyMeaningForm implements OnInit {
+  readonly initial = input<VocabularyMeaning | null>(null);
   readonly locked = input(false);
   readonly fieldErrors = input<AdditionErrors>({});
 
@@ -30,7 +33,7 @@ export class VocabularyMeaningForm {
   private readonly textInput =
     viewChild<ElementRef<HTMLInputElement | HTMLTextAreaElement>>('textInput');
   meaning = '';
-  language: 'vi' | 'en' = 'en';
+  language = 'en';
   isPrimary = false;
   displayOrder: number | null = null;
   readonly validText = validVocabularyText;
@@ -38,6 +41,15 @@ export class VocabularyMeaningForm {
 
   constructor() {
     afterNextRender(() => this.textInput()?.nativeElement.focus());
+  }
+
+  ngOnInit(): void {
+    const initial = this.initial();
+    if (!initial) return;
+    this.meaning = initial.meaning;
+    this.language = initial.languageCode;
+    this.isPrimary = initial.isPrimary;
+    this.displayOrder = initial.displayOrder;
   }
 
   get valid(): boolean {
@@ -50,6 +62,7 @@ export class VocabularyMeaningForm {
 
   submit(): void {
     if (!this.valid || this.locked() || !validDisplayOrder(this.displayOrder)) return;
+    if (this.language !== 'vi' && this.language !== 'en') return;
     this.submitted.emit({
       meaning: this.meaning,
       language: this.language,

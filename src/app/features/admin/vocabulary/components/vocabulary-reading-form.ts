@@ -1,9 +1,11 @@
+import { VocabularyReading } from '../models/vocabulary-detail.model';
 import {
   afterNextRender,
   ChangeDetectionStrategy,
   Component,
   ElementRef,
   input,
+  OnInit,
   output,
   viewChild,
 } from '@angular/core';
@@ -21,7 +23,8 @@ import { validVocabularyText } from '../models/vocabulary-validation';
   templateUrl: './vocabulary-reading-form.html',
   changeDetection: ChangeDetectionStrategy.OnPush,
 })
-export class VocabularyReadingForm {
+export class VocabularyReadingForm implements OnInit {
+  readonly initial = input<VocabularyReading | null>(null);
   readonly locked = input(false);
   readonly fieldErrors = input<AdditionErrors>({});
   readonly hasPrimary = input.required<boolean>();
@@ -38,6 +41,14 @@ export class VocabularyReadingForm {
 
   constructor() {
     afterNextRender(() => this.textInput()?.nativeElement.focus());
+  }
+
+  ngOnInit(): void {
+    const initial = this.initial();
+    if (!initial) return;
+    this.reading = initial.reading;
+    this.isPrimary = initial.isPrimary;
+    this.displayOrder = initial.displayOrder;
   }
 
   get valid(): boolean {

@@ -106,12 +106,28 @@ describe('VocabularyService read adapter', () => {
     },
   );
 
-  it('preserves identity-incomplete child values from the validated GET', () => {
+  it('preserves identified child values from the validated GET', () => {
     const next = vi.fn();
     const detail = {
       ...vocabularyDetailFixture(),
-      readings: [{ reading: 'にほんご', isPrimary: true, pitchAccents: [0] }],
-      meanings: [{ languageCode: 'en', meaning: 'Japanese language', isPrimary: false }],
+      readings: [
+        {
+          readingId: 111,
+          displayOrder: 17,
+          reading: 'にほんご',
+          isPrimary: true,
+          pitchAccents: [0],
+        },
+      ],
+      meanings: [
+        {
+          meaningId: 124,
+          displayOrder: 29,
+          languageCode: 'en',
+          meaning: 'Japanese language',
+          isPrimary: false,
+        },
+      ],
     };
     service.getVocabularyDetail(42).subscribe(next);
     http.expectOne('/api/v1/flashcards/42').flush({ success: true, data: detail, meta });
@@ -185,5 +201,147 @@ describe('VocabularyService read adapter', () => {
       .subscribe({ error });
     http.expectOne('/api/v1/admin/vocabularies/42/meanings').flush({ success: true, data, meta });
     expect(error).toHaveBeenCalledWith(expect.objectContaining({ code: 'INVALID_RESPONSE', meta }));
+  });
+
+  it('PUTs a reading object to its backend identity and preserves the result envelope', () => {
+    const next = vi.fn();
+    service
+      .updateReading(73, 887, { reading: 'にっぽんご', isPrimary: false, displayOrder: 43 })
+      .subscribe(next);
+    const request = http.expectOne('/api/v1/admin/vocabularies/73/readings/887');
+    expect(request.request.method).toBe('PUT');
+    expect(request.request.body).toEqual({
+      reading: 'にっぽんご',
+      isPrimary: false,
+      displayOrder: 43,
+    });
+    request.flush({ success: true, data: { readingId: 887 }, meta });
+    expect(next).toHaveBeenCalledWith({ success: true, data: { readingId: 887 }, meta });
+  });
+
+  it('PUTs a meaning object with language instead of languageCode', () => {
+    const next = vi.fn();
+    service
+      .updateMeaning(73, 992, {
+        language: 'vi',
+        meaning: 'Tiếng Nhật',
+        isPrimary: true,
+        displayOrder: 61,
+      })
+      .subscribe(next);
+    const request = http.expectOne('/api/v1/admin/vocabularies/73/meanings/992');
+    expect(request.request.method).toBe('PUT');
+    expect(request.request.body).toEqual({
+      language: 'vi',
+      meaning: 'Tiếng Nhật',
+      isPrimary: true,
+      displayOrder: 61,
+    });
+    request.flush({ success: true, data: { meaningId: 992 }, meta });
+    expect(next).toHaveBeenCalledWith({ success: true, data: { meaningId: 992 }, meta });
+  });
+
+  it.each(['reading', 'meaning'] as const)('rejects mismatched %s PUT result identity', (kind) => {
+    const error = vi.fn();
+    if (kind === 'reading')
+      service
+        .updateReading(73, 887, { reading: 'a', isPrimary: true, displayOrder: 0 })
+        .subscribe({ error });
+    else
+      service
+        .updateMeaning(73, 992, { language: 'en', meaning: 'a', isPrimary: false, displayOrder: 0 })
+        .subscribe({ error });
+    http
+      .expectOne('/api/v1/admin/vocabularies/73/' + kind + 's/' + (kind === 'reading' ? 887 : 992))
+      .flush({
+        success: true,
+        data: kind === 'reading' ? { readingId: 1 } : { meaningId: 1 },
+        meta,
+      });
+    expect(error).toHaveBeenCalledWith(expect.objectContaining({ code: 'INVALID_RESPONSE', meta }));
+  });
+
+  it.each([
+    { readingId: undefined },
+    { readingId: 0 },
+    { readingId: -1 },
+    { readingId: 1.5 },
+    { readingId: '887' },
+    { displayOrder: undefined },
+    { displayOrder: -1 },
+    { displayOrder: 1.5 },
+    { displayOrder: 2147483648 },
+  ])('rejects invalid reading identity/order %j at the read boundary', (patch) => {
+    const error = vi.fn();
+    service.getVocabularyDetail(73).subscribe({ error });
+    http.expectOne('/api/v1/flashcards/73').flush({
+      success: true,
+      data: {
+        ...vocabularyDetailFixture(73),
+        readings: [
+          {
+            readingId: 887,
+            reading: 'a',
+            isPrimary: true,
+            displayOrder: 43,
+            pitchAccents: [],
+            ...patch,
+          },
+        ],
+      },
+      meta,
+    });
+    expect(error).toHaveBeenCalledWith(expect.objectContaining({ code: 'INVALID_RESPONSE' }));
+  });
+
+  it.each([
+    { meaningId: undefined },
+    { meaningId: 0 },
+    { meaningId: -1 },
+    { meaningId: 1.5 },
+    { meaningId: '992' },
+    { displayOrder: undefined },
+    { displayOrder: -1 },
+    { displayOrder: 1.5 },
+    { displayOrder: 2147483648 },
+  ])('rejects invalid meaning identity/order %j at the read boundary', (patch) => {
+    const error = vi.fn();
+    service.getVocabularyDetail(73).subscribe({ error });
+    http.expectOne('/api/v1/flashcards/73').flush({
+      success: true,
+      data: {
+        ...vocabularyDetailFixture(73),
+        meanings: [
+          {
+            meaningId: 992,
+            languageCode: 'vi',
+            meaning: 'a',
+            isPrimary: true,
+            displayOrder: 61,
+            ...patch,
+          },
+        ],
+      },
+      meta,
+    });
+    expect(error).toHaveBeenCalledWith(expect.objectContaining({ code: 'INVALID_RESPONSE' }));
+  });
+
+  it('rejects duplicate child identities rather than exposing ambiguous Edit targets', () => {
+    const error = vi.fn();
+    const reading = {
+      readingId: 887,
+      reading: 'a',
+      isPrimary: true,
+      displayOrder: 43,
+      pitchAccents: [],
+    };
+    service.getVocabularyDetail(73).subscribe({ error });
+    http.expectOne('/api/v1/flashcards/73').flush({
+      success: true,
+      data: { ...vocabularyDetailFixture(73), readings: [reading, reading] },
+      meta,
+    });
+    expect(error).toHaveBeenCalledWith(expect.objectContaining({ code: 'INVALID_RESPONSE' }));
   });
 });

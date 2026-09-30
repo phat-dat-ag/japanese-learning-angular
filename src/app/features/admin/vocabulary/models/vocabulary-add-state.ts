@@ -6,9 +6,18 @@ export type AdditionState =
   | { readonly status: 'idle' | 'saving' | 'refreshing' | 'saved' | 'refresh-error' }
   | { readonly status: 'error'; readonly message: string; readonly fields: AdditionErrors };
 
-export function additionError(error: unknown, kind: 'reading' | 'meaning'): AdditionState {
+export function additionError(
+  error: unknown,
+  kind: 'reading' | 'meaning',
+  operation: 'add' | 'edit' = 'add',
+): AdditionState {
   const fields: Partial<Record<AdditionField, string>> = {};
-  let message = 'Unable to add this ' + kind + '. Please try again.';
+  let message =
+    'Unable to ' +
+    (operation === 'edit' ? 'update' : 'add') +
+    ' this ' +
+    kind +
+    '. Please try again.';
   if (error instanceof ApiError) {
     switch (error.status) {
       case 400:
@@ -34,7 +43,12 @@ export function additionError(error: unknown, kind: 'reading' | 'meaning'): Addi
         message = 'You do not have permission to update this vocabulary.';
         break;
       case 404:
-        message = 'This vocabulary no longer exists. Return to Vocabulary Management.';
+        message =
+          operation === 'edit'
+            ? 'This ' +
+              kind +
+              ' or its vocabulary is no longer available. Return to Vocabulary Management.'
+            : 'This vocabulary no longer exists. Return to Vocabulary Management.';
         break;
       case 409:
         message =

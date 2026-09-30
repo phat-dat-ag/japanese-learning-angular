@@ -122,4 +122,52 @@ export class VocabularyService {
         }),
       );
   }
+  updateReading(
+    vocabularyId: number,
+    readingId: number,
+    request: VocabularyReadingUpdateRequest,
+  ): Observable<ApiSuccess<VocabularyReadingResult>> {
+    return this.api
+      .put(
+        `v1/admin/vocabularies/${vocabularyId}/readings/${readingId}`,
+        {
+          reading: request.reading,
+          isPrimary: request.isPrimary,
+          displayOrder: request.displayOrder,
+        },
+        (value): value is VocabularyReadingResult => isReadingResults([value]),
+      )
+      .pipe(
+        map((response) => {
+          if (response.data.readingId !== readingId)
+            throw ApiError.invalidResponse(200, response.meta);
+          return response;
+        }),
+      );
+  }
+
+  updateMeaning(
+    vocabularyId: number,
+    meaningId: number,
+    request: VocabularyMeaningUpdateRequest,
+  ): Observable<ApiSuccess<VocabularyMeaningResult>> {
+    return this.api
+      .put(
+        `v1/admin/vocabularies/${vocabularyId}/meanings/${meaningId}`,
+        {
+          language: request.language,
+          meaning: request.meaning,
+          isPrimary: request.isPrimary,
+          displayOrder: request.displayOrder,
+        },
+        (value): value is VocabularyMeaningResult => isMeaningResults([value]),
+      )
+      .pipe(
+        map((response) => {
+          if (response.data.meaningId !== meaningId)
+            throw ApiError.invalidResponse(200, response.meta);
+          return response;
+        }),
+      );
+  }
 }

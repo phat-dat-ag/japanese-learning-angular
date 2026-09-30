@@ -1,6 +1,8 @@
 <form #form="ngForm" (ngSubmit)="submit()" class="mt-5 space-y-5">
   <fieldset [disabled]="locked()" class="grid min-w-0 gap-5 sm:grid-cols-2">
-    <legend class="sr-only">Add meaning</legend>
+    <legend class="mb-4 text-lg font-semibold text-gray-900">
+      {{ initial() ? 'Editing Meaning' : 'Adding Meaning' }}
+    </legend>
     <div class="sm:col-span-2">
       <label for="new-meaning" class="mb-2 block text-sm font-medium text-gray-800">Meaning</label>
       <textarea
@@ -65,7 +67,7 @@
       <p id="meaning-order-help" class="mt-2 text-sm text-gray-600">
         {{
           fieldErrors().displayOrder ||
-            'Enter a whole number from 0 to 2147483647. Existing display orders are not available.'
+            'Enter a whole number from 0 to 2147483647. Use the persisted order when editing.'
         }}
       </p>
     </div>

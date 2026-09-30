@@ -11,12 +11,12 @@ import { AdditionState } from '../models/vocabulary-add-state';
         }
         @case ('refreshing') {
           <p role="status" class="mt-4 text-sm text-indigo-700">
-            Addition saved. Refreshing details…
+            {{ operation() === 'edit' ? 'Changes' : 'Addition' }} saved. Refreshing details…
           </p>
         }
         @case ('saved') {
           <p role="status" class="mt-4 rounded-xl bg-green-50 p-3 text-sm text-green-800">
-            {{ kind() }} added.
+            {{ kind() }} {{ operation() === 'edit' ? 'updated' : 'added' }}.
           </p>
         }
         @case ('error') {
@@ -30,8 +30,8 @@ import { AdditionState } from '../models/vocabulary-add-state';
         @case ('refresh-error') {
           <div class="mt-4 rounded-xl border border-amber-200 bg-amber-50 p-4">
             <p role="alert" class="text-sm text-amber-900">
-              The addition was saved, but the latest details could not be loaded. Refresh before
-              adding again.
+              The {{ operation() === 'edit' ? 'update' : 'addition' }} was saved, but the latest
+              details could not be loaded. Refresh before making more changes.
             </p>
             <button
               type="button"
@@ -48,6 +48,7 @@ import { AdditionState } from '../models/vocabulary-add-state';
   changeDetection: ChangeDetectionStrategy.OnPush,
 })
 export class VocabularyAddFeedback {
+  readonly operation = input<'add' | 'edit'>('add');
   readonly state = input.required<AdditionState>();
   readonly kind = input.required<string>();
   readonly retried = output<void>();

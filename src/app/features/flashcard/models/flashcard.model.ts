@@ -7,11 +7,15 @@ export interface Flashcard {
     readonly normalizedWord: string;
   };
   readonly readings: readonly {
+    readonly readingId: number;
+    readonly displayOrder: number;
     readonly reading: string;
     readonly isPrimary: boolean;
     readonly pitchAccents: readonly number[];
   }[];
   readonly meanings: readonly {
+    readonly meaningId: number;
+    readonly displayOrder: number;
     readonly languageCode: string;
     readonly meaning: string;
     readonly isPrimary: boolean;
@@ -63,6 +67,22 @@ function isArrayOf(value: unknown, validate: (item: unknown) => boolean): boolea
 
 export function isFlashcard(value: unknown): value is Flashcard {
   if (!isRecord(value)) return false;
+  const readingIds = new Set<number>();
+  const meaningIds = new Set<number>();
+  const validChild = (item: Record<string, unknown>, key: string, ids: Set<number>): boolean => {
+    const id = item[key];
+    const order = item['displayOrder'];
+    if (
+      !isNonNegativeInteger(id) ||
+      id === 0 ||
+      ids.has(id) ||
+      !isNonNegativeInteger(order) ||
+      order > 2147483647
+    )
+      return false;
+    ids.add(id);
+    return true;
+  };
   const vocabulary = value['vocabulary'];
   return (
     hasStrings(vocabulary, ['word', 'normalizedWord']) &&
@@ -73,13 +93,16 @@ export function isFlashcard(value: unknown): value is Flashcard {
       value['readings'],
       (item) =>
         hasStrings(item, ['reading']) &&
+        validChild(item, 'readingId', readingIds) &&
         typeof item['isPrimary'] === 'boolean' &&
         isArrayOf(item['pitchAccents'], isNonNegativeInteger),
     ) &&
     isArrayOf(
       value['meanings'],
       (item) =>
-        hasStrings(item, ['languageCode', 'meaning']) && typeof item['isPrimary'] === 'boolean',
+        hasStrings(item, ['languageCode', 'meaning']) &&
+        validChild(item, 'meaningId', meaningIds) &&
+        typeof item['isPrimary'] === 'boolean',
     ) &&
     isArrayOf(value['partsOfSpeech'], (item) => hasStrings(item, ['code', 'nameVi', 'nameEn'])) &&
     isArrayOf(value['levels'], (item) => hasStrings(item, ['code', 'name'])) &&

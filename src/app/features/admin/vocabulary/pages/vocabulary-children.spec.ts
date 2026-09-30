@@ -11,8 +11,18 @@ import {
 
 const existing = {
   ...vocabularyDetailFixture(73),
-  readings: [{ reading: 'にほんご', isPrimary: true, pitchAccents: [0] }],
-  meanings: [{ languageCode: 'vi', meaning: 'Tiếng Nhật', isPrimary: true }],
+  readings: [
+    { readingId: 111, displayOrder: 17, reading: 'にほんご', isPrimary: true, pitchAccents: [0] },
+  ],
+  meanings: [
+    {
+      meaningId: 157,
+      displayOrder: 29,
+      languageCode: 'vi',
+      meaning: 'Tiếng Nhật',
+      isPrimary: true,
+    },
+  ],
 };
 
 describe.each(['reading', 'meaning'] as const)('Vocabulary %s additions', (kind) => {
@@ -88,21 +98,33 @@ describe.each(['reading', 'meaning'] as const)('Vocabulary %s additions', (kind)
             ...existing,
             readings: [
               ...existing.readings,
-              { reading: 'Backend reading', isPrimary: false, pitchAccents: [] },
+              {
+                readingId: 122,
+                displayOrder: 17,
+                reading: 'Backend reading',
+                isPrimary: false,
+                pitchAccents: [],
+              },
             ],
           }
         : {
             ...existing,
             meanings: [
               ...existing.meanings,
-              { languageCode: 'en', meaning: 'Backend meaning', isPrimary: false },
+              {
+                meaningId: 170,
+                displayOrder: 29,
+                languageCode: 'en',
+                meaning: 'Backend meaning',
+                isPrimary: false,
+              },
             ],
           };
     http.expectOne(getUrl).flush({ success: true, data, meta });
     fixture.detectChanges();
   }
 
-  it('renders actual children and primary/language labels without child Edit controls or PUT', () => {
+  it('renders actual children and primary/language labels with identity-backed Edit controls', () => {
     expect(section().textContent).toContain(kind === 'reading' ? 'にほんご' : 'Tiếng Nhật');
     expect(section().textContent).toContain('Primary');
     if (kind === 'meaning') expect(section().textContent).toContain('Vietnamese (vi)');
@@ -110,7 +132,7 @@ describe.each(['reading', 'meaning'] as const)('Vocabulary %s additions', (kind)
       Array.from(section().querySelectorAll('button')).some((item) =>
         item.textContent?.includes('Edit'),
       ),
-    ).toBe(false);
+    ).toBe(true);
     http.expectNone((request) => request.method === 'PUT');
   });
 
@@ -318,7 +340,15 @@ describe('Independent vocabulary sections', () => {
       success: true,
       data: {
         ...existing,
-        meanings: [{ languageCode: 'en', meaning: 'New authoritative meaning', isPrimary: false }],
+        meanings: [
+          {
+            meaningId: 183,
+            displayOrder: 29,
+            languageCode: 'en',
+            meaning: 'New authoritative meaning',
+            isPrimary: false,
+          },
+        ],
       },
       meta,
     });
@@ -327,7 +357,15 @@ describe('Independent vocabulary sections', () => {
       success: true,
       data: {
         ...existing,
-        readings: [{ reading: 'New authoritative reading', isPrimary: true, pitchAccents: [] }],
+        readings: [
+          {
+            readingId: 133,
+            displayOrder: 17,
+            reading: 'New authoritative reading',
+            isPrimary: true,
+            pitchAccents: [],
+          },
+        ],
       },
       meta,
     });
@@ -399,7 +437,15 @@ describe('Independent vocabulary sections', () => {
       success: true,
       data: {
         ...existing,
-        readings: [{ reading: 'Refreshed reading', isPrimary: true, pitchAccents: [] }],
+        readings: [
+          {
+            readingId: 144,
+            displayOrder: 17,
+            reading: 'Refreshed reading',
+            isPrimary: true,
+            pitchAccents: [],
+          },
+        ],
       },
       meta,
     });

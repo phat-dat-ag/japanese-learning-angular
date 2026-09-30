@@ -9,10 +9,12 @@ import { Flashcard } from '../../models/flashcard.model';
 const meta = { timestamp: '2026-09-14T14:52:10Z', traceId: 'trace', correlationId: 'correlation' };
 const card: Flashcard = {
   vocabulary: { id: 1, word: '会社', normalizedWord: '会社' },
-  readings: [{ reading: 'かいしゃ', isPrimary: true, pitchAccents: [0] }],
+  readings: [
+    { readingId: 111, displayOrder: 17, reading: 'かいしゃ', isPrimary: true, pitchAccents: [0] },
+  ],
   meanings: [
-    { languageCode: 'en', meaning: 'company', isPrimary: true },
-    { languageCode: 'vi', meaning: 'công ty', isPrimary: true },
+    { meaningId: 135, displayOrder: 29, languageCode: 'en', meaning: 'company', isPrimary: true },
+    { meaningId: 148, displayOrder: 29, languageCode: 'vi', meaning: 'công ty', isPrimary: true },
   ],
   partsOfSpeech: [{ code: 'NOUN', nameVi: 'Danh từ', nameEn: 'Noun' }],
   levels: [{ code: 'N5', name: 'JLPT N5' }],
@@ -183,8 +185,24 @@ describe('Flashcard detail', () => {
 
   it.each([
     { ...card, vocabulary: { id: 1, word: '', normalizedWord: '' } },
-    { ...card, readings: [{ reading: 'かいしゃ', isPrimary: true, pitchAccents: ['0'] }] },
-    { ...card, meanings: [{ languageCode: 'en', meaning: 42, isPrimary: true }] },
+    {
+      ...card,
+      readings: [
+        {
+          readingId: 122,
+          displayOrder: 17,
+          reading: 'かいしゃ',
+          isPrimary: true,
+          pitchAccents: ['0'],
+        },
+      ],
+    },
+    {
+      ...card,
+      meanings: [
+        { meaningId: 161, displayOrder: 29, languageCode: 'en', meaning: 42, isPrimary: true },
+      ],
+    },
     { ...card, kanji: [{ ...card.kanji[0], readings: null }] },
     { ...card, examples: [{ japaneseText: '会社' }] },
     null,
@@ -293,7 +311,12 @@ describe('Flashcard detail', () => {
     ({ reading, accents, morae, highlighted }) => {
       http.expectOne('/api/v1/flashcards/1').flush({
         success: true,
-        data: { ...card, readings: [{ reading, isPrimary: true, pitchAccents: accents }] },
+        data: {
+          ...card,
+          readings: [
+            { readingId: 311, displayOrder: 17, reading, isPrimary: true, pitchAccents: accents },
+          ],
+        },
         meta,
       });
       fixture.detectChanges();

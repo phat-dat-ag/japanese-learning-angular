@@ -39,7 +39,10 @@ export class VocabularyReadings {
   private readonly destroyRef = inject(DestroyRef);
   private readonly injector = inject(Injector);
   private readonly addButton = viewChild<ElementRef<HTMLButtonElement>>('addButton');
-  readonly adding = signal(false);
+  readonly formOpen = signal(false);
+  readonly selected = signal<VocabularyReading | null>(null);
+  readonly operation = signal<'add' | 'edit'>('add');
+  private returnFocus: HTMLButtonElement | null = null;
   readonly state = signal<AdditionState>({ status: 'idle' });
   readonly locked = computed(() =>
     ['saving', 'refreshing', 'refresh-error'].includes(this.state().status),
@@ -49,23 +52,41 @@ export class VocabularyReadings {
     const state = this.state();
     return state.status === 'error' ? state.fields : {};
   });
-  readonly hasPrimary = computed(() => this.items().some((item) => item.isPrimary));
+  readonly hasPrimary = computed(() =>
+    this.items().some((item) => item.isPrimary && item.readingId !== this.selected()?.readingId),
+  );
 
   open(): void {
     if (this.locked()) return;
+    this.selected.set(null);
+    this.operation.set('add');
+    this.returnFocus = null;
     this.state.set({ status: 'idle' });
-    this.adding.set(true);
+    this.formOpen.set(true);
   }
+  edit(item: VocabularyReading, button: HTMLButtonElement): void {
+    if (this.formOpen() || this.locked()) return;
+    this.selected.set(item);
+    this.operation.set('edit');
+    this.returnFocus = button;
+    this.state.set({ status: 'idle' });
+    this.formOpen.set(true);
+  }
+
   cancel(): void {
     if (this.locked()) return;
     this.state.set({ status: 'idle' });
     this.finish();
   }
   save(request: VocabularyReadingUpdateRequest): void {
-    if (!this.adding() || this.locked()) return;
+    if (!this.formOpen() || this.locked()) return;
+    const selected = this.selected();
+    const mutation: Observable<unknown> = selected
+      ? this.service.updateReading(this.vocabularyId(), selected.readingId, request)
+      : this.service.addReadings(this.vocabularyId(), [request]);
     this.state.set({ status: 'saving' });
     this.observe(
-      this.service.addReadings(this.vocabularyId(), [request]).pipe(
+      mutation.pipe(
         switchMap(() => {
           this.state.set({ status: 'refreshing' });
           return this.service.getVocabularyDetail(this.vocabularyId());
@@ -91,12 +112,19 @@ export class VocabularyReadings {
           this.state.set(
             this.state().status === 'refreshing'
               ? { status: 'refresh-error' }
-              : additionError(error, 'reading'),
+              : additionError(error, 'reading', this.operation()),
           ),
       });
   }
   private finish(): void {
-    this.adding.set(false);
-    afterNextRender(() => this.addButton()?.nativeElement.focus(), { injector: this.injector });
+    this.formOpen.set(false);
+    afterNextRender(
+      () =>
+        (this.returnFocus?.isConnected
+          ? this.returnFocus
+          : this.addButton()?.nativeElement
+        )?.focus(),
+      { injector: this.injector },
+    );
   }
 }
