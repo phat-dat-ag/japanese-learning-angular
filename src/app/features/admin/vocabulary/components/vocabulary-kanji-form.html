@@ -1,0 +1,109 @@
+<form #form="ngForm" (ngSubmit)="submit()" novalidate>
+  <fieldset [disabled]="locked()" class="space-y-5">
+    <legend class="mb-4 text-lg font-semibold text-gray-900">
+      {{ initial() ? 'Editing Kanji' : 'Adding Kanji' }}
+    </legend>
+    <p class="text-sm text-gray-600">
+      Adding an existing character attaches it only when its metadata matches. Blank stroke count
+      and &quot;Not specified&quot; meanings clear those values. Assignment order belongs to this
+      vocabulary.
+    </p>
+    <div>
+      <label [for]="idPrefix() + '-character'" class="text-sm font-medium text-gray-700">Kanji character</label>
+      <input type="text" #first lang="ja" [id]="idPrefix() + '-character'" name="character" [(ngModel)]="character"
+        #characterControl="ngModel" required maxlength="10" [attr.aria-describedby]="idPrefix() + '-character-error'"
+        class="mt-2 block min-h-11 w-full rounded-xl border border-gray-300 bg-white px-3 py-2 text-gray-900 focus-visible:outline-2 focus-visible:outline-indigo-600 disabled:bg-gray-100" />
+      <p [id]="idPrefix() + '-character-error'" class="mt-2 text-sm text-red-700">
+        {{
+        fieldErrors().character ||
+        ((characterControl.touched || form.submitted) && !validText(character, 10)
+        ? 'Enter nonblank text, up to 10 characters.'
+        : '')
+        }}
+      </p>
+    </div>
+    <div>
+      <label [for]="idPrefix() + '-strokeCount'" class="text-sm font-medium text-gray-700">Stroke count
+        (optional)</label>
+      <input [id]="idPrefix() + '-strokeCount'" name="strokeCount" type="number" [(ngModel)]="strokeCount"
+        #strokes="ngModel" min="0" max="65535" step="1" [attr.aria-describedby]="idPrefix() + '-strokeCount-error'"
+        class="mt-2 block min-h-11 w-full rounded-xl border border-gray-300 bg-white px-3 py-2 text-gray-900 focus-visible:outline-2 focus-visible:outline-indigo-600 disabled:bg-gray-100" />
+      <p [id]="idPrefix() + '-strokeCount-error'" class="mt-2 text-sm text-red-700">
+        {{
+        fieldErrors().strokeCount ||
+        ((strokes.touched || form.submitted) && !validStrokes
+        ? 'Leave blank or enter a whole number from 0 to 65535.'
+        : '')
+        }}
+      </p>
+    </div>
+    <div>
+      <label [for]="idPrefix() + '-meaningVi'" class="text-sm font-medium text-gray-700">Vietnamese meaning
+        (optional)</label>
+      <label class="mt-2 flex min-h-11 items-center gap-2 text-sm text-gray-700"><input type="checkbox"
+          name="meaningViUnset" [(ngModel)]="meaningViUnset"
+          class="size-4 accent-indigo-600 focus-visible:outline-2 focus-visible:outline-indigo-600" />Not
+        specified</label>
+      <textarea rows="2" lang="vi" [id]="idPrefix() + '-meaningVi'" name="meaningVi" [(ngModel)]="meaningVi"
+        [disabled]="meaningViUnset" #meaningViControl="ngModel" maxlength="500"
+        [attr.aria-describedby]="idPrefix() + '-meaningVi-error'"
+        class="mt-2 block min-h-11 w-full rounded-xl border border-gray-300 bg-white px-3 py-2 text-gray-900 focus-visible:outline-2 focus-visible:outline-indigo-600 disabled:bg-gray-100"></textarea>
+      <p [id]="idPrefix() + '-meaningVi-error'" class="mt-2 text-sm text-red-700">
+        {{
+        fieldErrors().meaningVi ||
+        ((meaningViControl.touched || form.submitted) &&
+        !meaningViUnset &&
+        meaningVi.length > 500
+        ? 'Use at most 500 characters.'
+        : '')
+        }}
+      </p>
+    </div>
+    <div>
+      <label [for]="idPrefix() + '-meaningEn'" class="text-sm font-medium text-gray-700">English meaning
+        (optional)</label>
+      <label class="mt-2 flex min-h-11 items-center gap-2 text-sm text-gray-700"><input type="checkbox"
+          name="meaningEnUnset" [(ngModel)]="meaningEnUnset"
+          class="size-4 accent-indigo-600 focus-visible:outline-2 focus-visible:outline-indigo-600" />Not
+        specified</label>
+      <textarea rows="2" lang="en" [id]="idPrefix() + '-meaningEn'" name="meaningEn" [(ngModel)]="meaningEn"
+        [disabled]="meaningEnUnset" #meaningEnControl="ngModel" maxlength="500"
+        [attr.aria-describedby]="idPrefix() + '-meaningEn-error'"
+        class="mt-2 block min-h-11 w-full rounded-xl border border-gray-300 bg-white px-3 py-2 text-gray-900 focus-visible:outline-2 focus-visible:outline-indigo-600 disabled:bg-gray-100"></textarea>
+      <p [id]="idPrefix() + '-meaningEn-error'" class="mt-2 text-sm text-red-700">
+        {{
+        fieldErrors().meaningEn ||
+        ((meaningEnControl.touched || form.submitted) &&
+        !meaningEnUnset &&
+        meaningEn.length > 500
+        ? 'Use at most 500 characters.'
+        : '')
+        }}
+      </p>
+    </div>
+    <div>
+      <label [for]="idPrefix() + '-order'" class="text-sm font-medium text-gray-700">Assignment display order</label>
+      <input [id]="idPrefix() + '-order'" name="displayOrder" type="number" [(ngModel)]="displayOrder" #order="ngModel"
+        required min="0" max="2147483647" step="1" [attr.aria-describedby]="idPrefix() + '-order-error'"
+        class="mt-2 block min-h-11 w-full rounded-xl border border-gray-300 bg-white px-3 py-2 text-gray-900 focus-visible:outline-2 focus-visible:outline-indigo-600 disabled:bg-gray-100" />
+      <p [id]="idPrefix() + '-order-error'" class="mt-2 text-sm text-red-700">
+        {{
+        fieldErrors().displayOrder ||
+        ((order.touched || form.submitted) && !validOrder(displayOrder)
+        ? 'Enter a whole number from 0 to 2147483647.'
+        : '')
+        }}
+      </p>
+    </div>
+    <div class="flex flex-wrap gap-3">
+      <button type="submit" [disabled]="locked() || !valid"
+        class="min-h-11 rounded-xl border border-gray-300 px-4 py-2 text-sm font-semibold focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-indigo-600 disabled:opacity-50 bg-indigo-600 text-white">
+        Save kanji
+      </button>
+      <button type="button" (click)="cancelled.emit()"
+        class="min-h-11 rounded-xl border border-gray-300 px-4 py-2 text-sm font-semibold focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-indigo-600 disabled:opacity-50 bg-white text-gray-700">
+        Cancel
+      </button>
+    </div>
+  </fieldset>
+</form>

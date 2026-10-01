@@ -76,6 +76,8 @@ describe('VocabularyService read adapter', () => {
         levels: [],
         lessons: [],
         partsOfSpeech: [],
+        examples: [],
+        kanji: [],
       },
       meta,
     });
@@ -150,6 +152,8 @@ describe('VocabularyService read adapter', () => {
         levels: [],
         lessons: [],
         partsOfSpeech: [],
+        examples: [],
+        kanji: [],
       },
       meta,
     });

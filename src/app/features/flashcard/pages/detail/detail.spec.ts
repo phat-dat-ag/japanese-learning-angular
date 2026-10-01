@@ -39,18 +39,22 @@ const card: Flashcard = {
   ],
   kanji: [
     {
+      kanjiId: 781,
+      displayOrder: 45,
       character: '会',
       strokeCount: 6,
       meaningVi: 'hội, gặp',
       meaningEn: 'meeting',
       readings: [
-        { reading: 'カイ', readingType: 'ON' },
-        { reading: 'あ', readingType: 'KUN' },
+        { kanjiReadingId: 812, displayOrder: 29, reading: 'カイ', readingType: 'ON' },
+        { kanjiReadingId: 925, displayOrder: 63, reading: 'あ', readingType: 'KUN' },
       ],
     },
   ],
   examples: [
     {
+      exampleId: 691,
+      displayOrder: 37,
       japaneseText: '会社へ行きます。',
       japaneseReading: 'かいしゃへいきます。',
       meaningVi: 'Tôi đi đến công ty.',
@@ -256,8 +260,8 @@ describe('Flashcard detail', () => {
         ...card,
         examples: [
           { ...example, japaneseText: '会社と会社', targetText: '会社' },
-          { ...example, japaneseText: 'a+b と a+b', targetText: 'a+b' },
-          { ...example, japaneseText: 'Third example' },
+          { ...example, exampleId: 692, japaneseText: 'a+b と a+b', targetText: 'a+b' },
+          { ...example, exampleId: 693, japaneseText: 'Third example' },
         ],
       },
       meta,

@@ -1,0 +1,107 @@
+<form #form="ngForm" (ngSubmit)="submit()" novalidate>
+  <fieldset [disabled]="locked()" class="space-y-5">
+    <legend class="mb-4 text-lg font-semibold text-gray-900">
+      {{ initial() ? 'Editing Example' : 'Adding Example' }}
+    </legend>
+    <p class="text-sm text-gray-600">
+      Shared sentence content may be protected. Target text and display order belong to this
+      vocabulary.
+    </p>
+    <div>
+      <label [for]="idPrefix() + '-japaneseText'" class="text-sm font-medium text-gray-700">Japanese sentence</label>
+      <textarea rows="3" #first lang="ja" [id]="idPrefix() + '-japaneseText'" name="japaneseText"
+        [(ngModel)]="japaneseText" #japaneseTextControl="ngModel" required maxlength="1000"
+        [attr.aria-describedby]="idPrefix() + '-japaneseText-error'"
+        class="mt-2 block min-h-11 w-full rounded-xl border border-gray-300 bg-white px-3 py-2 text-gray-900 focus-visible:outline-2 focus-visible:outline-indigo-600 disabled:bg-gray-100"></textarea>
+      <p [id]="idPrefix() + '-japaneseText-error'" class="mt-2 text-sm text-red-700">
+        {{
+        fieldErrors().japaneseText ||
+        ((japaneseTextControl.touched || form.submitted) && !validText(japaneseText, 1000)
+        ? 'Enter nonblank text, up to 1000 characters.'
+        : '')
+        }}
+      </p>
+    </div>
+    <div>
+      <label [for]="idPrefix() + '-japaneseReading'" class="text-sm font-medium text-gray-700">Japanese reading</label>
+      <textarea rows="3" lang="ja" [id]="idPrefix() + '-japaneseReading'" name="japaneseReading"
+        [(ngModel)]="japaneseReading" #japaneseReadingControl="ngModel" required maxlength="1000"
+        [attr.aria-describedby]="idPrefix() + '-japaneseReading-error'"
+        class="mt-2 block min-h-11 w-full rounded-xl border border-gray-300 bg-white px-3 py-2 text-gray-900 focus-visible:outline-2 focus-visible:outline-indigo-600 disabled:bg-gray-100"></textarea>
+      <p [id]="idPrefix() + '-japaneseReading-error'" class="mt-2 text-sm text-red-700">
+        {{
+        fieldErrors().japaneseReading ||
+        ((japaneseReadingControl.touched || form.submitted) && !validText(japaneseReading, 1000)
+        ? 'Enter nonblank text, up to 1000 characters.'
+        : '')
+        }}
+      </p>
+    </div>
+    <div>
+      <label [for]="idPrefix() + '-meaningVi'" class="text-sm font-medium text-gray-700">Vietnamese meaning</label>
+      <textarea rows="3" lang="vi" [id]="idPrefix() + '-meaningVi'" name="meaningVi" [(ngModel)]="meaningVi"
+        #meaningViControl="ngModel" required maxlength="1000" [attr.aria-describedby]="idPrefix() + '-meaningVi-error'"
+        class="mt-2 block min-h-11 w-full rounded-xl border border-gray-300 bg-white px-3 py-2 text-gray-900 focus-visible:outline-2 focus-visible:outline-indigo-600 disabled:bg-gray-100"></textarea>
+      <p [id]="idPrefix() + '-meaningVi-error'" class="mt-2 text-sm text-red-700">
+        {{
+        fieldErrors().meaningVi ||
+        ((meaningViControl.touched || form.submitted) && !validText(meaningVi, 1000)
+        ? 'Enter nonblank text, up to 1000 characters.'
+        : '')
+        }}
+      </p>
+    </div>
+    <div>
+      <label [for]="idPrefix() + '-meaningEn'" class="text-sm font-medium text-gray-700">English meaning</label>
+      <textarea rows="3" lang="en" [id]="idPrefix() + '-meaningEn'" name="meaningEn" [(ngModel)]="meaningEn"
+        #meaningEnControl="ngModel" required maxlength="1000" [attr.aria-describedby]="idPrefix() + '-meaningEn-error'"
+        class="mt-2 block min-h-11 w-full rounded-xl border border-gray-300 bg-white px-3 py-2 text-gray-900 focus-visible:outline-2 focus-visible:outline-indigo-600 disabled:bg-gray-100"></textarea>
+      <p [id]="idPrefix() + '-meaningEn-error'" class="mt-2 text-sm text-red-700">
+        {{
+        fieldErrors().meaningEn ||
+        ((meaningEnControl.touched || form.submitted) && !validText(meaningEn, 1000)
+        ? 'Enter nonblank text, up to 1000 characters.'
+        : '')
+        }}
+      </p>
+    </div>
+    <div>
+      <label [for]="idPrefix() + '-targetText'" class="text-sm font-medium text-gray-700">Vocabulary target text</label>
+      <input type="text" lang="ja" [id]="idPrefix() + '-targetText'" name="targetText" [(ngModel)]="targetText"
+        #targetTextControl="ngModel" required maxlength="200" [attr.aria-describedby]="idPrefix() + '-targetText-error'"
+        class="mt-2 block min-h-11 w-full rounded-xl border border-gray-300 bg-white px-3 py-2 text-gray-900 focus-visible:outline-2 focus-visible:outline-indigo-600 disabled:bg-gray-100" />
+      <p [id]="idPrefix() + '-targetText-error'" class="mt-2 text-sm text-red-700">
+        {{
+        fieldErrors().targetText ||
+        ((targetTextControl.touched || form.submitted) && !validText(targetText, 200)
+        ? 'Enter nonblank text, up to 200 characters.'
+        : '')
+        }}
+      </p>
+    </div>
+    <div>
+      <label [for]="idPrefix() + '-order'" class="text-sm font-medium text-gray-700">Assignment display order</label>
+      <input [id]="idPrefix() + '-order'" name="displayOrder" type="number" [(ngModel)]="displayOrder" #order="ngModel"
+        required min="0" max="2147483647" step="1" [attr.aria-describedby]="idPrefix() + '-order-error'"
+        class="mt-2 block min-h-11 w-full rounded-xl border border-gray-300 bg-white px-3 py-2 text-gray-900 focus-visible:outline-2 focus-visible:outline-indigo-600 disabled:bg-gray-100" />
+      <p [id]="idPrefix() + '-order-error'" class="mt-2 text-sm text-red-700">
+        {{
+        fieldErrors().displayOrder ||
+        ((order.touched || form.submitted) && !validOrder(displayOrder)
+        ? 'Enter a whole number from 0 to 2147483647.'
+        : '')
+        }}
+      </p>
+    </div>
+    <div class="flex flex-wrap gap-3">
+      <button type="submit" [disabled]="locked() || !valid"
+        class="min-h-11 rounded-xl border border-gray-300 px-4 py-2 text-sm font-semibold focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-indigo-600 disabled:opacity-50 bg-indigo-600 text-white">
+        Save example
+      </button>
+      <button type="button" (click)="cancelled.emit()"
+        class="min-h-11 rounded-xl border border-gray-300 px-4 py-2 text-sm font-semibold focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-indigo-600 disabled:opacity-50 bg-white text-gray-700">
+        Cancel
+      </button>
+    </div>
+  </fieldset>
+</form>

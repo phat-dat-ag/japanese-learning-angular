@@ -1,4 +1,9 @@
 import {
+  VocabularyExampleUpdateRequest,
+  KanjiUpdateRequest,
+  KanjiReadingUpdateRequest,
+} from '../models/vocabulary-content.model';
+import {
   identityResult,
   VocabularyPitchAccentUpdateRequest,
   AssignmentOrderUpdateRequest,
@@ -63,6 +68,8 @@ export class VocabularyService {
             levels: response.data.levels,
             lessons: response.data.lessons,
             partsOfSpeech: response.data.partsOfSpeech,
+            examples: response.data.examples,
+            kanji: response.data.kanji,
           },
         };
       }),
@@ -256,6 +263,105 @@ export class VocabularyService {
       'parts-of-speech',
       requests.map(({ code }) => ({ code })),
       'partOfSpeechId',
+    );
+  }
+
+  addExamples(vocabularyId: number, requests: readonly VocabularyExampleUpdateRequest[]) {
+    return this.addMetadata(
+      vocabularyId,
+      'examples',
+      requests.map(
+        ({ japaneseText, japaneseReading, meaningVi, meaningEn, targetText, displayOrder }) => ({
+          japaneseText,
+          japaneseReading,
+          meaningVi,
+          meaningEn,
+          targetText,
+          displayOrder,
+        }),
+      ),
+      'exampleId',
+    );
+  }
+  updateExample(vocabularyId: number, exampleId: number, request: VocabularyExampleUpdateRequest) {
+    return this.updateMetadata(
+      vocabularyId,
+      'examples',
+      exampleId,
+      {
+        japaneseText: request.japaneseText,
+        japaneseReading: request.japaneseReading,
+        meaningVi: request.meaningVi,
+        meaningEn: request.meaningEn,
+        targetText: request.targetText,
+        displayOrder: request.displayOrder,
+      },
+      'exampleId',
+    );
+  }
+
+  addKanji(vocabularyId: number, requests: readonly KanjiUpdateRequest[]) {
+    return this.addMetadata(
+      vocabularyId,
+      'kanji',
+      requests.map(({ character, strokeCount, meaningVi, meaningEn, displayOrder }) => ({
+        character,
+        strokeCount,
+        meaningVi,
+        meaningEn,
+        displayOrder,
+      })),
+      'kanjiId',
+    );
+  }
+  updateKanji(vocabularyId: number, kanjiId: number, request: KanjiUpdateRequest) {
+    return this.updateMetadata(
+      vocabularyId,
+      'kanji',
+      kanjiId,
+      {
+        character: request.character,
+        strokeCount: request.strokeCount,
+        meaningVi: request.meaningVi,
+        meaningEn: request.meaningEn,
+        displayOrder: request.displayOrder,
+      },
+      'kanjiId',
+    );
+  }
+
+  addKanjiReadings(
+    vocabularyId: number,
+    kanjiId: number,
+    requests: readonly KanjiReadingUpdateRequest[],
+  ) {
+    return this.addMetadata(
+      vocabularyId,
+      'kanji/' + kanjiId + '/readings',
+      requests.map(({ reading, readingType, displayOrder }) => ({
+        reading,
+        readingType,
+        displayOrder,
+      })),
+      'kanjiReadingId',
+    );
+  }
+  updateKanjiReading(
+    vocabularyId: number,
+    kanjiId: number,
+    kanjiReadingId: number,
+    request: KanjiReadingUpdateRequest,
+  ) {
+    return this.updateMetadata(
+      vocabularyId,
+      'kanji/' + kanjiId + '/readings',
+      kanjiReadingId,
+      {
+        reading: request.reading,
+        readingType: request.readingType,
+        displayOrder: request.displayOrder,
+      },
+      'kanjiReadingId',
     );
   }
 

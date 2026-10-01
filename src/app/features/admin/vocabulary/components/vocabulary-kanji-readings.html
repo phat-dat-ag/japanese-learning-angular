@@ -1,0 +1,41 @@
+<section [attr.aria-labelledby]="'kanji-readings-heading-' + kanjiId()">
+  <div class="flex flex-wrap items-center justify-between gap-3">
+    <h4 [id]="'kanji-readings-heading-' + kanjiId()" class="font-semibold text-gray-900">
+      Kanji Readings
+    </h4>
+    <button #addButton type="button" [hidden]="formOpen()" (click)="open()"
+      class="min-h-11 rounded-xl border border-indigo-200 bg-indigo-50 px-4 py-2 text-sm font-semibold text-indigo-700 hover:bg-indigo-100 focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-indigo-600 disabled:opacity-50">
+      Add kanji reading
+    </button>
+  </div>
+  <div [attr.aria-busy]="busy()">
+    <ul class="divide-y divide-gray-100">
+      @for (item of items(); track item.kanjiReadingId) {
+      <li class="flex flex-wrap items-center justify-between gap-3 py-3">
+        <div>
+          <p lang="ja" class="break-words font-medium text-gray-900">{{ item.reading }}</p>
+          <p class="mt-1 text-sm text-gray-600">
+            {{ item.readingType }} / Order {{ item.displayOrder }}
+          </p>
+        </div>
+        <button #editButton type="button" [attr.data-edit-id]="item.kanjiReadingId" [attr.aria-label]="
+              'Edit kanji reading ' + item.reading + ' (ID ' + item.kanjiReadingId + ')'
+            " [disabled]="formOpen() || locked()" (click)="edit(item, editButton)"
+          class="min-h-11 rounded-xl border border-indigo-200 bg-indigo-50 px-4 py-2 text-sm font-semibold text-indigo-700 hover:bg-indigo-100 focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-indigo-600 disabled:opacity-50">
+          Edit
+        </button>
+      </li>
+      } @empty {
+      <li class="py-4 text-sm text-gray-600">No readings for this kanji.</li>
+      }
+    </ul>
+    @if (formOpen()) {
+    <div class="mt-5 border-t border-gray-100 pt-5">
+      <app-vocabulary-kanji-reading-form [initial]="selected()" [locked]="locked()" [fieldErrors]="fields()"
+        [idPrefix]="'kanji-reading-' + kanjiId()" (submitted)="save($event)" (cancelled)="cancel()" />
+    </div>
+    }
+  </div>
+  <app-vocabulary-add-feedback [state]="state()" kind="kanji reading" [operation]="operation()"
+    (retried)="retryRefresh()" />
+</section>

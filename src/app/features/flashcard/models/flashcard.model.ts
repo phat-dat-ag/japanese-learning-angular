@@ -46,13 +46,22 @@ export interface Flashcard {
     readonly displayOrder: number;
   }[];
   readonly kanji: readonly {
+    readonly kanjiId: number;
+    readonly displayOrder: number;
     readonly character: string;
-    readonly strokeCount: number;
-    readonly meaningVi: string;
-    readonly meaningEn: string;
-    readonly readings: readonly { readonly reading: string; readonly readingType: string }[];
+    readonly strokeCount: number | null;
+    readonly meaningVi: string | null;
+    readonly meaningEn: string | null;
+    readonly readings: readonly {
+      readonly kanjiReadingId: number;
+      readonly reading: string;
+      readonly readingType: string;
+      readonly displayOrder: number;
+    }[];
   }[];
   readonly examples: readonly {
+    readonly exampleId: number;
+    readonly displayOrder: number;
     readonly japaneseText: string;
     readonly japaneseReading: string;
     readonly meaningVi: string;
@@ -83,6 +92,9 @@ export function isFlashcard(value: unknown): value is Flashcard {
   const levelIds = new Set<number>();
   const lessonIds = new Set<number>();
   const accentIds = new Set<number>();
+  const kanjiIds = new Set<number>();
+  const kanjiReadingIds = new Set<number>();
+  const exampleIds = new Set<number>();
   const validChild = (item: Record<string, unknown>, key: string, ids: Set<number>): boolean => {
     const id = item[key];
     const order = item['displayOrder'];
@@ -153,12 +165,29 @@ export function isFlashcard(value: unknown): value is Flashcard {
     isArrayOf(
       value['kanji'],
       (item) =>
-        hasStrings(item, ['character', 'meaningVi', 'meaningEn']) &&
-        isNonNegativeInteger(item['strokeCount']) &&
-        isArrayOf(item['readings'], (reading) => hasStrings(reading, ['reading', 'readingType'])),
+        hasStrings(item, ['character']) &&
+        validChild(item, 'kanjiId', kanjiIds) &&
+        (item['meaningVi'] === null || typeof item['meaningVi'] === 'string') &&
+        (item['meaningEn'] === null || typeof item['meaningEn'] === 'string') &&
+        (item['strokeCount'] === null ||
+          (isNonNegativeInteger(item['strokeCount']) && item['strokeCount'] <= 65535)) &&
+        isArrayOf(
+          item['readings'],
+          (reading) =>
+            hasStrings(reading, ['reading', 'readingType']) &&
+            validChild(reading, 'kanjiReadingId', kanjiReadingIds),
+        ),
     ) &&
-    isArrayOf(value['examples'], (item) =>
-      hasStrings(item, ['japaneseText', 'japaneseReading', 'meaningVi', 'meaningEn', 'targetText']),
+    isArrayOf(
+      value['examples'],
+      (item) =>
+        hasStrings(item, [
+          'japaneseText',
+          'japaneseReading',
+          'meaningVi',
+          'meaningEn',
+          'targetText',
+        ]) && validChild(item, 'exampleId', exampleIds),
     )
   );
 }

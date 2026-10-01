@@ -10,7 +10,15 @@ export type AdditionField =
   | 'accentPattern'
   | 'level'
   | 'lessonId'
-  | 'code';
+  | 'code'
+  | 'japaneseText'
+  | 'japaneseReading'
+  | 'meaningVi'
+  | 'meaningEn'
+  | 'targetText'
+  | 'character'
+  | 'strokeCount'
+  | 'readingType';
 export type AdditionErrors = Readonly<Partial<Record<AdditionField, string>>>;
 export type AdditionState =
   | { readonly status: 'idle' | 'saving' | 'refreshing' | 'saved' | 'refresh-error' }
@@ -24,7 +32,10 @@ export function additionError(
     | 'pitch accent'
     | 'level assignment'
     | 'lesson assignment'
-    | 'part of speech',
+    | 'part of speech'
+    | 'example'
+    | 'kanji'
+    | 'kanji reading',
   operation: 'add' | 'edit' = 'add',
 ): AdditionState {
   const fields: Partial<Record<AdditionField, string>> = {};
@@ -45,8 +56,16 @@ export function additionError(
               : 'Check the ' + kind + ' fields and try again.';
         for (const detail of error.details) {
           if (
-            (detail.field === 'reading' && kind === 'reading') ||
+            (detail.field === 'reading' && (kind === 'reading' || kind === 'kanji reading')) ||
             (detail.field === 'meaning' && kind === 'meaning') ||
+            detail.field === 'japaneseText' ||
+            detail.field === 'japaneseReading' ||
+            detail.field === 'meaningVi' ||
+            detail.field === 'meaningEn' ||
+            detail.field === 'targetText' ||
+            detail.field === 'character' ||
+            detail.field === 'strokeCount' ||
+            detail.field === 'readingType' ||
             detail.field === 'readingId' ||
             detail.field === 'accentPattern' ||
             detail.field === 'level' ||
@@ -70,13 +89,22 @@ export function additionError(
         message =
           operation === 'edit'
             ? 'This ' +
-              kind +
-              ' or its vocabulary is no longer available. Return to Vocabulary Management.'
+            kind +
+            ' or its vocabulary is no longer available. Return to Vocabulary Management.'
             : kind === 'reading' || kind === 'meaning'
               ? 'This vocabulary no longer exists. Return to Vocabulary Management.'
               : 'The vocabulary or selected master-data entry is no longer available. Check the selection and try again.';
         break;
       case 409:
+        if (kind === 'example' || kind === 'kanji' || kind === 'kanji reading') {
+          message =
+            kind === 'example'
+              ? 'This example conflicts with an existing example or shared sentence content. Shared sentence content cannot be changed here; its vocabulary target and order can still be edited. Your draft has been kept.'
+              : kind === 'kanji'
+                ? 'This kanji conflicts with an existing assignment or shared metadata. Attaching existing kanji requires matching metadata; shared metadata cannot be changed here, but assignment order can. Your draft has been kept.'
+                : 'This reading conflicts with an existing reading or belongs to shared kanji. Readings of shared kanji cannot be added or edited here. Your draft has been kept.';
+          break;
+        }
         message =
           kind === 'reading'
             ? 'This reading already exists for the vocabulary.'

@@ -1,3 +1,6 @@
+import { VocabularyExamples } from '../components/vocabulary-examples';
+import { VocabularyKanjiSection } from '../components/vocabulary-kanji';
+import { VocabularyExample, VocabularyKanji } from '../models/vocabulary-detail.model';
 import { VocabularyMetadataSection } from '../components/vocabulary-metadata-section';
 import { MetadataKind, MetadataUpdate } from '../models/vocabulary-metadata.model';
 import {
@@ -64,6 +67,8 @@ type SaveState =
     VocabularyReadings,
     VocabularyMeanings,
     VocabularyMetadataSection,
+    VocabularyExamples,
+    VocabularyKanjiSection,
   ],
   templateUrl: './vocabulary-detail.html',
   changeDetection: ChangeDetectionStrategy.OnPush,
@@ -173,6 +178,35 @@ export class VocabularyDetail {
           readings.find((reading) => reading.readingId === accent.readingId)?.reading ??
           accent.reading,
       })),
+    }));
+  }
+
+  updateExamples(examples: readonly VocabularyExample[]): void {
+    this.updated.next((detail) => ({ ...detail, examples }));
+  }
+
+  updateKanji(kanji: readonly VocabularyKanji[]): void {
+    this.updated.next((detail) => ({
+      ...detail,
+      // A metadata refresh must not replace a newer nested-reading refresh.
+      kanji: kanji.map((item) => ({
+        ...item,
+        readings:
+          detail.kanji.find((current) => current.kanjiId === item.kanjiId)?.readings ??
+          item.readings,
+      })),
+    }));
+  }
+
+  updateKanjiReadings(update: {
+    readonly kanjiId: number;
+    readonly readings: VocabularyKanji['readings'];
+  }): void {
+    this.updated.next((detail) => ({
+      ...detail,
+      kanji: detail.kanji.map((item) =>
+        item.kanjiId === update.kanjiId ? { ...item, readings: update.readings } : item,
+      ),
     }));
   }
 
