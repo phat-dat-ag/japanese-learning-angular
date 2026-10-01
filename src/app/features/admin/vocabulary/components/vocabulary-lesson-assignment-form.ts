@@ -1,3 +1,4 @@
+import { VocabularyFormActions } from './vocabulary-form-actions';
 import {
   afterNextRender,
   ChangeDetectionStrategy,
@@ -17,7 +18,7 @@ import { FlashcardLesson } from '../../../flashcard/models/flashcard-lesson.mode
 
 @Component({
   selector: 'app-vocabulary-lesson-assignment-form',
-  imports: [FormsModule],
+  imports: [FormsModule, VocabularyFormActions],
   templateUrl: './vocabulary-lesson-assignment-form.html',
   changeDetection: ChangeDetectionStrategy.OnPush,
 })
@@ -35,6 +36,8 @@ export class VocabularyLessonAssignmentForm implements OnInit {
 
   readonly initial = input<VocabularyDetailData['lessons'][number] | null>(null);
   readonly levels = input.required<VocabularyDetailData['levels']>();
+  readonly loading = input(false);
+  readonly choicesLoaded = input(false);
   readonly options = input<readonly FlashcardLesson[]>([]);
   readonly levelChanged = output<string>();
   readonly submitted = output<LessonAssignmentAddRequest>();
@@ -56,13 +59,17 @@ export class VocabularyLessonAssignmentForm implements OnInit {
     this.lessonId = null;
     this.levelChanged.emit(value);
   }
-  get valid(): boolean {
+  get validLevel(): boolean {
+    return this.levels().some((item) => item.code === this.level);
+  }
+  get validLesson(): boolean {
     return (
-      this.validOrder(this.displayOrder) &&
-      (this.initial() !== null ||
-        (this.levels().some((item) => item.code === this.level) &&
-          this.options().some((item) => item.id === this.lessonId)))
+      this.initial() !== null ||
+      (this.validLevel && this.options().some((item) => item.id === this.lessonId))
     );
+  }
+  get valid(): boolean {
+    return this.validOrder(this.displayOrder) && this.validLesson;
   }
   submit(): void {
     if (

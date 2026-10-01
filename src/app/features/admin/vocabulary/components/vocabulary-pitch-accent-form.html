@@ -1,18 +1,24 @@
 <form #form="ngForm" (ngSubmit)="submit()" novalidate>
-  <fieldset [disabled]="locked()" class="space-y-5">
+  <fieldset [disabled]="locked()" class="min-w-0 space-y-5">
     <legend class="mb-4 text-lg font-semibold text-gray-900">
       {{ initial() ? 'Editing Pitch Accent' : 'Adding Pitch Accent' }}
     </legend>
 
     <div>
-      <label for="accent-reading" class="text-sm font-medium text-gray-700">Reading</label>
+      <label for="accent-reading" class="text-sm font-medium text-gray-700"
+        >Reading <span class="font-normal text-gray-500">(required)</span></label
+      >
       <select
         #first
         id="accent-reading"
+        #readingControl="ngModel"
+        [attr.aria-invalid]="
+          !!fieldErrors().readingId || ((readingControl.touched || form.submitted) && !validReading)
+        "
         name="readingId"
         [(ngModel)]="readingId"
         required
-        aria-describedby="accent-reading-error"
+        aria-describedby="accent-reading-error accent-reading-help"
         class="mt-2 block min-h-11 w-full rounded-xl border border-gray-300 bg-white px-3 py-2 text-gray-900 focus-visible:outline-2 focus-visible:outline-indigo-600"
       >
         <option [ngValue]="null">Choose a reading</option>
@@ -23,13 +29,30 @@
         }
       </select>
       <p id="accent-reading-error" class="mt-2 text-sm text-red-700">
-        {{ fieldErrors().readingId }}
+        {{
+          fieldErrors().readingId ||
+            ((readingControl.touched || form.submitted) && !validReading
+              ? 'Choose a reading for this pitch accent.'
+              : '')
+        }}
       </p>
     </div>
+    <p id="accent-reading-help" class="text-sm text-gray-600">
+      {{
+        readings().length
+          ? 'Select the reading that owns this pitch accent.'
+          : 'Add a reading in the Readings section before adding a pitch accent.'
+      }}
+    </p>
     <div>
-      <label for="accent-pattern" class="text-sm font-medium text-gray-700">Accent pattern</label>
+      <label for="accent-pattern" class="text-sm font-medium text-gray-700"
+        >Accent pattern <span class="font-normal text-gray-500">(required)</span></label
+      >
       <input
         id="accent-pattern"
+        [attr.aria-invalid]="
+          !!fieldErrors().accentPattern || ((pattern.touched || form.submitted) && !validPattern)
+        "
         name="accentPattern"
         type="number"
         min="0"
@@ -39,7 +62,7 @@
         [(ngModel)]="accentPattern"
         #pattern="ngModel"
         aria-describedby="accent-pattern-error"
-        class="mt-2 block min-h-11 w-full rounded-xl border border-gray-300 bg-white px-3 py-2 text-gray-900 focus-visible:outline-2 focus-visible:outline-indigo-600"
+        class="aria-invalid:border-red-600 mt-2 block min-h-11 w-full rounded-xl border border-gray-300 bg-white px-3 py-2 text-gray-900 focus-visible:outline-2 focus-visible:outline-indigo-600"
       />
       <p id="accent-pattern-error" class="mt-2 text-sm text-red-700">
         {{
@@ -51,21 +74,11 @@
       </p>
     </div>
 
-    <div class="flex flex-wrap gap-3">
-      <button
-        type="submit"
-        [disabled]="locked() || !valid"
-        class="min-h-11 rounded-xl border border-gray-300 px-4 py-2 text-sm font-semibold focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-indigo-600 disabled:opacity-50 bg-indigo-600 text-white"
-      >
-        Save
-      </button>
-      <button
-        type="button"
-        (click)="cancelled.emit()"
-        class="min-h-11 rounded-xl border border-gray-300 px-4 py-2 text-sm font-semibold focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-indigo-600 disabled:opacity-50 bg-white text-gray-700"
-      >
-        Cancel
-      </button>
-    </div>
+    <app-vocabulary-form-actions
+      saveLabel="Save pitch accent"
+      [locked]="locked()"
+      [invalid]="!valid"
+      (cancelled)="cancelled.emit()"
+    />
   </fieldset>
 </form>

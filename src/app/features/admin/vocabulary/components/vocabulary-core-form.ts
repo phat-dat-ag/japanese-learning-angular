@@ -1,3 +1,4 @@
+import { VocabularyFormActions } from './vocabulary-form-actions';
 import {
   afterNextRender,
   ChangeDetectionStrategy,
@@ -18,7 +19,7 @@ import {
 
 @Component({
   selector: 'app-vocabulary-core-form',
-  imports: [FormsModule],
+  imports: [FormsModule, VocabularyFormActions],
   templateUrl: './vocabulary-core-form.html',
   changeDetection: ChangeDetectionStrategy.OnPush,
 })

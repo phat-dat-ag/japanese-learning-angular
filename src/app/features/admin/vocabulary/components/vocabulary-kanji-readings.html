@@ -12,7 +12,7 @@
     <ul class="divide-y divide-gray-100">
       @for (item of items(); track item.kanjiReadingId) {
       <li class="flex flex-wrap items-center justify-between gap-3 py-3">
-        <div>
+        <div class="min-w-0">
           <p lang="ja" class="break-words font-medium text-gray-900">{{ item.reading }}</p>
           <p class="mt-1 text-sm text-gray-600">
             {{ item.readingType }} / Order {{ item.displayOrder }}

@@ -1,5 +1,5 @@
 <form #form="ngForm" (ngSubmit)="submit()" novalidate>
-  <fieldset [disabled]="locked()" class="space-y-5">
+  <fieldset [disabled]="locked()" class="min-w-0 space-y-5">
     <legend class="mb-4 text-lg font-semibold text-gray-900">
       {{ initial() ? 'Editing Kanji' : 'Adding Kanji' }}
     </legend>
@@ -9,10 +9,14 @@
       vocabulary.
     </p>
     <div>
-      <label [for]="idPrefix() + '-character'" class="text-sm font-medium text-gray-700">Kanji character</label>
-      <input type="text" #first lang="ja" [id]="idPrefix() + '-character'" name="character" [(ngModel)]="character"
-        #characterControl="ngModel" required maxlength="10" [attr.aria-describedby]="idPrefix() + '-character-error'"
-        class="mt-2 block min-h-11 w-full rounded-xl border border-gray-300 bg-white px-3 py-2 text-gray-900 focus-visible:outline-2 focus-visible:outline-indigo-600 disabled:bg-gray-100" />
+      <label [for]="idPrefix() + '-character'" class="text-sm font-medium text-gray-700">Kanji character <span
+          class="font-normal text-gray-500">(required)</span></label>
+      <input type="text" #first lang="ja" [id]="idPrefix() + '-character'" [attr.aria-invalid]="
+          !!fieldErrors().character ||
+          ((characterControl.touched || form.submitted) && !validText(character, 10))
+        " name="character" [(ngModel)]="character" #characterControl="ngModel" required maxlength="10"
+        [attr.aria-describedby]="idPrefix() + '-character-error'"
+        class="aria-invalid:border-red-600 mt-2 block min-h-11 w-full rounded-xl border border-gray-300 bg-white px-3 py-2 text-gray-900 focus-visible:outline-2 focus-visible:outline-indigo-600 disabled:bg-gray-100" />
       <p [id]="idPrefix() + '-character-error'" class="mt-2 text-sm text-red-700">
         {{
         fieldErrors().character ||
@@ -25,9 +29,11 @@
     <div>
       <label [for]="idPrefix() + '-strokeCount'" class="text-sm font-medium text-gray-700">Stroke count
         (optional)</label>
-      <input [id]="idPrefix() + '-strokeCount'" name="strokeCount" type="number" [(ngModel)]="strokeCount"
-        #strokes="ngModel" min="0" max="65535" step="1" [attr.aria-describedby]="idPrefix() + '-strokeCount-error'"
-        class="mt-2 block min-h-11 w-full rounded-xl border border-gray-300 bg-white px-3 py-2 text-gray-900 focus-visible:outline-2 focus-visible:outline-indigo-600 disabled:bg-gray-100" />
+      <input [id]="idPrefix() + '-strokeCount'" [attr.aria-invalid]="
+          !!fieldErrors().strokeCount || ((strokes.touched || form.submitted) && !validStrokes)
+        " name="strokeCount" type="number" [(ngModel)]="strokeCount" #strokes="ngModel" min="0" max="65535" step="1"
+        [attr.aria-describedby]="idPrefix() + '-strokeCount-error'"
+        class="aria-invalid:border-red-600 mt-2 block min-h-11 w-full rounded-xl border border-gray-300 bg-white px-3 py-2 text-gray-900 focus-visible:outline-2 focus-visible:outline-indigo-600 disabled:bg-gray-100" />
       <p [id]="idPrefix() + '-strokeCount-error'" class="mt-2 text-sm text-red-700">
         {{
         fieldErrors().strokeCount ||
@@ -41,13 +47,17 @@
       <label [for]="idPrefix() + '-meaningVi'" class="text-sm font-medium text-gray-700">Vietnamese meaning
         (optional)</label>
       <label class="mt-2 flex min-h-11 items-center gap-2 text-sm text-gray-700"><input type="checkbox"
-          name="meaningViUnset" [(ngModel)]="meaningViUnset"
+          aria-label="Vietnamese meaning not specified" name="meaningViUnset" [(ngModel)]="meaningViUnset"
           class="size-4 accent-indigo-600 focus-visible:outline-2 focus-visible:outline-indigo-600" />Not
         specified</label>
-      <textarea rows="2" lang="vi" [id]="idPrefix() + '-meaningVi'" name="meaningVi" [(ngModel)]="meaningVi"
-        [disabled]="meaningViUnset" #meaningViControl="ngModel" maxlength="500"
-        [attr.aria-describedby]="idPrefix() + '-meaningVi-error'"
-        class="mt-2 block min-h-11 w-full rounded-xl border border-gray-300 bg-white px-3 py-2 text-gray-900 focus-visible:outline-2 focus-visible:outline-indigo-600 disabled:bg-gray-100"></textarea>
+      <textarea rows="2" lang="vi" [id]="idPrefix() + '-meaningVi'" [attr.aria-invalid]="
+          !!fieldErrors().meaningVi ||
+          ((meaningViControl.touched || form.submitted) &&
+            !meaningViUnset &&
+            meaningVi.length > 500)
+        " name="meaningVi" [(ngModel)]="meaningVi" [disabled]="meaningViUnset" #meaningViControl="ngModel"
+        maxlength="500" [attr.aria-describedby]="idPrefix() + '-meaningVi-error'"
+        class="aria-invalid:border-red-600 mt-2 block min-h-11 w-full rounded-xl border border-gray-300 bg-white px-3 py-2 text-gray-900 focus-visible:outline-2 focus-visible:outline-indigo-600 disabled:bg-gray-100"></textarea>
       <p [id]="idPrefix() + '-meaningVi-error'" class="mt-2 text-sm text-red-700">
         {{
         fieldErrors().meaningVi ||
@@ -63,13 +73,17 @@
       <label [for]="idPrefix() + '-meaningEn'" class="text-sm font-medium text-gray-700">English meaning
         (optional)</label>
       <label class="mt-2 flex min-h-11 items-center gap-2 text-sm text-gray-700"><input type="checkbox"
-          name="meaningEnUnset" [(ngModel)]="meaningEnUnset"
+          aria-label="English meaning not specified" name="meaningEnUnset" [(ngModel)]="meaningEnUnset"
           class="size-4 accent-indigo-600 focus-visible:outline-2 focus-visible:outline-indigo-600" />Not
         specified</label>
-      <textarea rows="2" lang="en" [id]="idPrefix() + '-meaningEn'" name="meaningEn" [(ngModel)]="meaningEn"
-        [disabled]="meaningEnUnset" #meaningEnControl="ngModel" maxlength="500"
-        [attr.aria-describedby]="idPrefix() + '-meaningEn-error'"
-        class="mt-2 block min-h-11 w-full rounded-xl border border-gray-300 bg-white px-3 py-2 text-gray-900 focus-visible:outline-2 focus-visible:outline-indigo-600 disabled:bg-gray-100"></textarea>
+      <textarea rows="2" lang="en" [id]="idPrefix() + '-meaningEn'" [attr.aria-invalid]="
+          !!fieldErrors().meaningEn ||
+          ((meaningEnControl.touched || form.submitted) &&
+            !meaningEnUnset &&
+            meaningEn.length > 500)
+        " name="meaningEn" [(ngModel)]="meaningEn" [disabled]="meaningEnUnset" #meaningEnControl="ngModel"
+        maxlength="500" [attr.aria-describedby]="idPrefix() + '-meaningEn-error'"
+        class="aria-invalid:border-red-600 mt-2 block min-h-11 w-full rounded-xl border border-gray-300 bg-white px-3 py-2 text-gray-900 focus-visible:outline-2 focus-visible:outline-indigo-600 disabled:bg-gray-100"></textarea>
       <p [id]="idPrefix() + '-meaningEn-error'" class="mt-2 text-sm text-red-700">
         {{
         fieldErrors().meaningEn ||
@@ -82,10 +96,14 @@
       </p>
     </div>
     <div>
-      <label [for]="idPrefix() + '-order'" class="text-sm font-medium text-gray-700">Assignment display order</label>
-      <input [id]="idPrefix() + '-order'" name="displayOrder" type="number" [(ngModel)]="displayOrder" #order="ngModel"
-        required min="0" max="2147483647" step="1" [attr.aria-describedby]="idPrefix() + '-order-error'"
-        class="mt-2 block min-h-11 w-full rounded-xl border border-gray-300 bg-white px-3 py-2 text-gray-900 focus-visible:outline-2 focus-visible:outline-indigo-600 disabled:bg-gray-100" />
+      <label [for]="idPrefix() + '-order'" class="text-sm font-medium text-gray-700">Assignment display order <span
+          class="font-normal text-gray-500">(required)</span></label>
+      <input [id]="idPrefix() + '-order'" [attr.aria-invalid]="
+          !!fieldErrors().displayOrder ||
+          ((order.touched || form.submitted) && !validOrder(displayOrder))
+        " name="displayOrder" type="number" [(ngModel)]="displayOrder" #order="ngModel" required min="0"
+        max="2147483647" step="1" [attr.aria-describedby]="idPrefix() + '-order-error'"
+        class="aria-invalid:border-red-600 mt-2 block min-h-11 w-full rounded-xl border border-gray-300 bg-white px-3 py-2 text-gray-900 focus-visible:outline-2 focus-visible:outline-indigo-600 disabled:bg-gray-100" />
       <p [id]="idPrefix() + '-order-error'" class="mt-2 text-sm text-red-700">
         {{
         fieldErrors().displayOrder ||
@@ -95,15 +113,7 @@
         }}
       </p>
     </div>
-    <div class="flex flex-wrap gap-3">
-      <button type="submit" [disabled]="locked() || !valid"
-        class="min-h-11 rounded-xl border border-gray-300 px-4 py-2 text-sm font-semibold focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-indigo-600 disabled:opacity-50 bg-indigo-600 text-white">
-        Save kanji
-      </button>
-      <button type="button" (click)="cancelled.emit()"
-        class="min-h-11 rounded-xl border border-gray-300 px-4 py-2 text-sm font-semibold focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-indigo-600 disabled:opacity-50 bg-white text-gray-700">
-        Cancel
-      </button>
-    </div>
+    <app-vocabulary-form-actions saveLabel="Save kanji" [locked]="locked()" [invalid]="!valid"
+      (cancelled)="cancelled.emit()" />
   </fieldset>
 </form>

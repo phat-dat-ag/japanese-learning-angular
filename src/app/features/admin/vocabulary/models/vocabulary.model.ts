@@ -13,4 +13,4 @@ export interface VocabularyPage {
 export type LoadState<T> =
   | { readonly status: 'loading' }
   | { readonly status: 'loaded'; readonly data: T }
-  | { readonly status: 'error' };
+  | { readonly status: 'error'; readonly message?: string };

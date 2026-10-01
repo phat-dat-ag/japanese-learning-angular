@@ -148,8 +148,20 @@ describe('Vocabulary learning metadata', () => {
     fixture.detectChanges();
     await fixture.whenStable();
   }
+  function saveLabel(kind: string): string {
+    switch (kind) {
+      case 'pitch-accents':
+        return 'Save pitch accent';
+      case 'levels':
+        return 'Save level assignment';
+      case 'lessons':
+        return 'Save lesson assignment';
+      default:
+        return 'Save part of speech';
+    }
+  }
   function save(kind: string): void {
-    button(kind, 'Save').click();
+    button(kind, saveLabel(kind)).click();
     fixture.detectChanges();
   }
   function fail(request: ReturnType<HttpTestingController['expectOne']>, status = 409): void {
@@ -200,7 +212,7 @@ describe('Vocabulary learning metadata', () => {
         expect(put.request.method).toBe('PUT');
         expect(put.request.body).toEqual(request);
         expect(Array.isArray(put.request.body)).toBe(false);
-        expect(button(kind, 'Save').disabled).toBe(true);
+        expect(button(kind, saveLabel(kind)).disabled).toBe(true);
         put.flush({ success: true, data: result, meta });
         const next = {
           ...detail,
@@ -233,7 +245,7 @@ describe('Vocabulary learning metadata', () => {
         await set(kind, input, value);
         save(kind);
         http.expectNone(url);
-        expect(button(kind, 'Save').disabled).toBe(true);
+        expect(button(kind, saveLabel(kind)).disabled).toBe(true);
       });
     }
     it(kind + ' preserves draft and other sections on mutation failure', async () => {
@@ -249,7 +261,7 @@ describe('Vocabulary learning metadata', () => {
       expect(element.textContent).toContain('first reading');
       expect(element.textContent).toContain('Noun');
       http.expectNone(getUrl);
-      expect(button(kind, 'Save').disabled).toBe(false);
+      expect(button(kind, saveLabel(kind)).disabled).toBe(false);
     });
     it(
       kind + ' distinguishes committed PUT from refresh failure and retries only GET',
@@ -260,7 +272,7 @@ describe('Vocabulary learning metadata', () => {
         fail(http.expectOne(getUrl), 503);
         fixture.detectChanges();
         expect(section(kind).textContent).toContain('update was saved');
-        expect(button(kind, 'Save').disabled).toBe(true);
+        expect(button(kind, saveLabel(kind)).disabled).toBe(true);
         button(kind, 'Refresh saved details').click();
         fixture.detectChanges();
         http.expectNone(url);

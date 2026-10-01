@@ -1,3 +1,4 @@
+import { VocabularyFormActions } from './vocabulary-form-actions';
 import {
   afterNextRender,
   ChangeDetectionStrategy,
@@ -16,7 +17,7 @@ import { VocabularyExample } from '../models/vocabulary-detail.model';
 import { VocabularyExampleUpdateRequest } from '../models/vocabulary-content.model';
 @Component({
   selector: 'app-vocabulary-example-form',
-  imports: [FormsModule],
+  imports: [FormsModule, VocabularyFormActions],
   templateUrl: './vocabulary-example-form.html',
   changeDetection: ChangeDetectionStrategy.OnPush,
 })

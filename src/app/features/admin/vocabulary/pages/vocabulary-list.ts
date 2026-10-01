@@ -1,4 +1,5 @@
-import { ChangeDetectionStrategy, Component, inject } from '@angular/core';
+import { vocabularyLoadError } from '../models/vocabulary-load-error';
+import { ChangeDetectionStrategy, Component, ElementRef, inject, viewChild } from '@angular/core';
 import { toSignal } from '@angular/core/rxjs-interop';
 import { RouterLink } from '@angular/router';
 import {
@@ -34,6 +35,8 @@ export class VocabularyList {
   private readonly reload = new Subject<void>();
   private readonly levelReload = new Subject<void>();
   private readonly lessonReload = new Subject<void>();
+
+  private readonly resultsHeading = viewChild<ElementRef<HTMLHeadingElement>>('resultsHeading');
 
   readonly query = toSignal(this.queryChanges, { requireSync: true });
   readonly pageSizes = [20, 50, 100] as const;
@@ -87,7 +90,15 @@ export class VocabularyList {
                 status: 'loaded',
                 data: response.data,
               })),
-              catchError(() => of<LoadState<VocabularyPage>>({ status: 'error' })),
+              catchError((error: unknown) =>
+                of<LoadState<VocabularyPage>>({
+                  status: 'error',
+                  message: vocabularyLoadError(
+                    error,
+                    'Unable to load vocabulary. Please try again.',
+                  ),
+                }),
+              ),
               startWith<LoadState<VocabularyPage>>({ status: 'loading' }),
             ),
           ),
@@ -133,6 +144,7 @@ export class VocabularyList {
       page === state.data.page
     )
       return;
+    this.resultsHeading()?.nativeElement.focus();
     this.queryChanges.next({ ...this.query(), page });
   }
 
@@ -141,6 +153,7 @@ export class VocabularyList {
   }
 
   retry(): void {
+    this.resultsHeading()?.nativeElement.focus();
     this.reload.next();
   }
 

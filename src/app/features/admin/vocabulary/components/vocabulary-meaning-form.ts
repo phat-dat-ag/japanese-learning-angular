@@ -1,3 +1,4 @@
+import { VocabularyFormActions } from './vocabulary-form-actions';
 import { VocabularyMeaning } from '../models/vocabulary-detail.model';
 import {
   afterNextRender,
@@ -19,7 +20,7 @@ import { validVocabularyText } from '../models/vocabulary-validation';
 
 @Component({
   selector: 'app-vocabulary-meaning-form',
-  imports: [FormsModule],
+  imports: [FormsModule, VocabularyFormActions],
   templateUrl: './vocabulary-meaning-form.html',
   changeDetection: ChangeDetectionStrategy.OnPush,
 })

@@ -2,10 +2,11 @@ import { ChangeDetectionStrategy, Component, input } from '@angular/core';
 
 @Component({
   selector: 'app-vocabulary-section',
+  host: { class: 'block min-w-0 [overflow-wrap:anywhere]' },
   template: `
     <section
       [attr.aria-labelledby]="headingId()"
-      class="rounded-2xl border border-gray-200 bg-white p-5 sm:p-6"
+      class="min-w-0 rounded-2xl border border-gray-200 bg-white p-5 sm:p-6"
     >
       <div class="mb-6 flex flex-wrap items-center justify-between gap-4">
         <div>

@@ -1,3 +1,4 @@
+import { VocabularyFormActions } from './vocabulary-form-actions';
 import {
   afterNextRender,
   ChangeDetectionStrategy,
@@ -15,7 +16,7 @@ import { VocabularyPitchAccentUpdateRequest } from '../models/vocabulary-metadat
 
 @Component({
   selector: 'app-vocabulary-pitch-accent-form',
-  imports: [FormsModule],
+  imports: [FormsModule, VocabularyFormActions],
   templateUrl: './vocabulary-pitch-accent-form.html',
   changeDetection: ChangeDetectionStrategy.OnPush,
 })
@@ -48,8 +49,11 @@ export class VocabularyPitchAccentForm implements OnInit {
       this.accentPattern <= 65535
     );
   }
+  get validReading(): boolean {
+    return this.readings().some((item) => item.readingId === this.readingId);
+  }
   get valid(): boolean {
-    return this.validPattern && this.readings().some((item) => item.readingId === this.readingId);
+    return this.validPattern && this.validReading;
   }
   submit(): void {
     if (this.locked() || !this.valid || this.readingId === null || this.accentPattern === null)

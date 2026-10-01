@@ -1,3 +1,4 @@
+import { vocabularyLoadError } from '../models/vocabulary-load-error';
 import { VocabularyExamples } from '../components/vocabulary-examples';
 import { VocabularyKanjiSection } from '../components/vocabulary-kanji';
 import { VocabularyExample, VocabularyKanji } from '../models/vocabulary-detail.model';
@@ -51,7 +52,8 @@ import {
 import { VocabularyService } from '../services/vocabulary.service';
 
 type DetailState =
-  | { readonly status: 'invalid' | 'loading' | 'missing' | 'error' }
+  | { readonly status: 'invalid' | 'loading' | 'missing' }
+  | { readonly status: 'error'; readonly message: string }
   | { readonly status: 'loaded'; readonly core: VocabularyDetailData };
 type SaveState =
   | { readonly status: 'idle' | 'saving' | 'refreshing' | 'saved' | 'refresh-error' }
@@ -111,9 +113,17 @@ export class VocabularyDetail {
               this.service.getVocabularyDetail(id).pipe(
                 map((response): DetailState => ({ status: 'loaded', core: response.data })),
                 catchError((error: unknown) =>
-                  of<DetailState>({
-                    status: error instanceof ApiError && error.status === 404 ? 'missing' : 'error',
-                  }),
+                  of<DetailState>(
+                    error instanceof ApiError && error.status === 404
+                      ? { status: 'missing' }
+                      : {
+                          status: 'error',
+                          message: vocabularyLoadError(
+                            error,
+                            'Unable to load vocabulary details. Please try again.',
+                          ),
+                        },
+                  ),
                 ),
                 startWith<DetailState>({ status: 'loading' }),
               ),

@@ -1,3 +1,4 @@
+import { VocabularyFormActions } from './vocabulary-form-actions';
 import { VocabularyReading } from '../models/vocabulary-detail.model';
 import {
   afterNextRender,
@@ -19,7 +20,7 @@ import { validVocabularyText } from '../models/vocabulary-validation';
 
 @Component({
   selector: 'app-vocabulary-reading-form',
-  imports: [FormsModule],
+  imports: [FormsModule, VocabularyFormActions],
   templateUrl: './vocabulary-reading-form.html',
   changeDetection: ChangeDetectionStrategy.OnPush,
 })

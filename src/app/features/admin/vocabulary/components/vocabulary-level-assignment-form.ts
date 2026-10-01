@@ -1,3 +1,4 @@
+import { VocabularyFormActions } from './vocabulary-form-actions';
 import {
   afterNextRender,
   ChangeDetectionStrategy,
@@ -17,7 +18,7 @@ import { JlptLevel } from '../../../flashcard/models/jlpt-level.model';
 
 @Component({
   selector: 'app-vocabulary-level-assignment-form',
-  imports: [FormsModule],
+  imports: [FormsModule, VocabularyFormActions],
   templateUrl: './vocabulary-level-assignment-form.html',
   changeDetection: ChangeDetectionStrategy.OnPush,
 })
@@ -34,6 +35,8 @@ export class VocabularyLevelAssignmentForm implements OnInit {
   }
 
   readonly initial = input<VocabularyDetailData['levels'][number] | null>(null);
+  readonly loading = input(false);
+  readonly choicesLoaded = input(false);
   readonly options = input<readonly JlptLevel[]>([]);
   readonly submitted = output<LevelAssignmentAddRequest>();
   level = '';
@@ -46,11 +49,11 @@ export class VocabularyLevelAssignmentForm implements OnInit {
       this.displayOrder = item.displayOrder;
     }
   }
+  get validLevel(): boolean {
+    return this.initial() !== null || this.options().some((item) => item.code === this.level);
+  }
   get valid(): boolean {
-    return (
-      validDisplayOrder(this.displayOrder) &&
-      (this.initial() !== null || this.options().some((item) => item.code === this.level))
-    );
+    return validDisplayOrder(this.displayOrder) && this.validLevel;
   }
   submit(): void {
     if (this.locked() || !this.valid || !validDisplayOrder(this.displayOrder)) return;

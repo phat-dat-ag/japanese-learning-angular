@@ -1,3 +1,4 @@
+import { VocabularyFormActions } from './vocabulary-form-actions';
 import {
   afterNextRender,
   ChangeDetectionStrategy,
@@ -16,7 +17,7 @@ import { VocabularyKanjiReading } from '../models/vocabulary-detail.model';
 import { KanjiReadingUpdateRequest } from '../models/vocabulary-content.model';
 @Component({
   selector: 'app-vocabulary-kanji-reading-form',
-  imports: [FormsModule],
+  imports: [FormsModule, VocabularyFormActions],
   templateUrl: './vocabulary-kanji-reading-form.html',
   changeDetection: ChangeDetectionStrategy.OnPush,
 })

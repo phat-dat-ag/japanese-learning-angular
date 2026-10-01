@@ -1,75 +1,58 @@
 <form #form="ngForm" (ngSubmit)="submit()" novalidate>
-  <fieldset [disabled]="locked()" class="space-y-5">
+  <fieldset [disabled]="locked()" class="min-w-0 space-y-5">
     <legend class="mb-4 text-lg font-semibold text-gray-900">
       {{ initial() ? 'Editing Level Assignment' : 'Adding Level Assignment' }}
     </legend>
 
     @if (initial(); as item) {
-      <p class="text-gray-700">{{ item.name }} ({{ item.code }})</p>
+    <p class="text-gray-700">{{ item.name }} ({{ item.code }})</p>
     } @else {
-      <div>
-        <label for="assignment-level" class="text-sm font-medium text-gray-700">JLPT level</label>
-        <select
-          #first
-          id="assignment-level"
-          name="level"
-          [(ngModel)]="level"
-          required
-          aria-describedby="assignment-level-error"
-          class="mt-2 block min-h-11 w-full rounded-xl border border-gray-300 bg-white px-3 py-2 text-gray-900 focus-visible:outline-2 focus-visible:outline-indigo-600"
-        >
-          <option value="">Choose a level</option>
-          @for (item of options(); track item.code) {
-            <option [value]="item.code">{{ item.name }}</option>
-          }
-        </select>
-        <p id="assignment-level-error" class="mt-2 text-sm text-red-700">
-          {{ fieldErrors().level }}
-        </p>
-      </div>
+    <div>
+      <label for="assignment-level" class="text-sm font-medium text-gray-700">JLPT level <span
+          class="font-normal text-gray-500">(required)</span></label>
+      <select #first id="assignment-level" #levelControl="ngModel" [attr.aria-busy]="loading()" [attr.aria-invalid]="
+            !!fieldErrors().level || ((levelControl.touched || form.submitted) && !validLevel)
+          " name="level" [(ngModel)]="level" required aria-describedby="assignment-level-error assignment-level-help"
+        class="mt-2 block min-h-11 w-full rounded-xl border border-gray-300 bg-white px-3 py-2 text-gray-900 focus-visible:outline-2 focus-visible:outline-indigo-600">
+        <option value="">Choose a level</option>
+        @for (item of options(); track item.code) {
+        <option [value]="item.code">{{ item.name }}</option>
+        }
+      </select>
+      <p id="assignment-level-error" class="mt-2 text-sm text-red-700">
+        {{
+        fieldErrors().level ||
+        ((levelControl.touched || form.submitted) && !validLevel
+        ? 'Choose a JLPT level.'
+        : '')
+        }}
+      </p>
+      <p id="assignment-level-help" class="mt-2 text-sm text-gray-600">
+        @if (choicesLoaded() && options().length === 0) {
+        No JLPT levels are available to assign.
+        }
+      </p>
+    </div>
     }
     <div>
-      <label for="level-assignment-order" class="text-sm font-medium text-gray-700"
-        >Assignment display order</label
-      >
-      <input
-        #orderInput
-        id="level-assignment-order"
-        name="displayOrder"
-        type="number"
-        min="0"
-        max="2147483647"
-        step="1"
-        required
-        [(ngModel)]="displayOrder"
-        #order="ngModel"
-        aria-describedby="level-order-error"
-        class="mt-2 block min-h-11 w-full rounded-xl border border-gray-300 bg-white px-3 py-2 text-gray-900 focus-visible:outline-2 focus-visible:outline-indigo-600"
-      />
+      <label for="level-assignment-order" class="text-sm font-medium text-gray-700">Assignment display order <span
+          class="font-normal text-gray-500">(required)</span></label>
+      <input #orderInput id="level-assignment-order" [attr.aria-invalid]="
+          !!fieldErrors().displayOrder ||
+          ((order.touched || form.submitted) && !validOrder(displayOrder))
+        " name="displayOrder" type="number" min="0" max="2147483647" step="1" required [(ngModel)]="displayOrder"
+        #order="ngModel" aria-describedby="level-order-error"
+        class="aria-invalid:border-red-600 mt-2 block min-h-11 w-full rounded-xl border border-gray-300 bg-white px-3 py-2 text-gray-900 focus-visible:outline-2 focus-visible:outline-indigo-600" />
       <p id="level-order-error" class="mt-2 text-sm text-red-700">
         {{
-          fieldErrors().displayOrder ||
-            ((order.touched || form.submitted) && !validOrder(displayOrder)
-              ? 'Enter a whole number from 0 to 2147483647.'
-              : '')
+        fieldErrors().displayOrder ||
+        ((order.touched || form.submitted) && !validOrder(displayOrder)
+        ? 'Enter a whole number from 0 to 2147483647.'
+        : '')
         }}
       </p>
     </div>
-    <div class="flex flex-wrap gap-3">
-      <button
-        type="submit"
-        [disabled]="locked() || !valid"
-        class="min-h-11 rounded-xl border border-gray-300 px-4 py-2 text-sm font-semibold focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-indigo-600 disabled:opacity-50 bg-indigo-600 text-white"
-      >
-        Save
-      </button>
-      <button
-        type="button"
-        (click)="cancelled.emit()"
-        class="min-h-11 rounded-xl border border-gray-300 px-4 py-2 text-sm font-semibold focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-indigo-600 disabled:opacity-50 bg-white text-gray-700"
-      >
-        Cancel
-      </button>
-    </div>
+    <app-vocabulary-form-actions saveLabel="Save level assignment" [locked]="locked()" [invalid]="!valid"
+      (cancelled)="cancelled.emit()" />
   </fieldset>
 </form>

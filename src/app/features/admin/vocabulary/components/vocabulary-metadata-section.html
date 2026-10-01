@@ -19,8 +19,8 @@
         @case ('pitch-accents') {
           @for (item of detail().pitchAccents; track item.pitchAccentId) {
             <li class="flex flex-wrap items-center justify-between gap-3 py-4">
-              <div>
-                <p class="font-medium text-gray-900">
+              <div class="min-w-0">
+                <p class="break-words font-medium text-gray-900">
                   <span lang="ja">{{ item.reading }}</span> · Pattern {{ item.accentPattern }}
                 </p>
                 <p class="mt-1 text-sm text-gray-600">Reading ID {{ item.readingId }}</p>
@@ -46,8 +46,10 @@
         @case ('levels') {
           @for (item of detail().levels; track item.levelId) {
             <li class="flex flex-wrap items-center justify-between gap-3 py-4">
-              <div>
-                <p class="font-medium text-gray-900">{{ item.name }} ({{ item.code }})</p>
+              <div class="min-w-0">
+                <p class="break-words font-medium text-gray-900">
+                  {{ item.name }} ({{ item.code }})
+                </p>
                 <p class="mt-1 text-sm text-gray-600">Assignment order {{ item.displayOrder }}</p>
               </div>
               <button
@@ -69,8 +71,8 @@
         @case ('lessons') {
           @for (item of detail().lessons; track item.lessonId) {
             <li class="flex flex-wrap items-center justify-between gap-3 py-4">
-              <div>
-                <p class="font-medium text-gray-900">
+              <div class="min-w-0">
+                <p class="break-words font-medium text-gray-900">
                   {{ item.levelCode }} · Lesson {{ item.lessonNumber }}: {{ item.title }}
                 </p>
                 <p class="mt-1 text-sm text-gray-600">
@@ -96,7 +98,7 @@
         @case ('parts-of-speech') {
           @for (item of detail().partsOfSpeech; track item.code) {
             <li class="py-4">
-              <p class="font-medium text-gray-900">
+              <p class="break-words font-medium text-gray-900">
                 {{ item.nameEn }} · <span lang="vi">{{ item.nameVi }}</span>
               </p>
               <p class="mt-1 text-sm text-gray-600">{{ item.code }}</p>
@@ -124,6 +126,8 @@
             <app-vocabulary-level-assignment-form
               [initial]="selectedLevel()"
               [options]="levels()"
+              [loading]="choicesState() === 'loading'"
+              [choicesLoaded]="choicesState() === 'loaded'"
               [locked]="locked()"
               [fieldErrors]="fields()"
               (submitted)="save({ kind: 'levels', request: $event })"
@@ -135,6 +139,8 @@
               [initial]="selectedLesson()"
               [levels]="detail().levels"
               [options]="lessons()"
+              [loading]="choicesState() === 'loading'"
+              [choicesLoaded]="choicesState() === 'loaded'"
               [locked]="locked()"
               [fieldErrors]="fields()"
               (levelChanged)="loadLessons($event)"

@@ -1,3 +1,4 @@
+import { VocabularyFormActions } from './vocabulary-form-actions';
 import {
   afterNextRender,
   ChangeDetectionStrategy,
@@ -16,7 +17,7 @@ import { VocabularyKanji } from '../models/vocabulary-detail.model';
 import { KanjiUpdateRequest } from '../models/vocabulary-content.model';
 @Component({
   selector: 'app-vocabulary-kanji-form',
-  imports: [FormsModule],
+  imports: [FormsModule, VocabularyFormActions],
   templateUrl: './vocabulary-kanji-form.html',
   changeDetection: ChangeDetectionStrategy.OnPush,
 })

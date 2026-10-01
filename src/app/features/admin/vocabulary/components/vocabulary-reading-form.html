@@ -4,7 +4,9 @@
       {{ initial() ? 'Editing Reading' : 'Adding Reading' }}
     </legend>
     <div class="sm:col-span-2">
-      <label for="new-reading" class="mb-2 block text-sm font-medium text-gray-800">Reading</label>
+      <label for="new-reading" class="mb-2 block text-sm font-medium text-gray-800"
+        >Reading <span class="font-normal text-gray-500">(required)</span></label
+      >
       <input
         type="text"
         lang="ja"
@@ -28,7 +30,7 @@
 
     <div>
       <label for="reading-order" class="mb-2 block text-sm font-medium text-gray-800"
-        >Display order</label
+        >Display order <span class="font-normal text-gray-500">(required)</span></label
       >
       <input
         #orderField="ngModel"
@@ -63,8 +65,8 @@
           aria-describedby="reading-primary-help"
           class="h-5 w-5 accent-indigo-600 focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-indigo-600"
         />
-        Primary reading
-      </label>
+        Primary reading</label
+      >
       <p id="reading-primary-help" class="mt-1 text-sm text-gray-600">
         {{
           fieldErrors().isPrimary ||
@@ -78,21 +80,10 @@
       }
     </div>
   </fieldset>
-  <div class="flex flex-wrap gap-3 border-t border-gray-100 pt-5">
-    <button
-      type="submit"
-      [disabled]="locked() || !valid || form.invalid"
-      class="min-h-11 rounded-xl bg-indigo-600 px-5 py-2 text-sm font-semibold text-white hover:bg-indigo-700 focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-indigo-600 disabled:opacity-50"
-    >
-      Save reading
-    </button>
-    <button
-      type="button"
-      [disabled]="locked()"
-      (click)="cancelled.emit()"
-      class="min-h-11 rounded-xl border border-gray-300 px-5 py-2 text-sm font-semibold text-gray-700 hover:bg-gray-50 focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-indigo-600 disabled:opacity-50"
-    >
-      Cancel
-    </button>
-  </div>
+  <app-vocabulary-form-actions
+    saveLabel="Save reading"
+    [locked]="locked()"
+    [invalid]="!valid || !!form.invalid"
+    (cancelled)="cancelled.emit()"
+  />
 </form>

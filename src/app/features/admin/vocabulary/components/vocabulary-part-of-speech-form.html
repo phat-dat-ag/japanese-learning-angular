@@ -1,21 +1,24 @@
 <form #form="ngForm" (ngSubmit)="submit()" novalidate>
-  <fieldset [disabled]="locked()" class="space-y-5">
+  <fieldset [disabled]="locked()" class="min-w-0 space-y-5">
     <legend class="mb-4 text-lg font-semibold text-gray-900">Adding Part of Speech</legend>
 
     <div>
       <label for="part-of-speech-code" class="text-sm font-medium text-gray-700"
-        >Master-data code</label
+        >Master-data code <span class="font-normal text-gray-500">(required)</span></label
       >
       <input
         #first
         id="part-of-speech-code"
+        [attr.aria-invalid]="
+          !!fieldErrors().code || ((codeControl.touched || form.submitted) && !valid)
+        "
         name="code"
         [(ngModel)]="code"
         #codeControl="ngModel"
         required
         maxlength="50"
         aria-describedby="pos-help pos-error"
-        class="mt-2 block min-h-11 w-full rounded-xl border border-gray-300 bg-white px-3 py-2 text-gray-900 focus-visible:outline-2 focus-visible:outline-indigo-600"
+        class="aria-invalid:border-red-600 mt-2 block min-h-11 w-full rounded-xl border border-gray-300 bg-white px-3 py-2 text-gray-900 focus-visible:outline-2 focus-visible:outline-indigo-600"
       />
       <p id="pos-help" class="mt-2 text-sm text-gray-600">
         Enter an existing part-of-speech code. The server checks that the code exists.
@@ -30,21 +33,11 @@
       </p>
     </div>
 
-    <div class="flex flex-wrap gap-3">
-      <button
-        type="submit"
-        [disabled]="locked() || !valid"
-        class="min-h-11 rounded-xl border border-gray-300 px-4 py-2 text-sm font-semibold focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-indigo-600 disabled:opacity-50 bg-indigo-600 text-white"
-      >
-        Save
-      </button>
-      <button
-        type="button"
-        (click)="cancelled.emit()"
-        class="min-h-11 rounded-xl border border-gray-300 px-4 py-2 text-sm font-semibold focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-indigo-600 disabled:opacity-50 bg-white text-gray-700"
-      >
-        Cancel
-      </button>
-    </div>
+    <app-vocabulary-form-actions
+      saveLabel="Save part of speech"
+      [locked]="locked()"
+      [invalid]="!valid"
+      (cancelled)="cancelled.emit()"
+    />
   </fieldset>
 </form>

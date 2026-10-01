@@ -4,39 +4,23 @@
       {{ initial() ? 'Editing Meaning' : 'Adding Meaning' }}
     </legend>
     <div class="sm:col-span-2">
-      <label for="new-meaning" class="mb-2 block text-sm font-medium text-gray-800">Meaning</label>
-      <textarea
-        rows="3"
-        #textInput
-        #textField="ngModel"
-        id="new-meaning"
-        name="meaning"
-        required
-        maxlength="500"
-        [(ngModel)]="meaning"
-        [attr.aria-invalid]="
+      <label for="new-meaning" class="mb-2 block text-sm font-medium text-gray-800">Meaning <span
+          class="font-normal text-gray-500">(required)</span></label>
+      <textarea rows="3" #textInput #textField="ngModel" id="new-meaning" name="meaning" required maxlength="500"
+        [(ngModel)]="meaning" [attr.aria-invalid]="
           (textField.touched && !validText(meaning, 500)) || !!fieldErrors().meaning
-        "
-        aria-describedby="meaning-text-help"
-        class="min-h-11 w-full rounded-xl border border-gray-300 bg-white px-3 py-2 text-gray-900 focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-indigo-600 disabled:bg-gray-50 aria-invalid:border-red-600"
-      ></textarea>
+        " aria-describedby="meaning-text-help"
+        class="min-h-11 w-full rounded-xl border border-gray-300 bg-white px-3 py-2 text-gray-900 focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-indigo-600 disabled:bg-gray-50 aria-invalid:border-red-600"></textarea>
       <p id="meaning-text-help" class="mt-2 text-sm text-gray-600">
         {{ fieldErrors().meaning || 'Enter a nonblank meaning, up to 500 characters.' }}
       </p>
     </div>
     <div>
-      <label for="meaning-language" class="mb-2 block text-sm font-medium text-gray-800"
-        >Language</label
-      >
-      <select
-        id="meaning-language"
-        name="language"
-        [(ngModel)]="language"
-        required
-        aria-describedby="meaning-language-help"
-        [attr.aria-invalid]="!!fieldErrors().language"
-        class="min-h-11 w-full rounded-xl border border-gray-300 bg-white px-3 py-2 text-gray-900 focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-indigo-600 disabled:bg-gray-50 aria-invalid:border-red-600"
-      >
+      <label for="meaning-language" class="mb-2 block text-sm font-medium text-gray-800">Language <span
+          class="font-normal text-gray-500">(required)</span></label>
+      <select id="meaning-language" name="language" [(ngModel)]="language" required
+        aria-describedby="meaning-language-help" [attr.aria-invalid]="!!fieldErrors().language"
+        class="min-h-11 w-full rounded-xl border border-gray-300 bg-white px-3 py-2 text-gray-900 focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-indigo-600 disabled:bg-gray-50 aria-invalid:border-red-600">
         <option value="en">English (en)</option>
         <option value="vi">Vietnamese (vi)</option>
       </select>
@@ -45,67 +29,34 @@
       </p>
     </div>
     <div>
-      <label for="meaning-order" class="mb-2 block text-sm font-medium text-gray-800"
-        >Display order</label
-      >
-      <input
-        #orderField="ngModel"
-        id="meaning-order"
-        name="displayOrder"
-        type="number"
-        min="0"
-        max="2147483647"
-        step="1"
-        required
-        [(ngModel)]="displayOrder"
-        [attr.aria-invalid]="
+      <label for="meaning-order" class="mb-2 block text-sm font-medium text-gray-800">Display order <span
+          class="font-normal text-gray-500">(required)</span></label>
+      <input #orderField="ngModel" id="meaning-order" name="displayOrder" type="number" min="0" max="2147483647"
+        step="1" required [(ngModel)]="displayOrder" [attr.aria-invalid]="
           (orderField.touched && !validOrder(displayOrder)) || !!fieldErrors().displayOrder
-        "
-        aria-describedby="meaning-order-help"
-        class="min-h-11 w-full rounded-xl border border-gray-300 bg-white px-3 py-2 text-gray-900 focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-indigo-600 disabled:bg-gray-50 aria-invalid:border-red-600"
-      />
+        " aria-describedby="meaning-order-help"
+        class="min-h-11 w-full rounded-xl border border-gray-300 bg-white px-3 py-2 text-gray-900 focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-indigo-600 disabled:bg-gray-50 aria-invalid:border-red-600" />
       <p id="meaning-order-help" class="mt-2 text-sm text-gray-600">
         {{
-          fieldErrors().displayOrder ||
-            'Enter a whole number from 0 to 2147483647. Use the persisted order when editing.'
+        fieldErrors().displayOrder ||
+        'Enter a whole number from 0 to 2147483647. Use the persisted order when editing.'
         }}
       </p>
     </div>
     <div class="sm:col-span-2">
       <label class="inline-flex min-h-11 items-center gap-3 text-sm font-medium text-gray-800">
-        <input
-          type="checkbox"
-          name="isPrimary"
-          [attr.aria-invalid]="!!fieldErrors().isPrimary"
-          [(ngModel)]="isPrimary"
+        <input type="checkbox" name="isPrimary" [attr.aria-invalid]="!!fieldErrors().isPrimary" [(ngModel)]="isPrimary"
           aria-describedby="meaning-primary-help"
-          class="h-5 w-5 accent-indigo-600 focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-indigo-600"
-        />
-        Primary meaning
-      </label>
+          class="h-5 w-5 accent-indigo-600 focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-indigo-600" />
+        Primary meaning</label>
       <p id="meaning-primary-help" class="mt-1 text-sm text-gray-600">
         {{
-          fieldErrors().isPrimary ||
-            'Primary is optional. Multiple primary meanings are allowed; existing meanings are not demoted.'
+        fieldErrors().isPrimary ||
+        'Primary is optional. Multiple primary meanings are allowed; existing meanings are not demoted.'
         }}
       </p>
     </div>
   </fieldset>
-  <div class="flex flex-wrap gap-3 border-t border-gray-100 pt-5">
-    <button
-      type="submit"
-      [disabled]="locked() || !valid || form.invalid"
-      class="min-h-11 rounded-xl bg-indigo-600 px-5 py-2 text-sm font-semibold text-white hover:bg-indigo-700 focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-indigo-600 disabled:opacity-50"
-    >
-      Save meaning
-    </button>
-    <button
-      type="button"
-      [disabled]="locked()"
-      (click)="cancelled.emit()"
-      class="min-h-11 rounded-xl border border-gray-300 px-5 py-2 text-sm font-semibold text-gray-700 hover:bg-gray-50 focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-indigo-600 disabled:opacity-50"
-    >
-      Cancel
-    </button>
-  </div>
+  <app-vocabulary-form-actions saveLabel="Save meaning" [locked]="locked()" [invalid]="!valid || !!form.invalid"
+    (cancelled)="cancelled.emit()" />
 </form>

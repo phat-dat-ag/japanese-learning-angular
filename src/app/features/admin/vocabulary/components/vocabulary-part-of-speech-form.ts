@@ -1,3 +1,4 @@
+import { VocabularyFormActions } from './vocabulary-form-actions';
 import {
   afterNextRender,
   ChangeDetectionStrategy,
@@ -14,7 +15,7 @@ import { validVocabularyText } from '../models/vocabulary-validation';
 
 @Component({
   selector: 'app-vocabulary-part-of-speech-form',
-  imports: [FormsModule],
+  imports: [FormsModule, VocabularyFormActions],
   templateUrl: './vocabulary-part-of-speech-form.html',
   changeDetection: ChangeDetectionStrategy.OnPush,
 })
