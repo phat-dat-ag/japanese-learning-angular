@@ -1,0 +1,72 @@
+<form #form="ngForm" (ngSubmit)="submit()" novalidate>
+  <fieldset [disabled]="locked()" class="min-w-0 space-y-5">
+    <legend class="mb-4 text-lg font-semibold text-gray-900">
+      {{ initial() ? 'Editing Kanji Reading' : 'Adding Kanji Reading' }}
+    </legend>
+
+    <p class="text-sm text-gray-600">
+      Readings belong to this kanji. Changes may be restricted when the kanji is shared with other
+      vocabulary.
+    </p>
+
+    <div>
+      <label [for]="idPrefix() + '-reading'" class="text-sm font-medium text-gray-700">Kanji reading <span
+          class="font-normal text-gray-500">(required)</span></label>
+      <input type="text" #first lang="ja" [id]="idPrefix() + '-reading'" [attr.aria-invalid]="
+          !!fieldErrors().reading ||
+          ((readingControl.touched || form.submitted) && !validText(reading, 100))
+        " name="reading" [(ngModel)]="reading" #readingControl="ngModel" required maxlength="100"
+        [attr.aria-describedby]="idPrefix() + '-reading-error'"
+        class="aria-invalid:border-red-600 mt-2 block min-h-11 w-full rounded-xl border border-gray-300 bg-white px-3 py-2 text-gray-900 focus-visible:outline-2 focus-visible:outline-indigo-600 disabled:bg-gray-100" />
+      <p [id]="idPrefix() + '-reading-error'" class="mt-2 text-sm text-red-700">
+        {{
+        fieldErrors().reading ||
+        ((readingControl.touched || form.submitted) && !validText(reading, 100)
+        ? 'Enter nonblank text, up to 100 characters.'
+        : '')
+        }}
+      </p>
+    </div>
+
+    <div>
+      <label [for]="idPrefix() + '-readingType'" class="text-sm font-medium text-gray-700">Reading type <span
+          class="font-normal text-gray-500">(required)</span></label>
+      <input type="text" [id]="idPrefix() + '-readingType'" [attr.aria-invalid]="
+          !!fieldErrors().readingType ||
+          ((readingTypeControl.touched || form.submitted) && !validText(readingType, 20))
+        " name="readingType" [(ngModel)]="readingType" #readingTypeControl="ngModel" required maxlength="20"
+        [attr.aria-describedby]="idPrefix() + '-readingType-error'"
+        class="aria-invalid:border-red-600 mt-2 block min-h-11 w-full rounded-xl border border-gray-300 bg-white px-3 py-2 text-gray-900 focus-visible:outline-2 focus-visible:outline-indigo-600 disabled:bg-gray-100" />
+      <p [id]="idPrefix() + '-readingType-error'" class="mt-2 text-sm text-red-700">
+        {{
+        fieldErrors().readingType ||
+        ((readingTypeControl.touched || form.submitted) && !validText(readingType, 20)
+        ? 'Enter nonblank text, up to 20 characters.'
+        : '')
+        }}
+      </p>
+    </div>
+
+    <div>
+      <label [for]="idPrefix() + '-order'" class="text-sm font-medium text-gray-700">Display order <span
+          class="font-normal text-gray-500">(required)</span></label>
+      <input [id]="idPrefix() + '-order'" [attr.aria-invalid]="
+          !!fieldErrors().displayOrder ||
+          ((order.touched || form.submitted) && !validOrder(displayOrder))
+        " name="displayOrder" type="number" [(ngModel)]="displayOrder" #order="ngModel" required min="0"
+        max="2147483647" step="1" [attr.aria-describedby]="idPrefix() + '-order-error'"
+        class="aria-invalid:border-red-600 mt-2 block min-h-11 w-full rounded-xl border border-gray-300 bg-white px-3 py-2 text-gray-900 focus-visible:outline-2 focus-visible:outline-indigo-600 disabled:bg-gray-100" />
+      <p [id]="idPrefix() + '-order-error'" class="mt-2 text-sm text-red-700">
+        {{
+        fieldErrors().displayOrder ||
+        ((order.touched || form.submitted) && !validOrder(displayOrder)
+        ? 'Enter a whole number from 0 to 2147483647.'
+        : '')
+        }}
+      </p>
+    </div>
+
+    <app-vocabulary-form-actions saveLabel="Save kanji reading" [locked]="locked()" [invalid]="!valid"
+      (cancelled)="cancelled.emit()" />
+  </fieldset>
+</form>

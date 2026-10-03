@@ -1,0 +1,59 @@
+<form #form="ngForm" (ngSubmit)="submit()" class="mt-5 space-y-5">
+  <fieldset [disabled]="locked()" class="grid min-w-0 gap-5 sm:grid-cols-2">
+    <legend class="mb-4 text-lg font-semibold text-gray-900">
+      {{ initial() ? 'Editing Reading' : 'Adding Reading' }}
+    </legend>
+
+    <div class="sm:col-span-2">
+      <label for="new-reading" class="mb-2 block text-sm font-medium text-gray-800">Reading <span
+          class="font-normal text-gray-500">(required)</span></label>
+      <input type="text" lang="ja" #textInput #textField="ngModel" id="new-reading" name="reading" required
+        maxlength="100" [(ngModel)]="reading" [attr.aria-invalid]="
+          (textField.touched && !validText(reading, 100)) || !!fieldErrors().reading
+        " aria-describedby="reading-text-help"
+        class="min-h-11 w-full rounded-xl border border-gray-300 bg-white px-3 py-2 text-gray-900 focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-indigo-600 disabled:bg-gray-50 aria-invalid:border-red-600" />
+      <p id="reading-text-help" class="mt-2 text-sm text-gray-600">
+        {{ fieldErrors().reading || 'Enter a nonblank reading, up to 100 characters.' }}
+      </p>
+    </div>
+
+    <div>
+      <label for="reading-order" class="mb-2 block text-sm font-medium text-gray-800">Display order <span
+          class="font-normal text-gray-500">(required)</span></label>
+      <input #orderField="ngModel" id="reading-order" name="displayOrder" type="number" min="0" max="2147483647"
+        step="1" required [(ngModel)]="displayOrder" [attr.aria-invalid]="
+          (orderField.touched && !validOrder(displayOrder)) || !!fieldErrors().displayOrder
+        " aria-describedby="reading-order-help"
+        class="min-h-11 w-full rounded-xl border border-gray-300 bg-white px-3 py-2 text-gray-900 focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-indigo-600 disabled:bg-gray-50 aria-invalid:border-red-600" />
+      <p id="reading-order-help" class="mt-2 text-sm text-gray-600">
+        {{
+        fieldErrors().displayOrder ||
+        'Enter a whole number from 0 to 2147483647. Use the persisted order when editing.'
+        }}
+      </p>
+    </div>
+
+    <div class="sm:col-span-2">
+      <label class="inline-flex min-h-11 items-center gap-3 text-sm font-medium text-gray-800">
+        <input type="checkbox" name="isPrimary" [attr.aria-invalid]="!!fieldErrors().isPrimary" [(ngModel)]="isPrimary"
+          aria-describedby="reading-primary-help"
+          class="h-5 w-5 accent-indigo-600 focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-indigo-600" />
+        Primary reading</label>
+      <p id="reading-primary-help" class="mt-1 text-sm text-gray-600">
+        {{
+        fieldErrors().isPrimary ||
+        'At least one primary reading is required. Multiple primary readings are allowed; existing readings are not
+        demoted.'
+        }}
+      </p>
+      @if (!hasPrimary() && !isPrimary) {
+      <p class="mt-2 text-sm text-gray-700">
+        No other primary reading is available. Keep this reading primary to continue.
+      </p>
+      }
+    </div>
+  </fieldset>
+
+  <app-vocabulary-form-actions saveLabel="Save reading" [locked]="locked()" [invalid]="!valid || !!form.invalid"
+    (cancelled)="cancelled.emit()" />
+</form>

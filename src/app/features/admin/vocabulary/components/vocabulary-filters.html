@@ -1,0 +1,103 @@
+<section aria-labelledby="filters-heading" class="rounded-2xl border border-gray-200 bg-white p-5 sm:p-6">
+  <div class="flex flex-wrap items-center justify-between gap-3">
+    <h2 id="filters-heading" class="font-semibold text-gray-900">Find vocabulary</h2>
+    @if (query().level || query().lesson) {
+    <button type="button" (click)="filtersCleared.emit()"
+      class="min-h-11 rounded-lg px-3 text-sm font-semibold text-indigo-700 hover:bg-indigo-50 focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-indigo-600">
+      Clear filters
+    </button>
+    }
+  </div>
+
+  <div class="mt-4 grid gap-5 sm:grid-cols-3">
+    <div>
+      <label for="vocabulary-level" class="block text-sm font-medium text-gray-700">JLPT level</label>
+      <select #level id="vocabulary-level" [value]="query().level ?? ''" (change)="levelChanged.emit(level.value)"
+        [disabled]="levelState().status !== 'loaded'" aria-describedby="level-help"
+        class="mt-2 min-h-11 w-full rounded-xl border border-gray-300 bg-white px-3 text-gray-900 focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-indigo-600 disabled:bg-gray-50 disabled:text-gray-500">
+        <option value="">All levels</option>
+        @if (levelState(); as levels) {
+        @if (levels.status === 'loaded') {
+        @for (item of levels.data; track item.code) {
+        <option [value]="item.code">{{ item.code }} · {{ item.name }}</option>
+        }
+        }
+        }
+      </select>
+
+      <div id="level-help" class="mt-2 text-sm text-gray-600">
+        @switch (levelState().status) {
+        @case ('loading') {
+        <p role="status">Loading levels…</p>
+        }
+        @case ('error') {
+        <p role="alert">Unable to load levels.</p>
+        <button type="button" (click)="levelsRetried.emit()"
+          class="min-h-11 rounded px-2 font-semibold text-indigo-700 underline focus-visible:outline-2 focus-visible:outline-indigo-600">
+          Retry levels
+        </button>
+        }
+        @case ('loaded') {
+        <p>Filter by JLPT level.</p>
+        }
+        }
+      </div>
+    </div>
+
+    <div>
+      <label for="vocabulary-lesson" class="block text-sm font-medium text-gray-700">Lesson</label>
+      <select #lesson id="vocabulary-lesson" [value]="query().lesson ?? ''" (change)="lessonChanged.emit(lesson.value)"
+        [disabled]="!query().level || lessonState().status !== 'loaded'" aria-describedby="lesson-help"
+        class="mt-2 min-h-11 w-full rounded-xl border border-gray-300 bg-white px-3 text-gray-900 focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-indigo-600 disabled:bg-gray-50 disabled:text-gray-500">
+        <option value="">All lessons</option>
+        @if (lessonState(); as lessons) {
+        @if (lessons.status === 'loaded') {
+        @for (item of lessons.data; track item.id) {
+        <option [value]="item.id">Lesson {{ item.lessonNumber }} · {{ item.title }}</option>
+        }
+        }
+        }
+      </select>
+
+      <div id="lesson-help" class="mt-2 text-sm text-gray-600">
+        @if (!query().level) {
+        <p>Select a level to choose a lesson.</p>
+        } @else {
+        @if (lessonState(); as lessons) {
+        @switch (lessons.status) {
+        @case ('loading') {
+        <p role="status">Loading lessons…</p>
+        }
+        @case ('error') {
+        <p role="alert">Unable to load lessons.</p>
+        <button type="button" (click)="lessonsRetried.emit()"
+          class="min-h-11 rounded px-2 font-semibold text-indigo-700 underline focus-visible:outline-2 focus-visible:outline-indigo-600">
+          Retry lessons
+        </button>
+        }
+        @case ('loaded') {
+        <p>
+          {{
+          lessons.data.length
+          ? 'Lessons for the selected level.'
+          : 'No lessons available for this level.'
+          }}
+        </p>
+        }
+        }
+        }
+        }
+      </div>
+    </div>
+
+    <div>
+      <label for="vocabulary-size" class="block text-sm font-medium text-gray-700">Entries per page</label>
+      <select #size id="vocabulary-size" [value]="query().size" (change)="sizeChanged.emit(size.value)"
+        class="mt-2 min-h-11 w-full rounded-xl border border-gray-300 bg-white px-3 text-gray-900 focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-indigo-600">
+        @for (count of pageSizes(); track count) {
+        <option [value]="count">{{ count }}</option>
+        }
+      </select>
+    </div>
+  </div>
+</section>

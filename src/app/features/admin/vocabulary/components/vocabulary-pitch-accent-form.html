@@ -1,0 +1,60 @@
+<form #form="ngForm" (ngSubmit)="submit()" novalidate>
+  <fieldset [disabled]="locked()" class="min-w-0 space-y-5">
+    <legend class="mb-4 text-lg font-semibold text-gray-900">
+      {{ initial() ? 'Editing Pitch Accent' : 'Adding Pitch Accent' }}
+    </legend>
+
+    <div>
+      <label for="accent-reading" class="text-sm font-medium text-gray-700">Reading <span
+          class="font-normal text-gray-500">(required)</span></label>
+      <select #first id="accent-reading" #readingControl="ngModel" [attr.aria-invalid]="
+          !!fieldErrors().readingId || ((readingControl.touched || form.submitted) && !validReading)
+        " name="readingId" [(ngModel)]="readingId" required aria-describedby="accent-reading-error accent-reading-help"
+        class="mt-2 block min-h-11 w-full rounded-xl border border-gray-300 bg-white px-3 py-2 text-gray-900 focus-visible:outline-2 focus-visible:outline-indigo-600">
+        <option [ngValue]="null">Choose a reading</option>
+        @for (reading of readings(); track reading.readingId) {
+        <option [ngValue]="reading.readingId">
+          {{ reading.reading }} (ID {{ reading.readingId }})
+        </option>
+        }
+      </select>
+      <p id="accent-reading-error" class="mt-2 text-sm text-red-700">
+        {{
+        fieldErrors().readingId ||
+        ((readingControl.touched || form.submitted) && !validReading
+        ? 'Choose a reading for this pitch accent.'
+        : '')
+        }}
+      </p>
+    </div>
+
+    <p id="accent-reading-help" class="text-sm text-gray-600">
+      {{
+      readings().length
+      ? 'Select the reading that owns this pitch accent.'
+      : 'Add a reading in the Readings section before adding a pitch accent.'
+      }}
+    </p>
+
+    <div>
+      <label for="accent-pattern" class="text-sm font-medium text-gray-700">Accent pattern <span
+          class="font-normal text-gray-500">(required)</span></label>
+      <input id="accent-pattern" [attr.aria-invalid]="
+          !!fieldErrors().accentPattern || ((pattern.touched || form.submitted) && !validPattern)
+        " name="accentPattern" type="number" min="0" max="65535" step="1" required [(ngModel)]="accentPattern"
+        #pattern="ngModel" aria-describedby="accent-pattern-error"
+        class="aria-invalid:border-red-600 mt-2 block min-h-11 w-full rounded-xl border border-gray-300 bg-white px-3 py-2 text-gray-900 focus-visible:outline-2 focus-visible:outline-indigo-600" />
+      <p id="accent-pattern-error" class="mt-2 text-sm text-red-700">
+        {{
+        fieldErrors().accentPattern ||
+        ((pattern.touched || form.submitted) && !validPattern
+        ? 'Enter a whole number from 0 to 65535.'
+        : '')
+        }}
+      </p>
+    </div>
+
+    <app-vocabulary-form-actions saveLabel="Save pitch accent" [locked]="locked()" [invalid]="!valid"
+      (cancelled)="cancelled.emit()" />
+  </fieldset>
+</form>

@@ -1,0 +1,44 @@
+<form #form="ngForm" (ngSubmit)="submit()" class="min-w-0 space-y-5">
+  <fieldset [disabled]="locked()" class="grid min-w-0 gap-5 sm:grid-cols-2">
+    <legend class="sr-only">Edit core information</legend>
+    
+    <div>
+      <label for="core-word" class="mb-2 block text-sm font-medium text-gray-800">Word <span
+          class="font-normal text-gray-500">(required)</span></label>
+      <input #wordInput #wordField="ngModel" id="core-word" name="word" lang="ja" type="text" required maxlength="100"
+        [(ngModel)]="word" [attr.aria-invalid]="(wordField.touched && !validText(word)) || !!fieldErrors().word"
+        aria-describedby="core-word-help"
+        class="min-h-11 w-full rounded-xl border border-gray-300 px-3 py-2 text-gray-900 focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-indigo-600 disabled:bg-gray-50 aria-invalid:border-red-600" />
+      <p id="core-word-help" class="mt-2 text-sm" [class]="
+          fieldErrors().word || (wordField.touched && !validText(word))
+            ? 'text-red-700'
+            : 'text-gray-600'
+        ">
+        {{ fieldErrors().word || 'Enter a nonblank word, up to 100 characters.' }}
+      </p>
+    </div>
+
+    <div>
+      <label for="core-normalized-word" class="mb-2 block text-sm font-medium text-gray-800">Normalized word <span
+          class="font-normal text-gray-500">(required)</span></label>
+      <input #normalizedField="ngModel" id="core-normalized-word" name="normalizedWord" lang="ja" type="text" required
+        maxlength="100" [(ngModel)]="normalizedWord" [attr.aria-invalid]="
+          (normalizedField.touched && !validText(normalizedWord)) || !!fieldErrors().normalizedWord
+        " aria-describedby="core-normalized-help"
+        class="min-h-11 w-full rounded-xl border border-gray-300 px-3 py-2 text-gray-900 focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-indigo-600 disabled:bg-gray-50 aria-invalid:border-red-600" />
+      <p id="core-normalized-help" class="mt-2 text-sm" [class]="
+          fieldErrors().normalizedWord || (normalizedField.touched && !validText(normalizedWord))
+            ? 'text-red-700'
+            : 'text-gray-600'
+        ">
+        {{
+        fieldErrors().normalizedWord ||
+        'Enter the normalized form explicitly, up to 100 characters. This value must be unique.'
+        }}
+      </p>
+    </div>
+  </fieldset>
+
+  <app-vocabulary-form-actions saveLabel="Save changes" [locked]="locked()" [invalid]="!valid || !!form.invalid"
+    (cancelled)="cancelled.emit()" />
+</form>

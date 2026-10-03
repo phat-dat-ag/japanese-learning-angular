@@ -3,6 +3,7 @@ import { EMPTY, expand, map, Observable, reduce } from 'rxjs';
 import { ApiClient } from '../../../core/api/api-client.service';
 import { ApiSuccess } from '../../../core/api/api-response.model';
 import { FlashcardPage, isFlashcardPage } from '../models/flashcard-page.model';
+import { FlashcardListQuery } from '../models/flashcard-list-query.model';
 import { Flashcard, isFlashcard } from '../models/flashcard.model';
 
 @Injectable({ providedIn: 'root' })
@@ -10,10 +11,20 @@ export class FlashcardService {
   private readonly api = inject(ApiClient);
 
   getFlashcards(lessonId: number, level: string, page = 0): Observable<ApiSuccess<FlashcardPage>> {
-    return this.api.get(
-      `v1/flashcards?lesson=${lessonId}&level=${encodeURIComponent(level.toUpperCase())}&page=${page}&size=20`,
-      isFlashcardPage,
-    );
+    return this.getFlashcardPage({ lesson: lessonId, level, page, size: 20 });
+  }
+
+  getFlashcardPage(query: FlashcardListQuery): Observable<ApiSuccess<FlashcardPage>> {
+    const params = new URLSearchParams();
+
+    if (query.lesson !== undefined) params.set('lesson', String(query.lesson));
+
+    if (query.level) params.set('level', query.level.toUpperCase());
+
+    params.set('page', String(query.page));
+    params.set('size', String(query.size));
+
+    return this.api.get(`v1/flashcards?${params}`, isFlashcardPage);
   }
 
   getLessonFlashcardIds(lessonId: number, level: string): Observable<readonly number[]> {
@@ -23,6 +34,7 @@ export class FlashcardService {
           ? this.getFlashcards(lessonId, level, response.data.page + 1)
           : EMPTY,
       ),
+
       reduce(
         (ids: number[], response) => [
           ...ids,
@@ -30,6 +42,7 @@ export class FlashcardService {
         ],
         [],
       ),
+
       map((ids) => [...new Set(ids)]),
     );
   }
