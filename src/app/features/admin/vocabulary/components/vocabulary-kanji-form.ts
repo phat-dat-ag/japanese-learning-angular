@@ -15,12 +15,14 @@ import { validDisplayOrder } from '../models/vocabulary-children.model';
 import { validVocabularyText } from '../models/vocabulary-validation';
 import { VocabularyKanji } from '../models/vocabulary-detail.model';
 import { KanjiUpdateRequest } from '../models/vocabulary-content.model';
+
 @Component({
   selector: 'app-vocabulary-kanji-form',
   imports: [FormsModule, VocabularyFormActions],
   templateUrl: './vocabulary-kanji-form.html',
   changeDetection: ChangeDetectionStrategy.OnPush,
 })
+
 export class VocabularyKanjiForm implements OnInit {
   readonly initial = input<VocabularyKanji | null>(null);
   readonly idPrefix = input('kanji');
@@ -31,6 +33,7 @@ export class VocabularyKanjiForm implements OnInit {
   readonly validText = validVocabularyText;
   readonly validOrder = validDisplayOrder;
   private readonly first = viewChild<ElementRef<HTMLInputElement | HTMLTextAreaElement>>('first');
+
   constructor() {
     afterNextRender(() => this.first()?.nativeElement.focus());
   }
@@ -42,6 +45,7 @@ export class VocabularyKanjiForm implements OnInit {
   meaningViUnset = true;
   meaningEnUnset = true;
   displayOrder: number | null = null;
+
   ngOnInit(): void {
     const item = this.initial();
     if (!item) return;
@@ -53,12 +57,14 @@ export class VocabularyKanjiForm implements OnInit {
     this.meaningEnUnset = item.meaningEn === null;
     this.displayOrder = item.displayOrder;
   }
+
   get validStrokes(): boolean {
     return (
       this.strokeCount === null ||
       (Number.isInteger(this.strokeCount) && this.strokeCount >= 0 && this.strokeCount <= 65535)
     );
   }
+
   get valid(): boolean {
     return (
       validVocabularyText(this.character, 10) &&
@@ -68,6 +74,7 @@ export class VocabularyKanjiForm implements OnInit {
       validDisplayOrder(this.displayOrder)
     );
   }
+
   submit(): void {
     if (this.locked() || !this.valid || !validDisplayOrder(this.displayOrder)) return;
     this.submitted.emit({

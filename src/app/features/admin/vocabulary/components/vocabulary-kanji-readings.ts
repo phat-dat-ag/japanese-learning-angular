@@ -30,6 +30,7 @@ import { VocabularyAddFeedback } from './vocabulary-add-feedback';
   templateUrl: './vocabulary-kanji-readings.html',
   changeDetection: ChangeDetectionStrategy.OnPush,
 })
+
 export class VocabularyKanjiReadings {
   readonly vocabularyId = input.required<number>();
   readonly kanjiId = input.required<number>();
@@ -62,6 +63,7 @@ export class VocabularyKanjiReadings {
     this.state.set({ status: 'idle' });
     this.formOpen.set(true);
   }
+
   edit(item: VocabularyKanjiReading, button: HTMLButtonElement): void {
     if (this.formOpen() || this.locked()) return;
     this.selected.set(item);
@@ -76,6 +78,7 @@ export class VocabularyKanjiReadings {
     this.state.set({ status: 'idle' });
     this.finish();
   }
+
   save(request: KanjiReadingUpdateRequest): void {
     if (!this.formOpen() || this.locked()) return;
     const selected = this.selected();
@@ -97,11 +100,13 @@ export class VocabularyKanjiReadings {
       ),
     );
   }
+
   retryRefresh(): void {
     if (this.state().status !== 'refresh-error') return;
     this.state.set({ status: 'refreshing' });
     this.observe(this.service.getVocabularyDetail(this.vocabularyId()));
   }
+
   private observe(request: Observable<ApiSuccess<VocabularyDetailData>>): void {
     request
       .pipe(
@@ -127,6 +132,7 @@ export class VocabularyKanjiReadings {
           ),
       });
   }
+
   private finish(): void {
     this.formOpen.set(false);
     afterNextRender(

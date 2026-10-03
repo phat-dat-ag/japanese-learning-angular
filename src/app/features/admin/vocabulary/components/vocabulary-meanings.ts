@@ -30,6 +30,7 @@ import { VocabularyAddFeedback } from './vocabulary-add-feedback';
   templateUrl: './vocabulary-meanings.html',
   changeDetection: ChangeDetectionStrategy.OnPush,
 })
+
 export class VocabularyMeanings {
   readonly vocabularyId = input.required<number>();
   readonly items = input.required<readonly VocabularyMeaning[]>();
@@ -64,6 +65,7 @@ export class VocabularyMeanings {
     this.state.set({ status: 'idle' });
     this.formOpen.set(true);
   }
+
   edit(item: VocabularyMeaning, button: HTMLButtonElement): void {
     if (this.formOpen() || this.locked()) return;
     this.selected.set(item);
@@ -78,6 +80,7 @@ export class VocabularyMeanings {
     this.state.set({ status: 'idle' });
     this.finish();
   }
+
   save(request: VocabularyMeaningUpdateRequest): void {
     if (!this.formOpen() || this.locked()) return;
     const selected = this.selected();
@@ -94,11 +97,13 @@ export class VocabularyMeanings {
       ),
     );
   }
+
   retryRefresh(): void {
     if (this.state().status !== 'refresh-error') return;
     this.state.set({ status: 'refreshing' });
     this.observe(this.service.getVocabularyDetail(this.vocabularyId()));
   }
+
   private observe(request: Observable<ApiSuccess<VocabularyDetailData>>): void {
     request
       .pipe(takeUntil(this.route.paramMap.pipe(skip(1))), takeUntilDestroyed(this.destroyRef))
@@ -116,6 +121,7 @@ export class VocabularyMeanings {
           ),
       });
   }
+
   private finish(): void {
     this.formOpen.set(false);
     afterNextRender(

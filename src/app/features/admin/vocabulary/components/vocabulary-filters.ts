@@ -8,6 +8,7 @@ import { LoadState, VocabularyQuery } from '../models/vocabulary.model';
   templateUrl: './vocabulary-filters.html',
   changeDetection: ChangeDetectionStrategy.OnPush,
 })
+
 export class VocabularyFilters {
   readonly query = input.required<VocabularyQuery>();
   readonly levelState = input.required<LoadState<readonly JlptLevel[]>>();

@@ -27,6 +27,7 @@ import { VocabularyService } from '../services/vocabulary.service';
   templateUrl: './vocabulary-list.html',
   changeDetection: ChangeDetectionStrategy.OnPush,
 })
+
 export class VocabularyList {
   private readonly vocabulary = inject(VocabularyService);
   private readonly levels = inject(JlptLevelService);
@@ -61,6 +62,7 @@ export class VocabularyList {
       switchMap((level) => {
         if (!level)
           return of<LoadState<readonly FlashcardLesson[]>>({ status: 'loaded', data: [] });
+
         return this.lessonReload.pipe(
           startWith(undefined),
           switchMap(() =>
@@ -109,33 +111,44 @@ export class VocabularyList {
   );
 
   changeLevel(level: string): void {
-    if (level === (this.query().level ?? '')) return;
+    if (level === (this.query().level ?? ''))
+      return;
+
     const levels = this.levelState();
+
     if (level && (levels.status !== 'loaded' || !levels.data.some((item) => item.code === level)))
       return;
+
     this.queryChanges.next({ page: 0, size: this.query().size, level: level || undefined });
   }
 
   changeLesson(value: string): void {
     const lesson = value ? Number(value) : undefined;
     const lessons = this.lessonState();
+
     if (
       lesson !== undefined &&
       (lessons.status !== 'loaded' || !lessons.data.some((item) => item.id === lesson))
     )
       return;
+
     if (lesson === this.query().lesson) return;
+
     this.queryChanges.next({ ...this.query(), lesson, page: 0 });
   }
 
   changeSize(value: string): void {
     const size = this.pageSizes.find((item) => item === Number(value));
-    if (!size || size === this.query().size) return;
+
+    if (!size || size === this.query().size)
+      return;
+
     this.queryChanges.next({ ...this.query(), size, page: 0 });
   }
 
   changePage(page: number): void {
     const state = this.state();
+
     if (
       state.status !== 'loaded' ||
       !Number.isSafeInteger(page) ||
@@ -144,7 +157,9 @@ export class VocabularyList {
       page === state.data.page
     )
       return;
+
     this.resultsHeading()?.nativeElement.focus();
+
     this.queryChanges.next({ ...this.query(), page });
   }
 

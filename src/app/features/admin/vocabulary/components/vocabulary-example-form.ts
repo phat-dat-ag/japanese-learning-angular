@@ -15,12 +15,14 @@ import { validDisplayOrder } from '../models/vocabulary-children.model';
 import { validVocabularyText } from '../models/vocabulary-validation';
 import { VocabularyExample } from '../models/vocabulary-detail.model';
 import { VocabularyExampleUpdateRequest } from '../models/vocabulary-content.model';
+
 @Component({
   selector: 'app-vocabulary-example-form',
   imports: [FormsModule, VocabularyFormActions],
   templateUrl: './vocabulary-example-form.html',
   changeDetection: ChangeDetectionStrategy.OnPush,
 })
+
 export class VocabularyExampleForm implements OnInit {
   readonly initial = input<VocabularyExample | null>(null);
   readonly idPrefix = input('example');
@@ -31,6 +33,7 @@ export class VocabularyExampleForm implements OnInit {
   readonly validText = validVocabularyText;
   readonly validOrder = validDisplayOrder;
   private readonly first = viewChild<ElementRef<HTMLInputElement | HTMLTextAreaElement>>('first');
+
   constructor() {
     afterNextRender(() => this.first()?.nativeElement.focus());
   }
@@ -41,6 +44,7 @@ export class VocabularyExampleForm implements OnInit {
   meaningEn = '';
   targetText = '';
   displayOrder: number | null = null;
+
   ngOnInit(): void {
     const item = this.initial();
     if (!item) return;
@@ -51,6 +55,7 @@ export class VocabularyExampleForm implements OnInit {
     this.targetText = item.targetText;
     this.displayOrder = item.displayOrder;
   }
+
   get valid(): boolean {
     return (
       [this.japaneseText, this.japaneseReading, this.meaningVi, this.meaningEn].every((value) =>
@@ -60,6 +65,7 @@ export class VocabularyExampleForm implements OnInit {
       validDisplayOrder(this.displayOrder)
     );
   }
+
   submit(): void {
     if (this.locked() || !this.valid || !validDisplayOrder(this.displayOrder)) return;
     this.submitted.emit({

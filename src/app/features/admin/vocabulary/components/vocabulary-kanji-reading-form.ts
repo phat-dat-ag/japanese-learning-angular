@@ -15,12 +15,14 @@ import { validDisplayOrder } from '../models/vocabulary-children.model';
 import { validVocabularyText } from '../models/vocabulary-validation';
 import { VocabularyKanjiReading } from '../models/vocabulary-detail.model';
 import { KanjiReadingUpdateRequest } from '../models/vocabulary-content.model';
+
 @Component({
   selector: 'app-vocabulary-kanji-reading-form',
   imports: [FormsModule, VocabularyFormActions],
   templateUrl: './vocabulary-kanji-reading-form.html',
   changeDetection: ChangeDetectionStrategy.OnPush,
 })
+
 export class VocabularyKanjiReadingForm implements OnInit {
   readonly initial = input<VocabularyKanjiReading | null>(null);
   readonly idPrefix = input('kanji-reading');
@@ -31,6 +33,7 @@ export class VocabularyKanjiReadingForm implements OnInit {
   readonly validText = validVocabularyText;
   readonly validOrder = validDisplayOrder;
   private readonly first = viewChild<ElementRef<HTMLInputElement | HTMLTextAreaElement>>('first');
+
   constructor() {
     afterNextRender(() => this.first()?.nativeElement.focus());
   }
@@ -38,6 +41,7 @@ export class VocabularyKanjiReadingForm implements OnInit {
   reading = '';
   readingType = '';
   displayOrder: number | null = null;
+
   ngOnInit(): void {
     const item = this.initial();
     if (!item) return;
@@ -45,6 +49,7 @@ export class VocabularyKanjiReadingForm implements OnInit {
     this.readingType = item.readingType;
     this.displayOrder = item.displayOrder;
   }
+
   get valid(): boolean {
     return (
       validVocabularyText(this.reading, 100) &&
@@ -52,6 +57,7 @@ export class VocabularyKanjiReadingForm implements OnInit {
       validDisplayOrder(this.displayOrder)
     );
   }
+
   submit(): void {
     if (this.locked() || !this.valid || !validDisplayOrder(this.displayOrder)) return;
     this.submitted.emit({

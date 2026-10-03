@@ -31,6 +31,7 @@ import { VocabularyAddFeedback } from './vocabulary-add-feedback';
   templateUrl: './vocabulary-kanji.html',
   changeDetection: ChangeDetectionStrategy.OnPush,
 })
+
 export class VocabularyKanjiSection {
   readonly vocabularyId = input.required<number>();
   readonly items = input.required<readonly VocabularyKanji[]>();
@@ -66,6 +67,7 @@ export class VocabularyKanjiSection {
     this.state.set({ status: 'idle' });
     this.formOpen.set(true);
   }
+
   edit(item: VocabularyKanji, button: HTMLButtonElement): void {
     if (this.formOpen() || this.locked()) return;
     this.selected.set(item);
@@ -80,6 +82,7 @@ export class VocabularyKanjiSection {
     this.state.set({ status: 'idle' });
     this.finish();
   }
+
   save(request: KanjiUpdateRequest): void {
     if (!this.formOpen() || this.locked()) return;
     const selected = this.selected();
@@ -96,11 +99,13 @@ export class VocabularyKanjiSection {
       ),
     );
   }
+
   retryRefresh(): void {
     if (this.state().status !== 'refresh-error') return;
     this.state.set({ status: 'refreshing' });
     this.observe(this.service.getVocabularyDetail(this.vocabularyId()));
   }
+
   private observe(request: Observable<ApiSuccess<VocabularyDetailData>>): void {
     request
       .pipe(takeUntil(this.route.paramMap.pipe(skip(1))), takeUntilDestroyed(this.destroyRef))
@@ -118,6 +123,7 @@ export class VocabularyKanjiSection {
           ),
       });
   }
+
   private finish(): void {
     this.formOpen.set(false);
     afterNextRender(

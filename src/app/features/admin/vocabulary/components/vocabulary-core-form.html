@@ -1,6 +1,7 @@
 <form #form="ngForm" (ngSubmit)="submit()" class="min-w-0 space-y-5">
   <fieldset [disabled]="locked()" class="grid min-w-0 gap-5 sm:grid-cols-2">
     <legend class="sr-only">Edit core information</legend>
+    
     <div>
       <label for="core-word" class="mb-2 block text-sm font-medium text-gray-800">Word <span
           class="font-normal text-gray-500">(required)</span></label>
@@ -16,6 +17,7 @@
         {{ fieldErrors().word || 'Enter a nonblank word, up to 100 characters.' }}
       </p>
     </div>
+
     <div>
       <label for="core-normalized-word" class="mb-2 block text-sm font-medium text-gray-800">Normalized word <span
           class="font-normal text-gray-500">(required)</span></label>
@@ -36,6 +38,7 @@
       </p>
     </div>
   </fieldset>
+
   <app-vocabulary-form-actions saveLabel="Save changes" [locked]="locked()" [invalid]="!valid || !!form.invalid"
     (cancelled)="cancelled.emit()" />
 </form>

@@ -11,6 +11,7 @@ import { ChangeDetectionStrategy, Component, input } from '@angular/core';
   `,
   changeDetection: ChangeDetectionStrategy.OnPush,
 })
+
 export class VocabularyHeader {
   readonly title = input.required<string>();
   readonly description = input.required<string>();

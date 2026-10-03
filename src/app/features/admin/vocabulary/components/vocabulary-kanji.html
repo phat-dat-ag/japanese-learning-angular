@@ -4,6 +4,7 @@
     class="min-h-11 rounded-xl border border-indigo-200 bg-indigo-50 px-4 py-2 text-sm font-semibold text-indigo-700 hover:bg-indigo-100 focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-indigo-600 disabled:opacity-50">
     Add or attach kanji
   </button>
+
   <div [attr.aria-busy]="busy()">
     <ul class="divide-y divide-gray-100">
       @for (item of items(); track item.kanjiId) {
@@ -19,6 +20,7 @@
             Edit
           </button>
         </div>
+
         <dl class="mt-3 grid gap-3 text-sm sm:grid-cols-2">
           <div class="min-w-0">
             <dt class="font-medium text-gray-600">Stroke count</dt>
@@ -37,6 +39,7 @@
             <dd lang="en" class="mt-1 break-words">{{ item.meaningEn ?? 'Not specified' }}</dd>
           </div>
         </dl>
+
         <div class="mt-5 rounded-xl border border-gray-200 p-4">
           <app-vocabulary-kanji-readings [vocabularyId]="vocabularyId()" [kanjiId]="item.kanjiId"
             [items]="item.readings" (updated)="readingsUpdated.emit({ kanjiId: item.kanjiId, readings: $event })" />
@@ -53,5 +56,6 @@
     </div>
     }
   </div>
+
   <app-vocabulary-add-feedback [state]="state()" kind="kanji" [operation]="operation()" (retried)="retryRefresh()" />
 </app-vocabulary-section>

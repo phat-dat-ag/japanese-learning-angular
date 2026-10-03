@@ -22,12 +22,14 @@ import { FlashcardLesson } from '../../../flashcard/models/flashcard-lesson.mode
   templateUrl: './vocabulary-lesson-assignment-form.html',
   changeDetection: ChangeDetectionStrategy.OnPush,
 })
+
 export class VocabularyLessonAssignmentForm implements OnInit {
   readonly locked = input(false);
   readonly fieldErrors = input<AdditionErrors>({});
   readonly cancelled = output<void>();
   private readonly first = viewChild<ElementRef<HTMLInputElement | HTMLSelectElement>>('first');
   private readonly orderInput = viewChild<ElementRef<HTMLInputElement>>('orderInput');
+  
   constructor() {
     afterNextRender(() =>
       (this.first()?.nativeElement ?? this.orderInput()?.nativeElement)?.focus(),
@@ -44,6 +46,7 @@ export class VocabularyLessonAssignmentForm implements OnInit {
   level = '';
   lessonId: number | null = null;
   displayOrder: number | null = null;
+
   ngOnInit(): void {
     const item = this.initial();
     if (item) {
@@ -51,26 +54,32 @@ export class VocabularyLessonAssignmentForm implements OnInit {
       this.displayOrder = item.assignmentDisplayOrder;
     }
   }
+
   validOrder(value: number | null): value is number {
     return validDisplayOrder(value) && value >= 1;
   }
+
   changeLevel(value: string): void {
     this.level = value;
     this.lessonId = null;
     this.levelChanged.emit(value);
   }
+
   get validLevel(): boolean {
     return this.levels().some((item) => item.code === this.level);
   }
+
   get validLesson(): boolean {
     return (
       this.initial() !== null ||
       (this.validLevel && this.options().some((item) => item.id === this.lessonId))
     );
   }
+
   get valid(): boolean {
     return this.validOrder(this.displayOrder) && this.validLesson;
   }
+
   submit(): void {
     if (
       this.locked() ||

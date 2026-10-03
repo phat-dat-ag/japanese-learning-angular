@@ -19,20 +19,24 @@ import { validVocabularyText } from '../models/vocabulary-validation';
   templateUrl: './vocabulary-part-of-speech-form.html',
   changeDetection: ChangeDetectionStrategy.OnPush,
 })
+
 export class VocabularyPartOfSpeechForm {
   readonly locked = input(false);
   readonly fieldErrors = input<AdditionErrors>({});
   readonly cancelled = output<void>();
   private readonly first = viewChild<ElementRef<HTMLInputElement | HTMLSelectElement>>('first');
+
   constructor() {
     afterNextRender(() => this.first()?.nativeElement.focus());
   }
 
   readonly submitted = output<PartOfSpeechAssignmentAddRequest>();
   code = '';
+
   get valid(): boolean {
     return validVocabularyText(this.code, 50);
   }
+
   submit(): void {
     if (this.locked() || !this.valid) return;
     this.submitted.emit({ code: this.code });

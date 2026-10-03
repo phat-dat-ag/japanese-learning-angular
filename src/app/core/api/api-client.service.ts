@@ -51,6 +51,7 @@ export class ApiClient {
           if (!isApiResponse(body)) {
             throw ApiError.invalidResponse(status);
           }
+
           if (!body.success) {
             throw new ApiError(
               body.error.code,
@@ -60,6 +61,7 @@ export class ApiClient {
               body.meta,
             );
           }
+
           if (!isData(body.data)) {
             throw ApiError.invalidResponse(status, body.meta);
           }

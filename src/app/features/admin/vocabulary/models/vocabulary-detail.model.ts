@@ -14,6 +14,7 @@ export interface VocabularyPitchAccent {
   readonly reading: string;
   readonly accentPattern: number;
 }
+
 export interface VocabularyDetailData extends VocabularyCore {
   readonly readings: readonly VocabularyReading[];
   readonly meanings: readonly VocabularyMeaning[];

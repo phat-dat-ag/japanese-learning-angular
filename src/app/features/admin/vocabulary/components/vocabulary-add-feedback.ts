@@ -47,6 +47,7 @@ import { AdditionState } from '../models/vocabulary-add-state';
   `,
   changeDetection: ChangeDetectionStrategy.OnPush,
 })
+
 export class VocabularyAddFeedback {
   readonly operation = input<'add' | 'edit'>('add');
   readonly state = input.required<AdditionState>();

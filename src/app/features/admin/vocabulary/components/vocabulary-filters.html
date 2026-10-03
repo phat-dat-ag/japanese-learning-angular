@@ -8,6 +8,7 @@
     </button>
     }
   </div>
+
   <div class="mt-4 grid gap-5 sm:grid-cols-3">
     <div>
       <label for="vocabulary-level" class="block text-sm font-medium text-gray-700">JLPT level</label>
@@ -23,6 +24,7 @@
         }
         }
       </select>
+
       <div id="level-help" class="mt-2 text-sm text-gray-600">
         @switch (levelState().status) {
         @case ('loading') {
@@ -41,6 +43,7 @@
         }
       </div>
     </div>
+
     <div>
       <label for="vocabulary-lesson" class="block text-sm font-medium text-gray-700">Lesson</label>
       <select #lesson id="vocabulary-lesson" [value]="query().lesson ?? ''" (change)="lessonChanged.emit(lesson.value)"
@@ -55,6 +58,7 @@
         }
         }
       </select>
+
       <div id="lesson-help" class="mt-2 text-sm text-gray-600">
         @if (!query().level) {
         <p>Select a level to choose a lesson.</p>
@@ -85,6 +89,7 @@
         }
       </div>
     </div>
+
     <div>
       <label for="vocabulary-size" class="block text-sm font-medium text-gray-700">Entries per page</label>
       <select #size id="vocabulary-size" [value]="query().size" (change)="sizeChanged.emit(size.value)"

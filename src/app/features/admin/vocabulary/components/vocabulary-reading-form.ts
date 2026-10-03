@@ -24,6 +24,7 @@ import { validVocabularyText } from '../models/vocabulary-validation';
   templateUrl: './vocabulary-reading-form.html',
   changeDetection: ChangeDetectionStrategy.OnPush,
 })
+
 export class VocabularyReadingForm implements OnInit {
   readonly initial = input<VocabularyReading | null>(null);
   readonly locked = input(false);

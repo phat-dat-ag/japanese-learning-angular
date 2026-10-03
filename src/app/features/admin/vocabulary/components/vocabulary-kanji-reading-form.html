@@ -3,10 +3,12 @@
     <legend class="mb-4 text-lg font-semibold text-gray-900">
       {{ initial() ? 'Editing Kanji Reading' : 'Adding Kanji Reading' }}
     </legend>
+
     <p class="text-sm text-gray-600">
       Readings belong to this kanji. Changes may be restricted when the kanji is shared with other
       vocabulary.
     </p>
+
     <div>
       <label [for]="idPrefix() + '-reading'" class="text-sm font-medium text-gray-700">Kanji reading <span
           class="font-normal text-gray-500">(required)</span></label>
@@ -25,6 +27,7 @@
         }}
       </p>
     </div>
+
     <div>
       <label [for]="idPrefix() + '-readingType'" class="text-sm font-medium text-gray-700">Reading type <span
           class="font-normal text-gray-500">(required)</span></label>
@@ -43,6 +46,7 @@
         }}
       </p>
     </div>
+
     <div>
       <label [for]="idPrefix() + '-order'" class="text-sm font-medium text-gray-700">Display order <span
           class="font-normal text-gray-500">(required)</span></label>
@@ -61,6 +65,7 @@
         }}
       </p>
     </div>
+
     <app-vocabulary-form-actions saveLabel="Save kanji reading" [locked]="locked()" [invalid]="!valid"
       (cancelled)="cancelled.emit()" />
   </fieldset>

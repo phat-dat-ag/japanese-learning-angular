@@ -24,6 +24,7 @@ import { ChangeDetectionStrategy, Component, input, output } from '@angular/core
   `,
   changeDetection: ChangeDetectionStrategy.OnPush,
 })
+
 export class VocabularyFormActions {
   readonly saveLabel = input.required<string>();
   readonly locked = input(false);

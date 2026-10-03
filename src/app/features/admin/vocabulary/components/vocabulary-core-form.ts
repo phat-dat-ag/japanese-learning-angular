@@ -23,6 +23,7 @@ import {
   templateUrl: './vocabulary-core-form.html',
   changeDetection: ChangeDetectionStrategy.OnPush,
 })
+
 export class VocabularyCoreForm implements OnInit {
   readonly core = input.required<VocabularyCore>();
   readonly locked = input(false);

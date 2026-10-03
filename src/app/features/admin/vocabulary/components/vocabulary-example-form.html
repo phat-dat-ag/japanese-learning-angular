@@ -3,10 +3,12 @@
     <legend class="mb-4 text-lg font-semibold text-gray-900">
       {{ initial() ? 'Editing Example' : 'Adding Example' }}
     </legend>
+
     <p class="text-sm text-gray-600">
       Shared sentence content may be protected. Target text and display order belong to this
       vocabulary.
     </p>
+
     <div>
       <label [for]="idPrefix() + '-japaneseText'" class="text-sm font-medium text-gray-700">Japanese sentence <span
           class="font-normal text-gray-500">(required)</span></label>
@@ -25,6 +27,7 @@
         }}
       </p>
     </div>
+
     <div>
       <label [for]="idPrefix() + '-japaneseReading'" class="text-sm font-medium text-gray-700">Japanese reading <span
           class="font-normal text-gray-500">(required)</span></label>
@@ -43,6 +46,7 @@
         }}
       </p>
     </div>
+
     <div>
       <label [for]="idPrefix() + '-meaningVi'" class="text-sm font-medium text-gray-700">Vietnamese meaning <span
           class="font-normal text-gray-500">(required)</span></label>
@@ -61,6 +65,7 @@
         }}
       </p>
     </div>
+
     <div>
       <label [for]="idPrefix() + '-meaningEn'" class="text-sm font-medium text-gray-700">English meaning <span
           class="font-normal text-gray-500">(required)</span></label>
@@ -79,6 +84,7 @@
         }}
       </p>
     </div>
+
     <div>
       <label [for]="idPrefix() + '-targetText'" class="text-sm font-medium text-gray-700">Vocabulary target text <span
           class="font-normal text-gray-500">(required)</span></label>
@@ -97,6 +103,7 @@
         }}
       </p>
     </div>
+
     <div>
       <label [for]="idPrefix() + '-order'" class="text-sm font-medium text-gray-700">Assignment display order <span
           class="font-normal text-gray-500">(required)</span></label>
@@ -115,6 +122,7 @@
         }}
       </p>
     </div>
+
     <app-vocabulary-form-actions saveLabel="Save example" [locked]="locked()" [invalid]="!valid"
       (cancelled)="cancelled.emit()" />
   </fieldset>

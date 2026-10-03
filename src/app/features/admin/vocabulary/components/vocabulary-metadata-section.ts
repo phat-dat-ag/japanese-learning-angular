@@ -72,6 +72,7 @@ const labels = {
   templateUrl: './vocabulary-metadata-section.html',
   changeDetection: ChangeDetectionStrategy.OnPush,
 })
+
 export class VocabularyMetadataSection {
   readonly kind = input.required<MetadataKind>();
   readonly detail = input.required<VocabularyDetailData>();
@@ -124,10 +125,10 @@ export class VocabularyMetadataSection {
           this.choicesState.set(level ? 'loading' : 'idle');
           return level
             ? this.lessonService.getLessons(level).pipe(
-                map((response) => ({ status: 'loaded' as const, items: response.data })),
-                catchError(() => of({ status: 'error' as const, items: [] })),
-                takeUntil(this.closed),
-              )
+              map((response) => ({ status: 'loaded' as const, items: response.data })),
+              catchError(() => of({ status: 'error' as const, items: [] })),
+              takeUntil(this.closed),
+            )
             : of({ status: 'idle' as const, items: [] });
         }),
         takeUntil(this.route.paramMap.pipe(skip(1))),
@@ -151,6 +152,7 @@ export class VocabularyMetadataSection {
     this.formOpen.set(true);
     if (this.kind() === 'levels') this.loadLevels();
   }
+
   edit(selection: MetadataSelection, button: HTMLButtonElement): void {
     if (this.formOpen() || this.locked() || selection.kind !== this.kind()) return;
     this.selection.set(selection);
@@ -160,19 +162,23 @@ export class VocabularyMetadataSection {
     this.choicesState.set('idle');
     this.formOpen.set(true);
   }
+
   cancel(): void {
     if (this.locked()) return;
     this.state.set({ status: 'idle' });
     this.finish();
   }
+
   loadLessons(level: string): void {
     this.lastLevel = level;
     this.lessonLevel.next(level);
   }
+
   retryChoices(): void {
     if (this.kind() === 'levels') this.loadLevels();
     else this.loadLessons(this.lastLevel);
   }
+
   private loadLevels(): void {
     this.choicesState.set('loading');
     this.levels.set([]);
@@ -191,11 +197,13 @@ export class VocabularyMetadataSection {
         error: () => this.choicesState.set('error'),
       });
   }
+
   save(submission: MetadataSubmission): void {
     if (!this.formOpen() || this.locked() || submission.kind !== this.kind()) return;
     const id = this.detail().id;
     const selected = this.selection();
     let mutation: Observable<unknown>;
+
     switch (submission.kind) {
       case 'pitch-accents':
         mutation =
@@ -203,23 +211,28 @@ export class VocabularyMetadataSection {
             ? this.service.updatePitchAccent(id, selected.item.pitchAccentId, submission.request)
             : this.service.addPitchAccents(id, [submission.request]);
         break;
+
       case 'levels':
         mutation =
           selected?.kind === 'levels'
             ? this.service.updateLevel(id, selected.item.levelId, submission.request)
             : this.service.addLevels(id, [submission.request]);
         break;
+
       case 'lessons':
         mutation =
           selected?.kind === 'lessons'
             ? this.service.updateLesson(id, selected.item.lessonId, submission.request)
             : this.service.addLessons(id, [submission.request]);
         break;
+
       case 'parts-of-speech':
         mutation = this.service.addPartsOfSpeech(id, [submission.request]);
         break;
     }
+
     this.state.set({ status: 'saving' });
+
     this.observe(
       mutation.pipe(
         switchMap(() => {
@@ -231,9 +244,11 @@ export class VocabularyMetadataSection {
   }
   retryRefresh(): void {
     if (this.state().status !== 'refresh-error') return;
+
     this.state.set({ status: 'refreshing' });
     this.observe(this.service.getVocabularyDetail(this.detail().id));
   }
+
   private observe(request: Observable<ApiSuccess<VocabularyDetailData>>): void {
     request
       .pipe(takeUntil(this.route.paramMap.pipe(skip(1))), takeUntilDestroyed(this.destroyRef))
@@ -244,19 +259,24 @@ export class VocabularyMetadataSection {
             case 'pitch-accents':
               this.updated.emit({ kind: 'pitch-accents', items: data.pitchAccents });
               break;
+
             case 'levels':
               this.updated.emit({ kind: 'levels', items: data.levels });
               break;
+
             case 'lessons':
               this.updated.emit({ kind: 'lessons', items: data.lessons });
               break;
+
             case 'parts-of-speech':
               this.updated.emit({ kind: 'parts-of-speech', items: data.partsOfSpeech });
               break;
           }
+
           this.state.set({ status: 'saved' });
           this.finish();
         },
+
         error: (error: unknown) =>
           this.state.set(
             this.state().status === 'refreshing'
@@ -265,6 +285,7 @@ export class VocabularyMetadataSection {
           ),
       });
   }
+
   private finish(): void {
     this.closed.next();
     this.formOpen.set(false);

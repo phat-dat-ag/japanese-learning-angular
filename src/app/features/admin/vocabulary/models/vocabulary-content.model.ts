@@ -6,6 +6,7 @@ export interface VocabularyExampleUpdateRequest {
   readonly targetText: string;
   readonly displayOrder: number;
 }
+
 export interface KanjiUpdateRequest {
   readonly character: string;
   readonly strokeCount: number | null;
@@ -13,6 +14,7 @@ export interface KanjiUpdateRequest {
   readonly meaningEn: string | null;
   readonly displayOrder: number;
 }
+
 export interface KanjiReadingUpdateRequest {
   readonly reading: string;
   readonly readingType: string;

@@ -19,7 +19,9 @@ export type AdditionField =
   | 'character'
   | 'strokeCount'
   | 'readingType';
+
 export type AdditionErrors = Readonly<Partial<Record<AdditionField, string>>>;
+
 export type AdditionState =
   | { readonly status: 'idle' | 'saving' | 'refreshing' | 'saved' | 'refresh-error' }
   | { readonly status: 'error'; readonly message: string; readonly fields: AdditionErrors };
@@ -39,12 +41,14 @@ export function additionError(
   operation: 'add' | 'edit' = 'add',
 ): AdditionState {
   const fields: Partial<Record<AdditionField, string>> = {};
+
   let message =
     'Unable to ' +
     (operation === 'edit' ? 'update' : 'add') +
     ' this ' +
     kind +
     '. Please try again.';
+
   if (error instanceof ApiError) {
     switch (error.status) {
       case 400:
@@ -54,6 +58,7 @@ export function additionError(
             : kind === 'lesson assignment'
               ? 'Check the assignment fields. Assign the lesson’s JLPT level to this vocabulary first.'
               : 'Check the ' + kind + ' fields and try again.';
+
         for (const detail of error.details) {
           if (
             (detail.field === 'reading' && (kind === 'reading' || kind === 'kanji reading')) ||
@@ -78,13 +83,17 @@ export function additionError(
             fields[detail.field] = 'The server rejected this value. Please check it.';
           }
         }
+
         break;
+
       case 401:
         message = 'Your session could not be verified. Please sign in again.';
         break;
+
       case 403:
         message = 'You do not have permission to update this vocabulary.';
         break;
+
       case 404:
         message =
           operation === 'edit'
@@ -95,6 +104,7 @@ export function additionError(
               ? 'This vocabulary no longer exists. Return to Vocabulary Management.'
               : 'The vocabulary or selected master-data entry is no longer available. Check the selection and try again.';
         break;
+
       case 409:
         if (kind === 'example' || kind === 'kanji' || kind === 'kanji reading') {
           message =
@@ -105,6 +115,7 @@ export function additionError(
                 : 'This reading conflicts with an existing reading or belongs to shared kanji. Readings of shared kanji cannot be added or edited here. Your draft has been kept.';
           break;
         }
+
         message =
           kind === 'reading'
             ? 'This reading already exists for the vocabulary.'
@@ -114,5 +125,6 @@ export function additionError(
         break;
     }
   }
+
   return { status: 'error', message, fields };
 }

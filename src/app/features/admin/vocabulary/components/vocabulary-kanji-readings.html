@@ -8,6 +8,7 @@
       Add kanji reading
     </button>
   </div>
+
   <div [attr.aria-busy]="busy()">
     <ul class="divide-y divide-gray-100">
       @for (item of items(); track item.kanjiReadingId) {
@@ -36,6 +37,7 @@
     </div>
     }
   </div>
+
   <app-vocabulary-add-feedback [state]="state()" kind="kanji reading" [operation]="operation()"
     (retried)="retryRefresh()" />
 </section>

@@ -30,6 +30,7 @@ describe('Admin vocabulary detail and core editing', () => {
     });
     http = TestBed.inject(HttpTestingController);
   });
+
   afterEach(() => http.verify());
 
   function create(): void {
@@ -37,12 +38,14 @@ describe('Admin vocabulary detail and core editing', () => {
     element = fixture.nativeElement;
     fixture.detectChanges();
   }
+
   function load(id = 42): void {
     http
       .expectOne('/api/v1/flashcards/' + id)
       .flush({ success: true, data: vocabularyDetailFixture(id), meta });
     fixture.detectChanges();
   }
+
   function button(label: string): HTMLButtonElement {
     const found = Array.from(element.querySelectorAll('button')).find(
       (item) => item.textContent?.trim() === label,
@@ -50,11 +53,13 @@ describe('Admin vocabulary detail and core editing', () => {
     expect(found).toBeDefined();
     return found!;
   }
+
   async function edit(): Promise<void> {
     button('Edit core information').click();
     fixture.detectChanges();
     await fixture.whenStable();
   }
+
   async function fill(word: string, normalizedWord: string): Promise<void> {
     for (const [id, value] of [
       ['core-word', word],
@@ -65,9 +70,11 @@ describe('Admin vocabulary detail and core editing', () => {
       input.dispatchEvent(new Event('input'));
       input.dispatchEvent(new Event('blur'));
     }
+
     fixture.detectChanges();
     await fixture.whenStable();
   }
+
   function save(): void {
     button('Save changes').click();
     fixture.detectChanges();
@@ -75,12 +82,17 @@ describe('Admin vocabulary detail and core editing', () => {
 
   it('loads a validated ID and renders actual core values', () => {
     create();
+
     expect(element.textContent).toContain('Loading vocabulary details');
     expect(element.querySelector('[aria-busy]')?.getAttribute('aria-busy')).toBe('true');
+
     const request = http.expectOne(getUrl);
+
     expect(request.request.method).toBe('GET');
     request.flush({ success: true, data: vocabularyDetailFixture(), meta });
+
     fixture.detectChanges();
+
     expect(element.textContent).toContain('Vocabulary ID 42');
     expect(element.textContent).toContain('日本語');
     expect(element.textContent).toContain('にほんご');
@@ -117,7 +129,9 @@ describe('Admin vocabulary detail and core editing', () => {
 
   it('cancels stale requests and removes old details when the route changes', () => {
     create();
+
     const old = http.expectOne(getUrl);
+
     params.next(convertToParamMap({ vocabularyId: '73' }));
     fixture.detectChanges();
     expect(old.cancelled).toBe(true);
@@ -133,18 +147,23 @@ describe('Admin vocabulary detail and core editing', () => {
     create();
     load();
     await edit();
+
     expect(element.querySelector<HTMLInputElement>('#core-word')?.value).toBe('日本語');
     expect(element.querySelector<HTMLInputElement>('#core-normalized-word')?.value).toBe(
       'にほんご',
     );
+
     await fill('Draft', 'draft');
+
     button('Cancel').click();
     fixture.detectChanges();
     expect(element.querySelector('form')).toBeNull();
     expect(element.textContent).toContain('日本語');
     expect(element.textContent).not.toContain('Draft');
     http.expectNone((request) => request.method === 'PUT');
+
     await edit();
+
     expect(element.querySelector<HTMLInputElement>('#core-word')?.value).toBe('日本語');
   });
 
@@ -161,6 +180,7 @@ describe('Admin vocabulary detail and core editing', () => {
     load();
     await edit();
     await fill(word, normalizedWord);
+
     expect(button('Save changes').disabled).toBe(true);
     element.querySelector('form')!.dispatchEvent(new Event('submit'));
     fixture.detectChanges();
@@ -174,8 +194,11 @@ describe('Admin vocabulary detail and core editing', () => {
     await edit();
     await fill(' 日本 ', 'にほん');
     save();
+
     fixture.componentInstance.save({ word: 'Duplicate', normalizedWord: 'duplicate' });
+
     const request = http.expectOne(putUrl);
+
     expect(request.request.method).toBe('PUT');
     expect(request.request.body).toEqual({ word: ' 日本 ', normalizedWord: 'にほん' });
     expect(button('Save changes').disabled).toBe(true);
@@ -184,7 +207,9 @@ describe('Admin vocabulary detail and core editing', () => {
     request.flush({ success: true, data: { vocabularyId: 42 }, meta });
     fixture.detectChanges();
     expect(element.textContent).toContain('Changes saved. Refreshing');
+
     const refreshed = vocabularyDetailFixture();
+
     http.expectOne(getUrl).flush({
       success: true,
       data: {
@@ -197,6 +222,7 @@ describe('Admin vocabulary detail and core editing', () => {
       },
       meta,
     });
+
     fixture.detectChanges();
     expect(element.querySelector('form')).toBeNull();
     expect(element.textContent).toContain('Authoritative word');
@@ -220,6 +246,7 @@ describe('Admin vocabulary detail and core editing', () => {
     await edit();
     await fill('Draft', 'draft');
     save();
+
     http.expectOne(putUrl).flush(
       {
         success: false,
@@ -235,7 +262,9 @@ describe('Admin vocabulary detail and core editing', () => {
       },
       { status: 400, statusText: 'Bad Request' },
     );
+
     fixture.detectChanges();
+
     expect(element.textContent).toContain('Please check the core information');
     expect(element.querySelector('#core-word-help')?.textContent).toContain('server rejected');
     expect(element.textContent).not.toContain('SQL');
@@ -243,7 +272,9 @@ describe('Admin vocabulary detail and core editing', () => {
     expect(element.querySelector<HTMLInputElement>('#core-word')?.value).toBe('Draft');
     expect(button('Save changes').disabled).toBe(false);
     button('Cancel').click();
+
     fixture.detectChanges();
+
     expect(element.textContent).toContain('にほんご');
   });
 
@@ -260,10 +291,12 @@ describe('Admin vocabulary detail and core editing', () => {
     await edit();
     await fill('Draft', 'draft');
     save();
+
     http
       .expectOne(putUrl)
       .flush('private diagnostic', { status: Number(status), statusText: 'Error' });
     fixture.detectChanges();
+
     expect(element.textContent).toContain(message);
     expect(element.textContent).not.toContain('private diagnostic');
     expect(element.querySelector<HTMLInputElement>('#core-word')?.value).toBe('Draft');
@@ -275,14 +308,18 @@ describe('Admin vocabulary detail and core editing', () => {
     await edit();
     await fill('Draft', 'draft');
     save();
+
     http.expectOne(putUrl).flush({ success: true, data: { vocabularyId: 42 }, meta });
     http.expectOne(getUrl).flush(null, { status: 500, statusText: 'Error' });
     fixture.detectChanges();
+
     expect(element.textContent).toContain('Changes were saved');
     expect(button('Save changes').disabled).toBe(true);
     expect(button('Cancel').disabled).toBe(true);
     button('Refresh saved details').click();
+
     load();
+
     expect(element.querySelector('form')).toBeNull();
     http.expectNone((r) => r.method === 'PUT');
   });
@@ -293,12 +330,16 @@ describe('Admin vocabulary detail and core editing', () => {
     await edit();
     await fill('Draft', 'draft');
     save();
+
     const old = http.expectOne(putUrl);
+
     params.next(convertToParamMap({ vocabularyId: '73' }));
     fixture.detectChanges();
     expect(old.cancelled).toBe(true);
     expect(element.querySelector('form')).toBeNull();
+
     load(73);
+
     expect(element.textContent).toContain('Vocabulary ID 73');
     expect(element.textContent).not.toContain('Draft');
   });

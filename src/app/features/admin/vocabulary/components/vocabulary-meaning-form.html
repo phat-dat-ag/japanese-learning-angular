@@ -3,6 +3,7 @@
     <legend class="mb-4 text-lg font-semibold text-gray-900">
       {{ initial() ? 'Editing Meaning' : 'Adding Meaning' }}
     </legend>
+
     <div class="sm:col-span-2">
       <label for="new-meaning" class="mb-2 block text-sm font-medium text-gray-800">Meaning <span
           class="font-normal text-gray-500">(required)</span></label>
@@ -15,6 +16,7 @@
         {{ fieldErrors().meaning || 'Enter a nonblank meaning, up to 500 characters.' }}
       </p>
     </div>
+
     <div>
       <label for="meaning-language" class="mb-2 block text-sm font-medium text-gray-800">Language <span
           class="font-normal text-gray-500">(required)</span></label>
@@ -28,6 +30,7 @@
         {{ fieldErrors().language || 'Choose English or Vietnamese.' }}
       </p>
     </div>
+
     <div>
       <label for="meaning-order" class="mb-2 block text-sm font-medium text-gray-800">Display order <span
           class="font-normal text-gray-500">(required)</span></label>
@@ -43,6 +46,7 @@
         }}
       </p>
     </div>
+
     <div class="sm:col-span-2">
       <label class="inline-flex min-h-11 items-center gap-3 text-sm font-medium text-gray-800">
         <input type="checkbox" name="isPrimary" [attr.aria-invalid]="!!fieldErrors().isPrimary" [(ngModel)]="isPrimary"
@@ -57,6 +61,7 @@
       </p>
     </div>
   </fieldset>
+
   <app-vocabulary-form-actions saveLabel="Save meaning" [locked]="locked()" [invalid]="!valid || !!form.invalid"
     (cancelled)="cancelled.emit()" />
 </form>

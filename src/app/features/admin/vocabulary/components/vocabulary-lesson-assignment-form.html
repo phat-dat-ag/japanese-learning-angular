@@ -25,6 +25,7 @@
         Assign the lesson’s JLPT level to this vocabulary first.
       </p>
     </div>
+
     <div>
       <label for="assignment-lesson" class="text-sm font-medium text-gray-700">Lesson <span
           class="font-normal text-gray-500">(required)</span></label>
@@ -54,6 +55,7 @@
       </p>
     </div>
     }
+
     <div>
       <label for="lesson-assignment-order" class="text-sm font-medium text-gray-700">Assignment display order <span
           class="font-normal text-gray-500">(required)</span></label>
@@ -72,6 +74,7 @@
         }}
       </p>
     </div>
+
     <app-vocabulary-form-actions saveLabel="Save lesson assignment" [locked]="locked()" [invalid]="!valid"
       (cancelled)="cancelled.emit()" />
   </fieldset>

@@ -22,12 +22,14 @@ import { JlptLevel } from '../../../flashcard/models/jlpt-level.model';
   templateUrl: './vocabulary-level-assignment-form.html',
   changeDetection: ChangeDetectionStrategy.OnPush,
 })
+
 export class VocabularyLevelAssignmentForm implements OnInit {
   readonly locked = input(false);
   readonly fieldErrors = input<AdditionErrors>({});
   readonly cancelled = output<void>();
   private readonly first = viewChild<ElementRef<HTMLInputElement | HTMLSelectElement>>('first');
   private readonly orderInput = viewChild<ElementRef<HTMLInputElement>>('orderInput');
+
   constructor() {
     afterNextRender(() =>
       (this.first()?.nativeElement ?? this.orderInput()?.nativeElement)?.focus(),
@@ -42,6 +44,7 @@ export class VocabularyLevelAssignmentForm implements OnInit {
   level = '';
   displayOrder: number | null = null;
   readonly validOrder = validDisplayOrder;
+
   ngOnInit(): void {
     const item = this.initial();
     if (item) {
@@ -49,12 +52,15 @@ export class VocabularyLevelAssignmentForm implements OnInit {
       this.displayOrder = item.displayOrder;
     }
   }
+
   get validLevel(): boolean {
     return this.initial() !== null || this.options().some((item) => item.code === this.level);
   }
+
   get valid(): boolean {
     return validDisplayOrder(this.displayOrder) && this.validLevel;
   }
+
   submit(): void {
     if (this.locked() || !this.valid || !validDisplayOrder(this.displayOrder)) return;
     this.submitted.emit({ level: this.level, displayOrder: this.displayOrder });

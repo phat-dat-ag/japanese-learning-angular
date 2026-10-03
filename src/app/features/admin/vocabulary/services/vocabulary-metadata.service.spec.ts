@@ -8,6 +8,7 @@ import { vocabularyMeta as meta } from '../testing/vocabulary-detail.fixture';
 describe('Vocabulary metadata result validation', () => {
   let service: VocabularyService;
   let http: HttpTestingController;
+
   beforeEach(() => {
     TestBed.configureTestingModule({
       providers: [provideHttpClient(), provideHttpClientTesting()],
@@ -15,7 +16,9 @@ describe('Vocabulary metadata result validation', () => {
     service = TestBed.inject(VocabularyService);
     http = TestBed.inject(HttpTestingController);
   });
+
   afterEach(() => http.verify());
+
   const cases = [
     {
       path: 'pitch-accents',
@@ -40,10 +43,12 @@ describe('Vocabulary metadata result validation', () => {
       update: (service: VocabularyService) => service.updateLesson(73, 963, { displayOrder: 63 }),
     },
   ];
+
   for (const config of cases) {
     it(config.path + ' rejects a mismatched update result identity', () => {
       const error = vi.fn();
       const mutation: Observable<unknown> = config.update(service);
+
       mutation.subscribe({ error });
       http
         .expectOne('/api/v1/admin/vocabularies/73/' + config.path + '/963')
@@ -52,6 +57,7 @@ describe('Vocabulary metadata result validation', () => {
         expect.objectContaining({ code: 'INVALID_RESPONSE', meta }),
       );
     });
+
     for (const data of [
       [],
       [{}],
@@ -62,6 +68,7 @@ describe('Vocabulary metadata result validation', () => {
       it(config.path + ' rejects malformed add results ' + JSON.stringify(data), () => {
         const error = vi.fn();
         const mutation: Observable<unknown> = config.add(service);
+
         mutation.subscribe({ error });
         http
           .expectOne('/api/v1/admin/vocabularies/73/' + config.path)
@@ -72,10 +79,14 @@ describe('Vocabulary metadata result validation', () => {
       });
     }
   }
+
   it('rejects duplicate result identities for an atomic batch', () => {
     const error = vi.fn();
+
     service.addPartsOfSpeech(73, [{ code: 'NOUN' }, { code: 'VERB' }]).subscribe({ error });
+
     const post = http.expectOne('/api/v1/admin/vocabularies/73/parts-of-speech');
+
     expect(post.request.body).toEqual([{ code: 'NOUN' }, { code: 'VERB' }]);
     post.flush({ success: true, data: [{ partOfSpeechId: 44 }, { partOfSpeechId: 44 }], meta });
     expect(error).toHaveBeenCalledWith(expect.objectContaining({ code: 'INVALID_RESPONSE' }));

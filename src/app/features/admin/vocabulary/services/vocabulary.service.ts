@@ -52,6 +52,7 @@ export class VocabularyService {
       map((response) => {
         if (response.data.vocabulary.id !== vocabularyId)
           throw ApiError.invalidResponse(200, response.meta);
+
         return {
           ...response,
           data: {
@@ -147,6 +148,7 @@ export class VocabularyService {
         }),
       );
   }
+
   updateReading(
     vocabularyId: number,
     readingId: number,
@@ -283,6 +285,7 @@ export class VocabularyService {
       'exampleId',
     );
   }
+
   updateExample(vocabularyId: number, exampleId: number, request: VocabularyExampleUpdateRequest) {
     return this.updateMetadata(
       vocabularyId,
@@ -314,6 +317,7 @@ export class VocabularyService {
       'kanjiId',
     );
   }
+
   updateKanji(vocabularyId: number, kanjiId: number, request: KanjiUpdateRequest) {
     return this.updateMetadata(
       vocabularyId,
@@ -346,6 +350,7 @@ export class VocabularyService {
       'kanjiReadingId',
     );
   }
+
   updateKanjiReading(
     vocabularyId: number,
     kanjiId: number,

@@ -34,6 +34,7 @@
       </p>
     </div>
     }
+
     <div>
       <label for="level-assignment-order" class="text-sm font-medium text-gray-700">Assignment display order <span
           class="font-normal text-gray-500">(required)</span></label>
@@ -52,6 +53,7 @@
         }}
       </p>
     </div>
+
     <app-vocabulary-form-actions saveLabel="Save level assignment" [locked]="locked()" [invalid]="!valid"
       (cancelled)="cancelled.emit()" />
   </fieldset>

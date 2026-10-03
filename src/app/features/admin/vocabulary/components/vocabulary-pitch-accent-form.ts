@@ -20,11 +20,13 @@ import { VocabularyPitchAccentUpdateRequest } from '../models/vocabulary-metadat
   templateUrl: './vocabulary-pitch-accent-form.html',
   changeDetection: ChangeDetectionStrategy.OnPush,
 })
+
 export class VocabularyPitchAccentForm implements OnInit {
   readonly locked = input(false);
   readonly fieldErrors = input<AdditionErrors>({});
   readonly cancelled = output<void>();
   private readonly first = viewChild<ElementRef<HTMLInputElement | HTMLSelectElement>>('first');
+
   constructor() {
     afterNextRender(() => this.first()?.nativeElement.focus());
   }
@@ -34,6 +36,7 @@ export class VocabularyPitchAccentForm implements OnInit {
   readonly submitted = output<VocabularyPitchAccentUpdateRequest>();
   readingId: number | null = null;
   accentPattern: number | null = null;
+
   ngOnInit(): void {
     const item = this.initial();
     if (item) {
@@ -41,6 +44,7 @@ export class VocabularyPitchAccentForm implements OnInit {
       this.accentPattern = item.accentPattern;
     }
   }
+
   get validPattern(): boolean {
     return (
       this.accentPattern !== null &&
@@ -49,12 +53,15 @@ export class VocabularyPitchAccentForm implements OnInit {
       this.accentPattern <= 65535
     );
   }
+
   get validReading(): boolean {
     return this.readings().some((item) => item.readingId === this.readingId);
   }
+
   get valid(): boolean {
     return this.validPattern && this.validReading;
   }
+
   submit(): void {
     if (this.locked() || !this.valid || this.readingId === null || this.accentPattern === null)
       return;

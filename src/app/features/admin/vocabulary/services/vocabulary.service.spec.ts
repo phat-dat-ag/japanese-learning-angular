@@ -17,6 +17,7 @@ const data = {
 describe('VocabularyService read adapter', () => {
   let service: VocabularyService;
   let http: HttpTestingController;
+
   beforeEach(() => {
     TestBed.configureTestingModule({
       providers: [provideHttpClient(), provideHttpClientTesting()],
@@ -24,12 +25,16 @@ describe('VocabularyService read adapter', () => {
     service = TestBed.inject(VocabularyService);
     http = TestBed.inject(HttpTestingController);
   });
+
   afterEach(() => http.verify());
 
   it('maps list items, preserves pagination and metadata, and normalizes query parameters', () => {
     const next = vi.fn();
+
     service.getVocabularyList({ level: 'n5', lesson: 7, page: 2, size: 50 }).subscribe(next);
+
     const request = http.expectOne('/api/v1/flashcards?lesson=7&level=N5&page=2&size=50');
+
     expect(request.request.method).toBe('GET');
     request.flush({ success: true, data, meta });
     expect(next).toHaveBeenCalledWith({
@@ -41,6 +46,7 @@ describe('VocabularyService read adapter', () => {
 
   it('preserves normalized errors and correlation metadata', () => {
     const error = vi.fn();
+
     service.getVocabularyList({ page: 0, size: 20 }).subscribe({ error });
     http.expectOne('/api/v1/flashcards?page=0&size=20').flush(
       {
@@ -50,6 +56,7 @@ describe('VocabularyService read adapter', () => {
       },
       { status: 503, statusText: 'Unavailable' },
     );
+
     expect(error).toHaveBeenCalledWith(
       expect.objectContaining({
         name: 'ApiError',
@@ -58,10 +65,13 @@ describe('VocabularyService read adapter', () => {
         meta,
       }),
     );
+
     expect(error.mock.calls[0][0]).toBeInstanceOf(ApiError);
   });
+
   it('maps real detail core fields while preserving response metadata', () => {
     const next = vi.fn();
+
     service.getVocabularyDetail(42).subscribe(next);
     http
       .expectOne('/api/v1/flashcards/42')
@@ -85,6 +95,7 @@ describe('VocabularyService read adapter', () => {
 
   it('rejects a detail response for the wrong vocabulary', () => {
     const error = vi.fn();
+
     service.getVocabularyDetail(42).subscribe({ error });
     http
       .expectOne('/api/v1/flashcards/42')
@@ -94,8 +105,11 @@ describe('VocabularyService read adapter', () => {
 
   it('sends only the exact core request and preserves the result envelope', () => {
     const next = vi.fn();
+
     service.updateVocabularyCore(42, { word: '日本', normalizedWord: 'にほん' }).subscribe(next);
+
     const request = http.expectOne('/api/v1/admin/vocabularies/42');
+
     expect(request.request.method).toBe('PUT');
     expect(request.request.body).toEqual({ word: '日本', normalizedWord: 'にほん' });
     request.flush({ success: true, data: { vocabularyId: 42 }, meta });
@@ -106,6 +120,7 @@ describe('VocabularyService read adapter', () => {
     'rejects malformed or mismatched core result %j',
     (data) => {
       const error = vi.fn();
+
       service
         .updateVocabularyCore(42, { word: '日本', normalizedWord: 'にほん' })
         .subscribe({ error });
@@ -140,6 +155,7 @@ describe('VocabularyService read adapter', () => {
         },
       ],
     };
+
     service.getVocabularyDetail(42).subscribe(next);
     http.expectOne('/api/v1/flashcards/42').flush({ success: true, data: detail, meta });
     expect(next).toHaveBeenCalledWith({
@@ -165,8 +181,11 @@ describe('VocabularyService read adapter', () => {
       { reading: 'にほんご', isPrimary: true, displayOrder: 0 },
       { reading: 'にっぽんご', isPrimary: false, displayOrder: 2 },
     ];
+
     service.addReadings(42, requests).subscribe(next);
+
     const request = http.expectOne('/api/v1/admin/vocabularies/42/readings');
+
     expect(request.request.method).toBe('POST');
     expect(request.request.body).toEqual(requests);
     request.flush({ success: true, data: [{ readingId: 10 }, { readingId: 11 }], meta });
@@ -184,6 +203,7 @@ describe('VocabularyService read adapter', () => {
     ];
     service.addMeanings(42, requests).subscribe(next);
     const request = http.expectOne('/api/v1/admin/vocabularies/42/meanings');
+
     expect(request.request.method).toBe('POST');
     expect(request.request.body).toEqual(requests);
     request.flush({ success: true, data: [{ meaningId: 10 }], meta });
@@ -200,6 +220,7 @@ describe('VocabularyService read adapter', () => {
     ].map((data) => ({ data })),
   )('rejects malformed or mismatched reading results %j', ({ data }) => {
     const error = vi.fn();
+
     service
       .addReadings(42, [{ reading: 'a', isPrimary: true, displayOrder: 0 }])
       .subscribe({ error });
@@ -217,6 +238,7 @@ describe('VocabularyService read adapter', () => {
     ].map((data) => ({ data })),
   )('rejects malformed or mismatched meaning results %j', ({ data }) => {
     const error = vi.fn();
+
     service
       .addMeanings(42, [{ language: 'en', meaning: 'a', isPrimary: false, displayOrder: 0 }])
       .subscribe({ error });
@@ -226,10 +248,13 @@ describe('VocabularyService read adapter', () => {
 
   it('PUTs a reading object to its backend identity and preserves the result envelope', () => {
     const next = vi.fn();
+
     service
       .updateReading(73, 887, { reading: 'にっぽんご', isPrimary: false, displayOrder: 43 })
       .subscribe(next);
+
     const request = http.expectOne('/api/v1/admin/vocabularies/73/readings/887');
+
     expect(request.request.method).toBe('PUT');
     expect(request.request.body).toEqual({
       reading: 'にっぽんご',
@@ -242,6 +267,7 @@ describe('VocabularyService read adapter', () => {
 
   it('PUTs a meaning object with language instead of languageCode', () => {
     const next = vi.fn();
+
     service
       .updateMeaning(73, 992, {
         language: 'vi',
@@ -250,7 +276,9 @@ describe('VocabularyService read adapter', () => {
         displayOrder: 61,
       })
       .subscribe(next);
+
     const request = http.expectOne('/api/v1/admin/vocabularies/73/meanings/992');
+
     expect(request.request.method).toBe('PUT');
     expect(request.request.body).toEqual({
       language: 'vi',
@@ -258,12 +286,14 @@ describe('VocabularyService read adapter', () => {
       isPrimary: true,
       displayOrder: 61,
     });
+
     request.flush({ success: true, data: { meaningId: 992 }, meta });
     expect(next).toHaveBeenCalledWith({ success: true, data: { meaningId: 992 }, meta });
   });
 
   it.each(['reading', 'meaning'] as const)('rejects mismatched %s PUT result identity', (kind) => {
     const error = vi.fn();
+
     if (kind === 'reading')
       service
         .updateReading(73, 887, { reading: 'a', isPrimary: true, displayOrder: 0 })
@@ -279,6 +309,7 @@ describe('VocabularyService read adapter', () => {
         data: kind === 'reading' ? { readingId: 1 } : { meaningId: 1 },
         meta,
       });
+
     expect(error).toHaveBeenCalledWith(expect.objectContaining({ code: 'INVALID_RESPONSE', meta }));
   });
 
@@ -294,6 +325,7 @@ describe('VocabularyService read adapter', () => {
     { displayOrder: 2147483648 },
   ])('rejects invalid reading identity/order %j at the read boundary', (patch) => {
     const error = vi.fn();
+
     service.getVocabularyDetail(73).subscribe({ error });
     http.expectOne('/api/v1/flashcards/73').flush({
       success: true,
@@ -313,6 +345,7 @@ describe('VocabularyService read adapter', () => {
       },
       meta,
     });
+
     expect(error).toHaveBeenCalledWith(expect.objectContaining({ code: 'INVALID_RESPONSE' }));
   });
 
@@ -328,6 +361,7 @@ describe('VocabularyService read adapter', () => {
     { displayOrder: 2147483648 },
   ])('rejects invalid meaning identity/order %j at the read boundary', (patch) => {
     const error = vi.fn();
+
     service.getVocabularyDetail(73).subscribe({ error });
     http.expectOne('/api/v1/flashcards/73').flush({
       success: true,
@@ -346,6 +380,7 @@ describe('VocabularyService read adapter', () => {
       },
       meta,
     });
+
     expect(error).toHaveBeenCalledWith(expect.objectContaining({ code: 'INVALID_RESPONSE' }));
   });
 
@@ -359,6 +394,7 @@ describe('VocabularyService read adapter', () => {
       pitchAccentDetails: [],
       pitchAccents: [],
     };
+
     service.getVocabularyDetail(73).subscribe({ error });
     http.expectOne('/api/v1/flashcards/73').flush({
       success: true,

@@ -16,10 +16,14 @@ export class FlashcardService {
 
   getFlashcardPage(query: FlashcardListQuery): Observable<ApiSuccess<FlashcardPage>> {
     const params = new URLSearchParams();
+
     if (query.lesson !== undefined) params.set('lesson', String(query.lesson));
+
     if (query.level) params.set('level', query.level.toUpperCase());
+
     params.set('page', String(query.page));
     params.set('size', String(query.size));
+
     return this.api.get(`v1/flashcards?${params}`, isFlashcardPage);
   }
 
@@ -30,6 +34,7 @@ export class FlashcardService {
           ? this.getFlashcards(lessonId, level, response.data.page + 1)
           : EMPTY,
       ),
+
       reduce(
         (ids: number[], response) => [
           ...ids,
@@ -37,6 +42,7 @@ export class FlashcardService {
         ],
         [],
       ),
+
       map((ids) => [...new Set(ids)]),
     );
   }

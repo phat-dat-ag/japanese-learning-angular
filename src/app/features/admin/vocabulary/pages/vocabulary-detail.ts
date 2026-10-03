@@ -55,6 +55,7 @@ type DetailState =
   | { readonly status: 'invalid' | 'loading' | 'missing' }
   | { readonly status: 'error'; readonly message: string }
   | { readonly status: 'loaded'; readonly core: VocabularyDetailData };
+
 type SaveState =
   | { readonly status: 'idle' | 'saving' | 'refreshing' | 'saved' | 'refresh-error' }
   | { readonly status: 'error'; readonly message: string; readonly fields: CoreFieldErrors };
@@ -75,6 +76,7 @@ type SaveState =
   templateUrl: './vocabulary-detail.html',
   changeDetection: ChangeDetectionStrategy.OnPush,
 })
+
 export class VocabularyDetail {
   private readonly route = inject(ActivatedRoute);
   private readonly service = inject(VocabularyService);
@@ -101,30 +103,37 @@ export class VocabularyDetail {
         const id = Number(raw);
         return /^\d+$/.test(raw) && Number.isSafeInteger(id) && id > 0 ? id : null;
       }),
+
       distinctUntilChanged(),
+
       switchMap((id) => {
         this.editing.set(false);
         this.saveState.set({ status: 'idle' });
+
         if (id === null) return of<DetailState>({ status: 'invalid' });
+
         return merge(
           this.reload.pipe(
             startWith(undefined),
+
             switchMap(() =>
               this.service.getVocabularyDetail(id).pipe(
                 map((response): DetailState => ({ status: 'loaded', core: response.data })),
+
                 catchError((error: unknown) =>
                   of<DetailState>(
                     error instanceof ApiError && error.status === 404
                       ? { status: 'missing' }
                       : {
-                          status: 'error',
-                          message: vocabularyLoadError(
-                            error,
-                            'Unable to load vocabulary details. Please try again.',
-                          ),
-                        },
+                        status: 'error',
+                        message: vocabularyLoadError(
+                          error,
+                          'Unable to load vocabulary details. Please try again.',
+                        ),
+                      },
                   ),
                 ),
+
                 startWith<DetailState>({ status: 'loading' }),
               ),
             ),
@@ -145,6 +154,7 @@ export class VocabularyDetail {
         );
       }),
     ),
+
     { initialValue: { status: 'loading' } as DetailState },
   );
 
@@ -168,10 +178,13 @@ export class VocabularyDetail {
                   ?.reading ?? accent.reading,
             })),
           };
+
         case 'levels':
           return { ...detail, levels: update.items };
+
         case 'lessons':
           return { ...detail, lessons: update.items };
+
         case 'parts-of-speech':
           return { ...detail, partsOfSpeech: update.items };
       }
@@ -242,6 +255,7 @@ export class VocabularyDetail {
 
   save(request: VocabularyCoreUpdateRequest): void {
     const state = this.state();
+
     if (
       state.status !== 'loaded' ||
       !this.editing() ||
@@ -250,7 +264,9 @@ export class VocabularyDetail {
       !validCoreText(request.normalizedWord)
     )
       return;
+
     this.saveState.set({ status: 'saving' });
+
     this.observeUpdate(
       this.service.updateVocabularyCore(state.core.id, request).pipe(
         switchMap(() => {
@@ -263,7 +279,10 @@ export class VocabularyDetail {
 
   retryRefresh(): void {
     const state = this.state();
-    if (state.status !== 'loaded' || this.saveState().status !== 'refresh-error') return;
+
+    if (state.status !== 'loaded' || this.saveState().status !== 'refresh-error')
+      return;
+
     this.saveState.set({ status: 'refreshing' });
     this.observeUpdate(this.service.getVocabularyDetail(state.core.id));
   }
@@ -274,15 +293,18 @@ export class VocabularyDetail {
       .subscribe({
         next: (response) => {
           const { id, word, normalizedWord } = response.data;
+
           this.updated.next((detail) => ({ ...detail, id, word, normalizedWord }));
           this.saveState.set({ status: 'saved' });
           this.finishEditing();
         },
+
         error: (error: unknown) => {
           if (this.saveState().status === 'refreshing') {
             this.saveState.set({ status: 'refresh-error' });
             return;
           }
+
           this.saveState.set(this.saveError(error));
         },
       });
@@ -291,6 +313,7 @@ export class VocabularyDetail {
   private saveError(error: unknown): SaveState {
     const fields: Partial<Record<keyof VocabularyCoreUpdateRequest, string>> = {};
     let message = 'Unable to save changes. Please try again.';
+
     if (error instanceof ApiError) {
       switch (error.status) {
         case 400:
@@ -316,6 +339,7 @@ export class VocabularyDetail {
           break;
       }
     }
+
     return { status: 'error', message, fields };
   }
 
