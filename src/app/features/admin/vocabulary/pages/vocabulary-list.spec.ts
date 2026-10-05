@@ -83,7 +83,11 @@ describe('Admin vocabulary list', () => {
     expect(element.textContent).toContain('21 entries');
     expect(element.textContent).toContain('Page 1 of 2');
 
-    const link = element.querySelector('a');
+    expect(element.querySelector('a[href="/admin/vocabulary/import"]')?.textContent).toContain(
+      'Import vocabulary file',
+    );
+    
+    const link = element.querySelector('section a');
 
     expect(link?.getAttribute('href')).toBe('/admin/vocabulary/42');
     expect(link?.getAttribute('aria-label')).toContain('日本語');
@@ -140,7 +144,7 @@ describe('Admin vocabulary list', () => {
     fixture.detectChanges();
 
     expect(element.textContent).toContain('Unable to load vocabulary');
-    expect(element.querySelector('a')).toBeNull();
+    expect(element.querySelector('section a')).toBeNull();
   });
 
   it('uses backend pagination, disables boundaries, and retries the failed page', () => {
@@ -150,7 +154,7 @@ describe('Admin vocabulary list', () => {
 
     fixture.detectChanges();
 
-    expect(element.querySelector('a')).toBeNull();
+    expect(element.querySelector('section a')).toBeNull();
     http
       .expectOne('/api/v1/flashcards?page=1&size=20')
       .flush(null, { status: 500, statusText: 'Server Error' });

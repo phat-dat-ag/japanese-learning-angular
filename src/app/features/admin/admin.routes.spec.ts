@@ -64,7 +64,7 @@ describe('Admin interface', () => {
     TestBed.inject(HttpTestingController).expectNone(() => true);
   });
 
-  it.each(sections.filter(([path]) => path !== 'vocabulary'))(
+  it.each(sections.filter(([path]) => path !== 'vocabulary' && path !== 'lessons'))(
     'renders the %s placeholder on direct navigation',
     async (path, title) => {
       signIn();
@@ -87,21 +87,23 @@ describe('Admin interface', () => {
     },
   );
 
-  it.each(['/admin', '/admin/vocabulary/42', ...sections.map(([path]) => '/admin/' + path)])(
-    'blocks Guests and Users from %s',
-    async (url) => {
-      const harness = await RouterTestingHarness.create(url);
+  it.each([
+    '/admin',
+    '/admin/vocabulary/import',
+    '/admin/vocabulary/42',
+    ...sections.map(([path]) => '/admin/' + path),
+  ])('blocks Guests and Users from %s', async (url) => {
+    const harness = await RouterTestingHarness.create(url);
 
-      expect(TestBed.inject(Router).url).toBe('/login');
-      expect(harness.routeNativeElement?.querySelector('nav')).toBeNull();
-      signIn('User');
+    expect(TestBed.inject(Router).url).toBe('/login');
+    expect(harness.routeNativeElement?.querySelector('nav')).toBeNull();
+    signIn('User');
 
-      await harness.navigateByUrl(url);
+    await harness.navigateByUrl(url);
 
-      expect(TestBed.inject(Router).url).toBe('/flashcards');
-      expect(harness.routeNativeElement?.querySelector('nav')).toBeNull();
-    },
-  );
+    expect(TestBed.inject(Router).url).toBe('/flashcards');
+    expect(harness.routeNativeElement?.querySelector('nav')).toBeNull();
+  });
 
   it('navigates between sections in the same shell and updates titles and active items', async () => {
     signIn();
@@ -181,6 +183,26 @@ describe('Admin interface', () => {
     ).toBe('/admin/vocabulary');
 
     http.expectNone(() => true);
+  });
+
+  it.each([
+    ['/admin/vocabulary/import', 'Import Vocabulary'],
+    ['/admin/lessons', 'Lesson Management'],
+  ])('opens the Admin import page at %s without fetching data', async (url, title) => {
+    signIn();
+
+    const harness = await RouterTestingHarness.create(url);
+
+    expect(harness.routeNativeElement?.querySelector('h1')?.textContent).toBe(title);
+    expect(harness.routeNativeElement?.querySelector('input[type="file"]')).not.toBeNull();
+
+    TestBed.inject(HttpTestingController).expectNone(() => true);
+
+    signIn('User');
+
+    await harness.navigateByUrl('/admin');
+
+    expect(TestBed.inject(Router).url).toBe('/flashcards');
   });
 
   it('loads direct detail navigation and reacts to ID changes', async () => {

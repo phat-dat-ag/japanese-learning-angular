@@ -14,12 +14,26 @@ export const ADMIN_ROUTES: Routes = [
     loadComponent: () => import('./vocabulary/pages/vocabulary-list').then((m) => m.VocabularyList),
   },
   {
+    path: 'vocabulary/import',
+    title: 'Import Vocabulary',
+    data: { importKind: 'vocabulary' },
+    loadComponent: () => import('./imports/file-import').then((m) => m.FileImport),
+  },
+  {
+    path: 'lessons',
+    title: 'Lesson Management',
+    data: { importKind: 'lessons' },
+    loadComponent: () => import('./imports/file-import').then((m) => m.FileImport),
+  },
+  {
     path: 'vocabulary/:vocabularyId',
     title: 'Vocabulary details',
     loadComponent: () =>
       import('./vocabulary/pages/vocabulary-detail').then((m) => m.VocabularyDetail),
   },
-  ...ADMIN_SECTIONS.filter((section) => section.path !== 'vocabulary').map((section) => ({
+  ...ADMIN_SECTIONS.filter(
+    (section) => section.path !== 'vocabulary' && section.path !== 'lessons',
+  ).map((section) => ({
     path: section.path,
     title: section.title,
     loadComponent: () => import('./pages/section').then((m) => m.AdminSection),
