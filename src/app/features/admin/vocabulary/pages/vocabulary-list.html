@@ -1,6 +1,10 @@
 <app-vocabulary-header title="Vocabulary Management"
   description="Browse your vocabulary collection and open an entry to manage its learning content." />
 
+<a [routerLink]="['/admin', 'vocabulary', 'import']"
+  class="mt-4 inline-flex min-h-11 items-center rounded-xl bg-indigo-600 px-5 py-2 text-sm font-semibold text-white hover:bg-indigo-700 focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-indigo-600">Import
+  vocabulary file</a>
+
 <app-vocabulary-filters [query]="query()" [levelState]="levelState()" [lessonState]="lessonState()"
   [pageSizes]="pageSizes" (levelChanged)="changeLevel($event)" (lessonChanged)="changeLesson($event)"
   (sizeChanged)="changeSize($event)" (filtersCleared)="resetFilters()" (levelsRetried)="retryLevels()"
