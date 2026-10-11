@@ -31,8 +31,16 @@ export const ADMIN_ROUTES: Routes = [
     loadComponent: () =>
       import('./vocabulary/pages/vocabulary-detail').then((m) => m.VocabularyDetail),
   },
+  {
+    path: 'kanji-quiz/questions',
+    title: 'Kanji Quiz Question Bank',
+    loadComponent: () => import('./kanji-quiz/pages/question-bank').then((m) => m.QuestionBank),
+  },
   ...ADMIN_SECTIONS.filter(
-    (section) => section.path !== 'vocabulary' && section.path !== 'lessons',
+    (section) =>
+      section.path !== 'vocabulary' &&
+      section.path !== 'lessons' &&
+      section.path !== 'kanji-quiz/questions',
   ).map((section) => ({
     path: section.path,
     title: section.title,

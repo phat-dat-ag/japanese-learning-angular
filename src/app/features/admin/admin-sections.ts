@@ -23,4 +23,10 @@ export const ADMIN_SECTIONS = [
     title: 'Settings',
     description: 'A home for application administration preferences.',
   },
+  {
+    path: 'kanji-quiz/questions',
+    label: 'Kanji Quiz Question Bank',
+    title: 'Kanji Quiz Question Bank',
+    description: 'A home for managing example-based and custom Kanji Quiz questions.',
+  },
 ] as const;
