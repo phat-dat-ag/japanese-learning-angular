@@ -40,6 +40,7 @@ export const ADMIN_ROUTES: Routes = [
   {
     path: 'kanji-quiz/questions/import',
     title: 'Kanji Quiz JSON Import Preview',
+    canDeactivate: [questionEditorGuard],
     loadComponent: () => import('./kanji-quiz/pages/question-import').then((m) => m.QuestionImport),
   },
   {

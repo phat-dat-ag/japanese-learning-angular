@@ -2,6 +2,7 @@ import { HttpParams } from '@angular/common/http';
 import { inject, Injectable } from '@angular/core';
 import { Observable } from 'rxjs';
 import { ApiClient } from '../../../../core/api/api-client.service';
+import { isQuizImportResponse, QuizImportResponse } from '../models/quiz-import.model';
 import { ApiSuccess } from '../../../../core/api/api-response.model';
 import {
   isQuizQuestion,
@@ -39,6 +40,12 @@ export class QuizQuestionService {
     }
     const search = params.toString();
     return this.api.get(this.path + (search ? '?' + search : ''), isQuizQuestionList);
+  }
+
+  importQuestions(file: File): Observable<ApiSuccess<QuizImportResponse>> {
+    const body = new FormData();
+    body.append('file', file);
+    return this.api.post(this.path + '/import', body, isQuizImportResponse);
   }
 
   getQuestion(id: number): Observable<ApiSuccess<QuizQuestionResponse>> {
