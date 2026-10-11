@@ -4,6 +4,8 @@ import { ApplicationRef, Component } from '@angular/core';
 import { TestBed } from '@angular/core/testing';
 import { provideRouter, Router } from '@angular/router';
 import { RouterTestingHarness } from '@angular/router/testing';
+import { of } from 'rxjs';
+import { QuizQuestionService } from './services/quiz-question.service';
 import { routes } from '../../../app.routes';
 import { AuthSession } from '../../../core/auth/auth-session.service';
 
@@ -17,6 +19,16 @@ describe('Kanji Quiz Question Bank routing', () => {
     TestBed.configureTestingModule({
       providers: [
         provideHttpClient(),
+        {
+          provide: QuizQuestionService,
+          useValue: {
+            listQuestions: () =>
+              of({
+                success: true,
+                data: { items: [], page: 0, size: 20, totalElements: 0, totalPages: 0 },
+              }),
+          },
+        },
         provideHttpClientTesting(),
         provideRouter([
           ...routes.filter((route) => route.path === 'admin'),
@@ -39,15 +51,15 @@ describe('Kanji Quiz Question Bank routing', () => {
     session.setUser({ userId: 'id', username: 'Account', role });
   }
 
-  it('loads the page shell directly for Admin with active navigation and no API requests', async () => {
+  it('loads the question list directly for Admin with active navigation', async () => {
     signIn('Admin');
     const harness = await RouterTestingHarness.create(path);
     const page = harness.routeNativeElement;
     expect(TestBed.inject(Router).url).toBe(path);
     expect(page?.querySelector('h1')?.textContent).toBe('Kanji Quiz Question Bank');
     expect(page?.querySelector('header')?.textContent).toContain('Kanji Quiz Question Bank');
-    expect(page?.querySelector('main')?.textContent).toContain('coming soon');
-    expect(page?.querySelector('main form, main table, main input')).toBeNull();
+    expect(page?.querySelector('main')?.textContent).toContain('No questions found');
+    expect(page?.querySelector('form[aria-label="Question filters"]')).not.toBeNull();
     expect(page?.querySelector('nav a[aria-current="page"]')?.getAttribute('href')).toBe(path);
   });
 
