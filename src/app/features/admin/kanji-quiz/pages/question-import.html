@@ -1,0 +1,171 @@
+<p class="text-sm font-semibold text-indigo-700">Administration</p>
+<h1 class="mt-2 text-3xl font-bold text-gray-900">Kanji Quiz JSON Import Preview</h1>
+<p class="mt-3 text-gray-700">
+  Select a JSON array of question creation objects, each with <code>content</code> and
+  <code>options</code>. CUSTOM and EXAMPLE questions are supported.
+</p>
+<a [routerLink]="['/admin', 'kanji-quiz', 'questions']" queryParamsHandling="preserve"
+  class="mt-4 inline-flex min-h-11 items-center rounded-xl border border-gray-300 px-4 font-semibold text-indigo-700 focus-visible:outline-2 focus-visible:outline-indigo-600">Back
+  to Question Bank</a>
+<section class="mt-6 space-y-4 rounded-2xl border border-gray-200 bg-white p-5" aria-labelledby="file-heading">
+  <h2 id="file-heading" class="text-xl font-semibold text-gray-900">Choose a JSON file</h2>
+  <p id="file-help" class="text-sm text-gray-600">
+    Local preview only: nothing is uploaded or imported. Maximum preview file size: 1 MiB (1,048,576
+    bytes). Values are not trimmed or normalized.
+  </p>
+  <label for="quiz-import-file" class="block font-medium text-gray-800">{{
+    file() ? 'Replace selected JSON file' : 'Select JSON file'
+    }}</label>
+  <input id="quiz-import-file" type="file" accept=".json,application/json" (change)="selectFile($event)"
+    aria-describedby="file-help"
+    class="block min-h-11 w-full min-w-0 rounded-xl border border-gray-300 p-2 focus-visible:outline-indigo-600" />
+  @if (file(); as selected) {
+  <dl class="grid gap-2 text-sm sm:grid-cols-2">
+    <div class="min-w-0">
+      <dt class="font-semibold">Filename</dt>
+      <dd class="break-all">{{ selected.name }}</dd>
+    </div>
+    <div>
+      <dt class="font-semibold">File size</dt>
+      <dd>{{ selected.size }} bytes</dd>
+    </div>
+    <div>
+      <dt class="font-semibold">Question count</dt>
+      <dd>
+        {{
+        state().status === 'ready'
+        ? questions().length
+        : 'Unavailable until a nonempty array is parsed'
+        }}
+      </dd>
+    </div>
+  </dl>
+  <button type="button" (click)="clear()"
+    class="min-h-11 rounded-xl border border-gray-300 px-4 font-semibold text-indigo-700 focus-visible:outline-2 focus-visible:outline-indigo-600">
+    Clear file
+  </button>
+  }
+</section>
+<div class="mt-4 rounded-xl bg-amber-50 p-4 text-sm text-amber-900">
+  These are client-side preview checks, not approval to import. The backend must validate database
+  references, EXAMPLE source readings, source links, and duplicate questions. Server file/count
+  limits are configurable (defaults: 1 MiB and 100 questions). Backend validation is authoritative.
+</div>
+@switch (state().status) {
+@case ('empty') {
+<p role="status" class="mt-6 text-gray-600">
+  No file selected. Choose a JSON file to preview questions.
+</p>
+}
+@case ('loading') {
+<p role="status" class="mt-6 text-indigo-700">
+  Reading and validating the selected file locally...
+</p>
+}
+@case ('error') {
+@if (state(); as current) {
+@if (current.status === 'error') {
+<p role="alert" class="mt-6 text-red-700">{{ current.message }}</p>
+<button type="button" (click)="retry()"
+  class="mt-3 min-h-11 rounded-xl border border-gray-300 px-4 font-semibold text-indigo-700 focus-visible:outline-2 focus-visible:outline-indigo-600">
+  Retry preview
+</button>
+}
+}
+}
+@case ('ready') {
+<section class="mt-6 space-y-4" aria-labelledby="preview-heading">
+  <h2 id="preview-heading" class="text-2xl font-semibold text-gray-900">Question preview</h2>
+  <p role="status" class="text-gray-700">
+    {{ questions().length }} questions: {{ questions().length - invalidCount() }} passed local
+    checks; {{ invalidCount() }} with validation errors. Original array indexes are zero-based.
+  </p>
+  @if (questions().length > 100) {
+  <p class="text-amber-900">
+    This file exceeds the backend default of 100 questions. Its configured limit must be
+    checked before a future import.
+  </p>
+  }
+  @for (question of visibleQuestions(); track question.index) {
+  <article class="min-w-0 space-y-3 rounded-2xl border border-gray-200 bg-white p-5"
+    [attr.aria-labelledby]="'preview-' + question.index">
+    <h3 [id]="'preview-' + question.index" class="break-words text-lg font-semibold text-gray-900">
+      Array index [{{ question.index }}] ? {{ question.sourceType }}
+    </h3>
+    <p [class]="
+              question.errors.length ? 'font-semibold text-red-700' : 'font-semibold text-green-800'
+            ">
+      {{
+      question.errors.length
+      ? 'Validation errors'
+      : 'Passed local checks (backend validation pending)'
+      }}
+    </p>
+    @if (question.errors.length) {
+    <ul class="list-disc space-y-1 pl-5 text-sm text-red-700" aria-label="Question validation errors">
+      @for (error of question.errors; track $index) {
+      <li class="break-words">
+        <span class="font-semibold">{{ error.field }}:</span> {{ error.message }}
+      </li>
+      }
+    </ul>
+    }
+    <dl class="grid min-w-0 gap-3 text-sm sm:grid-cols-2">
+      @for (field of question.fields; track field.label) {
+      <div class="min-w-0">
+        <dt class="font-semibold text-gray-700">{{ field.label }}</dt>
+        <dd class="max-h-48 overflow-auto whitespace-pre-wrap break-words text-gray-900">
+          {{ field.value }}
+        </dd>
+      </div>
+      }
+    </dl>
+    <p class="text-sm text-gray-600">
+      Target start is zero-based; target start and length count Unicode code points. JLPT and
+      lesson assignments use database IDs.
+    </p>
+    <h4 class="font-semibold text-gray-900">Answer options</h4>
+    <ol class="grid min-w-0 gap-3 sm:grid-cols-2">
+      @for (option of question.options; track $index) {
+      <li class="min-w-0 rounded-xl bg-gray-50 p-3">
+        <span class="text-sm text-gray-600">Option {{ $index + 1 }}</span>
+        <p lang="ja" class="max-h-48 overflow-auto whitespace-pre-wrap break-words text-xl">
+          {{ option.text }}
+        </p>
+        <p class="text-sm font-semibold">
+          {{
+          option.correct === null
+          ? 'Invalid or missing correct flag'
+          : option.correct
+          ? 'Correct answer'
+          : 'Incorrect answer'
+          }}
+        </p>
+      </li>
+      } @empty {
+      <li class="text-red-700">No answer options to preview.</li>
+      }
+    </ol>
+  </article>
+  }
+  @if (pageCount() > 1) {
+  <nav aria-label="Preview pagination"
+    class="flex flex-wrap items-center justify-between gap-3 rounded-xl bg-gray-50 p-4">
+    <p class="text-sm text-gray-700">
+      Page {{ page() + 1 }} of {{ pageCount() }} ({{ pageSize }} questions per page)
+    </p>
+    <div class="flex gap-3">
+      <button type="button" (click)="changePage(page() - 1)" [disabled]="page() === 0"
+        class="min-h-11 rounded-xl border border-gray-300 px-4 font-semibold text-indigo-700 focus-visible:outline-2 focus-visible:outline-indigo-600 disabled:opacity-50">
+        Previous
+      </button>
+      <button type="button" (click)="changePage(page() + 1)" [disabled]="page() + 1 >= pageCount()"
+        class="min-h-11 rounded-xl border border-gray-300 px-4 font-semibold text-indigo-700 focus-visible:outline-2 focus-visible:outline-indigo-600 disabled:opacity-50">
+        Next
+      </button>
+    </div>
+  </nav>
+  }
+</section>
+}
+}

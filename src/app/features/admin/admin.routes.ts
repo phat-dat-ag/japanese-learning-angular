@@ -38,6 +38,11 @@ export const ADMIN_ROUTES: Routes = [
     loadComponent: () => import('./kanji-quiz/pages/question-bank').then((m) => m.QuestionBank),
   },
   {
+    path: 'kanji-quiz/questions/import',
+    title: 'Kanji Quiz JSON Import Preview',
+    loadComponent: () => import('./kanji-quiz/pages/question-import').then((m) => m.QuestionImport),
+  },
+  {
     path: 'kanji-quiz/questions/new',
     title: 'Create Kanji Quiz Question',
     canDeactivate: [questionEditorGuard],
