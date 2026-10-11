@@ -26,6 +26,36 @@
 <p class="mt-4 text-gray-700">
   Question #{{ question.id }} · {{ question.sourceType }} · {{ question.status }}
 </p>
+<p class="mt-2 text-sm text-gray-600">
+  {{
+  question.eligibleForNewGames ? 'Eligible for new games' : 'Not eligible for new games'
+  }}
+</p>
+@if (question.status !== 'ARCHIVED') {
+<div class="mt-4 flex flex-wrap gap-3" aria-label="Question lifecycle">
+  @if (question.status === 'DRAFT') {
+  <button type="button" (click)="lifecycle('publish')" [disabled]="locked() || hasUnsavedChanges()"
+    class="min-h-11 rounded-xl bg-indigo-600 px-4 font-semibold text-white disabled:opacity-50">
+    Publish question
+  </button>
+  } @else {
+  <button type="button" (click)="lifecycle('unpublish')" [disabled]="locked() || hasUnsavedChanges()"
+    class="min-h-11 rounded-xl border border-gray-300 px-4 font-semibold text-indigo-700 disabled:opacity-50">
+    Unpublish question
+  </button>
+  }
+  <button type="button" (click)="lifecycle('archive')" [disabled]="locked() || hasUnsavedChanges()"
+    class="min-h-11 rounded-xl border border-red-300 px-4 font-semibold text-red-700 disabled:opacity-50">
+    Archive question
+  </button>
+</div>
+@if (hasUnsavedChanges()) {
+<p class="mt-2 text-sm text-amber-900">
+  Save or cancel your changes before changing question status. Save content and options
+  separately.
+</p>
+}
+}
 @if (question.status === 'PUBLISHED') {
 <p class="mt-2 rounded-xl bg-amber-50 p-4 text-amber-900">
   Saving changes returns this published question to DRAFT. It will no longer be eligible
@@ -43,6 +73,9 @@
   before saving.
 </p>
 }
+}
+@if (operationMessage()) {
+<p role="status" class="mt-4 font-medium text-green-800">{{ operationMessage() }}</p>
 }
 @if (saveState(); as save) {
 @if (save.status === 'saving') {
@@ -68,11 +101,15 @@
   class="mt-4 inline-flex min-h-11 items-center rounded-xl border border-gray-300 px-4 font-semibold text-indigo-700 focus-visible:outline-2 focus-visible:outline-indigo-600">Edit
   created question #{{ question.id }}</a>
 } @else {
+@if (current.question; as question) {
+<app-question-options [question]="question" [locked]="locked() || !!formComponent()?.form?.dirty"
+  (textSaved)="updateOption($event)" (correctSaved)="changeCorrectOption($event)" />
+}
 @if (exampleState(); as examples) {
-<app-question-form [initial]="current.question" [locked]="locked()" [backendErrors]="fields()"
-  [examples]="examples.status === 'ready' ? examples.examples : []" [lookupLoading]="examples.status === 'loading'"
-  [lookupMessage]="examples.status === 'ready' ? examples.message : ''" (lookupRequested)="lookup($event)"
-  (submitted)="save($event)" />
+<app-question-form [initial]="current.question" [locked]="locked() || !!optionsComponent()?.dirty()"
+  [backendErrors]="fields()" [examples]="examples.status === 'ready' ? examples.examples : []"
+  [lookupLoading]="examples.status === 'loading'" [lookupMessage]="examples.status === 'ready' ? examples.message : ''"
+  (lookupRequested)="lookup($event)" (submitted)="save($event)" />
 }
 }
 }

@@ -8,12 +8,31 @@
 } from '@angular/core';
 import { takeUntilDestroyed, toSignal } from '@angular/core/rxjs-interop';
 import { ActivatedRoute, RouterLink } from '@angular/router';
-import { catchError, map, of, skip, startWith, Subject, switchMap, takeUntil, tap } from 'rxjs';
+import {
+  catchError,
+  map,
+  Observable,
+  of,
+  skip,
+  startWith,
+  Subject,
+  switchMap,
+  takeUntil,
+  tap,
+} from 'rxjs';
+import { ApiSuccess } from '../../../../core/api/api-response.model';
+import { QuestionOptions } from '../components/question-options';
 import { ApiError } from '../../../../core/api/api-error';
 import { VocabularyExample } from '../../vocabulary/models/vocabulary-detail.model';
 import { VocabularyService } from '../../vocabulary/services/vocabulary.service';
 import { QuestionForm } from '../components/question-form';
-import { QuestionErrors, QuestionField, positiveId } from '../models/question-form.model';
+import {
+  QuestionErrors,
+  QuestionField,
+  positiveId,
+  validateOptions,
+  validateAnswerOptions,
+} from '../models/question-form.model';
 import { QuizQuestionCreateRequest, QuizQuestionResponse } from '../models/quiz-question.model';
 import { QuizQuestionService } from '../services/quiz-question.service';
 
@@ -30,7 +49,7 @@ type ExampleState =
 
 @Component({
   selector: 'app-question-editor',
-  imports: [RouterLink, QuestionForm],
+  imports: [RouterLink, QuestionForm, QuestionOptions],
   templateUrl: './question-editor.html',
   changeDetection: ChangeDetectionStrategy.OnPush,
   host: { '(window:beforeunload)': 'beforeUnload($event)' },
@@ -43,6 +62,8 @@ export class QuestionEditor {
   private readonly reload = new Subject<void>();
   private readonly lookupChanges = new Subject<number | null>();
   readonly formComponent = viewChild(QuestionForm);
+  readonly optionsComponent = viewChild(QuestionOptions);
+  readonly operationMessage = signal('');
   readonly state = signal<EditorState>({ status: 'loading' });
   readonly saveState = signal<SaveState>({ status: 'idle' });
   readonly created = signal<QuizQuestionResponse | null>(null);
@@ -81,6 +102,7 @@ export class QuestionEditor {
             startWith(undefined),
             tap(() => {
               this.saveState.set({ status: 'idle' });
+              this.operationMessage.set('');
               this.created.set(null);
               this.lookupChanges.next(null);
             }),
@@ -131,9 +153,23 @@ export class QuestionEditor {
 
   save(request: QuizQuestionCreateRequest): void {
     const state = this.state();
-    if (state.status !== 'ready' || this.locked() || this.created()) return;
+    if (
+      state.status !== 'ready' ||
+      this.locked() ||
+      this.optionsComponent()?.dirty() ||
+      this.created()
+    )
+      return;
     const question = state.question;
     if (question && request.content.sourceType !== question.sourceType) return;
+    if (
+      question?.status === 'PUBLISHED' &&
+      !window.confirm(
+        'Save changes and return this question to DRAFT? It will no longer be available for new games.',
+      )
+    )
+      return;
+    this.operationMessage.set('');
     this.saveState.set({ status: 'saving' });
     const operation = question
       ? this.service.updateQuestion(question.id, {
@@ -158,10 +194,138 @@ export class QuestionEditor {
       });
   }
 
+  hasUnsavedChanges(): boolean {
+    return !!this.formComponent()?.form.dirty || !!this.optionsComponent()?.dirty();
+  }
+
+  updateOption(change: { optionId: number; text: string }): void {
+    const state = this.state();
+    if (
+      state.status !== 'ready' ||
+      !state.question ||
+      this.locked() ||
+      this.formComponent()?.form.dirty
+    )
+      return;
+    const question = state.question;
+    if (!question.options.some((option) => option.id === change.optionId)) return;
+    const errors = validateAnswerOptions(
+      question.options.map((option) =>
+        option.id === change.optionId ? { ...option, text: change.text } : option,
+      ),
+    );
+    if (Object.keys(errors).length) return;
+    if (!this.confirmOptionEdit(question)) return;
+    this.mutate(
+      question,
+      this.service.updateOption(question.id, change.optionId, {
+        version: question.version,
+        text: change.text,
+      }),
+      'Option saved.',
+    );
+  }
+
+  changeCorrectOption(optionId: number): void {
+    const state = this.state();
+    if (
+      state.status !== 'ready' ||
+      !state.question ||
+      this.locked() ||
+      this.formComponent()?.form.dirty ||
+      this.optionsComponent()?.editingId() !== null
+    )
+      return;
+    const question = state.question;
+    const selected = question.options.findIndex((option) => option.id === optionId);
+    if (
+      (question.options[selected]?.correct &&
+        question.options.filter((option) => option.correct).length === 1) ||
+      Object.keys(
+        validateOptions(
+          question.options.map((option) => option.text),
+          selected,
+        ),
+      ).length
+    )
+      return;
+    if (!this.confirmOptionEdit(question)) return;
+    this.mutate(
+      question,
+      this.service.changeCorrectOption(question.id, { version: question.version, optionId }),
+      'Correct answer saved.',
+    );
+  }
+
+  lifecycle(action: 'publish' | 'unpublish' | 'archive'): void {
+    const state = this.state();
+    if (state.status !== 'ready' || !state.question || this.locked() || this.hasUnsavedChanges())
+      return;
+    const question = state.question;
+    if (
+      (action === 'publish' && question.status !== 'DRAFT') ||
+      (action === 'unpublish' && question.status !== 'PUBLISHED')
+    )
+      return;
+    if (action === 'publish') {
+      const fields = validateAnswerOptions(question.options);
+      if (Object.keys(fields).length) {
+        this.saveState.set({ status: 'error', message: Object.values(fields).join(' '), fields });
+        return;
+      }
+    }
+    const prompts = {
+      publish: 'Publish this question and make it available for new games?',
+      unpublish: 'Return this question to DRAFT? It will no longer be available for new games.',
+      archive: 'Archive this question? It will be unavailable for new games and read-only.',
+    };
+    if (!window.confirm(prompts[action])) return;
+    const request = { version: question.version };
+    const operation =
+      action === 'publish'
+        ? this.service.publishQuestion(question.id, request)
+        : action === 'unpublish'
+          ? this.service.unpublishQuestion(question.id, request)
+          : this.service.archiveQuestion(question.id, request);
+    this.mutate(question, operation, 'Question status updated.');
+  }
+
+  private confirmOptionEdit(question: QuizQuestionResponse): boolean {
+    return (
+      question.status !== 'PUBLISHED' ||
+      window.confirm(
+        'Save option changes and return this question to DRAFT? It will no longer be available for new games.',
+      )
+    );
+  }
+
+  private mutate(
+    question: QuizQuestionResponse,
+    operation: Observable<ApiSuccess<QuizQuestionResponse>>,
+    message: string,
+  ): void {
+    this.operationMessage.set('');
+    this.saveState.set({ status: 'saving' });
+    operation
+      .pipe(takeUntil(this.route.paramMap.pipe(skip(1))), takeUntilDestroyed(this.destroyRef))
+      .subscribe({
+        next: (response) => {
+          if (response.data.id !== question.id) {
+            this.saveState.set(this.saveError(ApiError.invalidResponse(200, response.meta), true));
+            return;
+          }
+          this.state.set({ status: 'ready', question: response.data });
+          this.saveState.set({ status: 'idle' });
+          this.operationMessage.set(message);
+        },
+        error: (error: unknown) => this.saveState.set(this.saveError(error, true)),
+      });
+  }
+
   reloadQuestion(): void {
     if (this.saveState().status === 'saving') return;
     if (
-      this.formComponent()?.form.dirty &&
+      this.hasUnsavedChanges() &&
       !window.confirm('Discard unsaved changes and reload the latest question?')
     )
       return;
@@ -170,11 +334,11 @@ export class QuestionEditor {
 
   canLeave(): boolean {
     if (this.saveState().status === 'saving') return false;
-    return !this.formComponent()?.form.dirty || window.confirm('Discard unsaved question changes?');
+    return !this.hasUnsavedChanges() || window.confirm('Discard unsaved question changes?');
   }
 
   beforeUnload(event: BeforeUnloadEvent): void {
-    if (this.saveState().status === 'saving' || this.formComponent()?.form.dirty) {
+    if (this.saveState().status === 'saving' || this.hasUnsavedChanges()) {
       event.preventDefault();
       event.returnValue = '';
     }
@@ -196,7 +360,8 @@ export class QuestionEditor {
       'Unable to confirm the save. Your changes are retained. Check the Question Bank before retrying; the request may have completed.';
     if (error instanceof ApiError) {
       if (error.status === 400) {
-        message = 'The server rejected some values. Check the highlighted fields and try again.';
+        message =
+          'The server rejected the question. Check the highlighted fields, four distinct answer options, exactly one correct answer, and the current source and target before retrying.';
         const known: readonly QuestionField[] = [
           'sourceType',
           'exampleId',
@@ -223,6 +388,8 @@ export class QuestionEditor {
           }
           if (detail.field === 'source')
             fields.exampleId = 'Check the source reference and question type.';
+          if (detail.field === 'text' || detail.field === 'optionId')
+            fields.options = 'Check the option text and selected correct answer.';
         }
       }
       if (error.status === 401)

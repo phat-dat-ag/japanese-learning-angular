@@ -1,5 +1,9 @@
 import { FormArray, FormControl, FormGroup } from '@angular/forms';
-import { QuestionSource, QuizQuestionContentRequest } from './quiz-question.model';
+import {
+  QuestionSource,
+  QuizOptionRequest,
+  QuizQuestionContentRequest,
+} from './quiz-question.model';
 
 export function createQuestionForm() {
   return new FormGroup({
@@ -104,22 +108,37 @@ export function validateQuestion(
     if (parseQuestionIds(value[field]) === null)
       errors[field] = 'Enter up to 100 distinct positive IDs separated by commas, or leave blank.';
   }
-  if (creating) {
-    if (
-      value.options.length !== 4 ||
-      value.options.some((text) => !validText(text, 200, true) || text !== strip(text)) ||
-      new Set(value.options.map((text) => text.normalize('NFKC'))).size !== 4
-    )
-      errors.options =
-        'Provide four nonblank options, at most 200 code points each, without surrounding whitespace or NFKC-equivalent duplicates.';
-    if (
-      value.correctIndex === null ||
-      !Number.isInteger(value.correctIndex) ||
-      value.correctIndex < 0 ||
-      value.correctIndex > 3
-    )
-      errors.correctIndex = 'Choose exactly one correct answer.';
-  }
+  if (creating) Object.assign(errors, validateOptions(value.options, value.correctIndex));
+  return errors;
+}
+
+export function validateAnswerOptions(options: readonly QuizOptionRequest[]): QuestionErrors {
+  const correct = options.filter((option) => option.correct);
+  return validateOptions(
+    options.map((option) => option.text),
+    correct.length === 1 ? options.findIndex((option) => option.correct) : null,
+  );
+}
+
+export function validateOptions(
+  options: readonly string[],
+  correctIndex: number | null,
+): QuestionErrors {
+  const errors: QuestionErrors = {};
+  if (
+    options.length !== 4 ||
+    options.some((text) => !validText(text, 200, true) || text !== strip(text)) ||
+    new Set(options.map((text) => text.normalize('NFKC'))).size !== 4
+  )
+    errors.options =
+      'Provide four nonblank options, at most 200 code points each, without surrounding whitespace or NFKC-equivalent duplicates.';
+  if (
+    correctIndex === null ||
+    !Number.isInteger(correctIndex) ||
+    correctIndex < 0 ||
+    correctIndex > 3
+  )
+    errors.correctIndex = 'Choose exactly one correct answer.';
   return errors;
 }
 

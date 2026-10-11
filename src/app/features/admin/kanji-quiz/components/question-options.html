@@ -1,0 +1,56 @@
+<section class="mt-6 rounded-2xl border border-gray-200 bg-white p-5" aria-labelledby="answer-options-title">
+  <h2 id="answer-options-title" class="text-xl font-semibold text-gray-900">Answer options</h2>
+  <p class="mt-2 text-sm text-gray-600">
+    Edit one option at a time. Choose exactly one correct answer and save the selection.
+  </p>
+  <fieldset [disabled]="locked() || question().status === 'ARCHIVED'" class="mt-4 space-y-4"
+    aria-describedby="option-edit-errors">
+    <legend class="sr-only">Four answer options and correct answer</legend>
+    @for (option of question().options; track option.id; let index = $index) {
+    <div class="flex flex-wrap items-center gap-3 rounded-xl border border-gray-200 p-3">
+      <label class="inline-flex min-h-11 items-center gap-2">
+        <input type="radio" name="savedCorrectOption" [formControl]="correctId" [value]="option.id"
+          [attr.disabled]="editingId() !== null ? '' : null" />
+        Option {{ index + 1 }}: <span lang="ja" class="text-xl">{{ option.text }}</span>
+      </label>
+      @if (option.correct) {
+      <span class="font-semibold text-green-800">Correct answer</span>
+      }
+      @if (editingId() === option.id) {
+      <div class="w-full space-y-2">
+        <label [for]="'edit-option-' + option.id" class="block font-medium">Kanji option text</label>
+        <input [id]="'edit-option-' + option.id" [formControl]="text" lang="ja" aria-describedby="option-edit-errors"
+          [attr.aria-invalid]="!!errors().options" class="min-h-11 w-full rounded-xl border border-gray-300 px-3" />
+        <button type="button" (click)="saveText()"
+          class="min-h-11 rounded-xl bg-indigo-600 px-4 font-semibold text-white">
+          Save option
+        </button>
+      </div>
+      } @else {
+      <button type="button" (click)="edit(option.id)" [disabled]="dirty()"
+        [attr.aria-label]="'Edit option ' + (index + 1)"
+        class="min-h-11 rounded-xl border border-gray-300 px-4 font-semibold text-indigo-700 disabled:opacity-50">
+        Edit
+      </button>
+      }
+    </div>
+    }
+    <p id="option-edit-errors" role="alert" class="text-sm text-red-700">
+      {{ errors().options }} {{ errors().correctIndex }}
+    </p>
+    @if (question().status !== 'ARCHIVED') {
+    <div class="flex flex-wrap gap-3">
+      <button type="button" (click)="saveCorrect()" [disabled]="editingId() !== null || !correctId.dirty"
+        class="min-h-11 rounded-xl bg-indigo-600 px-4 font-semibold text-white disabled:opacity-50">
+        Save correct answer
+      </button>
+      @if (dirty()) {
+      <button type="button" (click)="cancel()"
+        class="min-h-11 rounded-xl border border-gray-300 px-4 font-semibold text-indigo-700">
+        Cancel option changes
+      </button>
+      }
+    </div>
+    }
+  </fieldset>
+</section>

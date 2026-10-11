@@ -4,6 +4,7 @@
   questionContent,
   selectedTarget,
   validateQuestion,
+  validateAnswerOptions,
 } from './question-form.model';
 
 function validValue() {
@@ -137,5 +138,35 @@ describe('Question form contracts', () => {
     expect(validateQuestion(value, true, '😀がっこうへいく')).toEqual({});
     expect(validateQuestion({ ...value, exampleId: null }, true).exampleId).toBeDefined();
     expect(validateQuestion(value, true, '')).toHaveProperty('sentenceReading');
+  });
+});
+
+describe('Answer option invariants', () => {
+  const options = ['A', 'B', 'C', 'D'].map((text, index) => ({ text, correct: index === 0 }));
+  it('accepts exactly four distinct nonblank options with one correct answer', () => {
+    expect(validateAnswerOptions(options)).toEqual({});
+  });
+  it.each(
+    [[], options.slice(0, 3), [...options, { text: 'E', correct: false }]].map((values) => ({
+      values,
+    })),
+  )('rejects an incorrect option count', ({ values }) => {
+    expect(validateAnswerOptions(values).options).toBeDefined();
+  });
+  it.each(['', '   ', 'B', '\uFF22'])(
+    'rejects blank or NFKC-equivalent duplicate text: %s',
+    (text) => {
+      expect(
+        validateAnswerOptions(
+          options.map((option, index) => (index === 0 ? { ...option, text } : option)),
+        ).options,
+      ).toBeDefined();
+    },
+  );
+  it.each([0, 2, 4])('rejects %s correct answers', (count) => {
+    expect(
+      validateAnswerOptions(options.map((option, index) => ({ ...option, correct: index < count })))
+        .correctIndex,
+    ).toBeDefined();
   });
 });

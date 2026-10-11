@@ -242,6 +242,7 @@ describe('Question editor', () => {
     await open('/42/edit');
     expect(element().textContent).toContain('Loading question');
     flushDetail({ ...question, status: 'PUBLISHED' });
+    vi.spyOn(window, 'confirm').mockReturnValue(true);
     expect(element().textContent).toContain('returns this published question to DRAFT');
     expect(form().form.controls.sourceType.disabled).toBe(true);
     expect(form().form.getRawValue()).toMatchObject({
@@ -316,7 +317,7 @@ describe('Question editor', () => {
     expect(form().form.controls.sentenceReading.value).toBe(question.sentenceReading);
   });
 
-  it('surfaces existing-option validation failures without exposing option editing', async () => {
+  it('surfaces existing-option validation failures alongside the option panel', async () => {
     await open('/42/edit');
     flushDetail();
     form().submit();
@@ -440,4 +441,254 @@ describe('Question editor', () => {
     await harness.navigateByUrl('/admin');
     expect(TestBed.inject(Router).url).toBe('/admin');
   });
+  it('displays all options and saves validated text with the current version', async () => {
+    await open('/42/edit');
+    flushDetail();
+    const panel = editor.optionsComponent()!;
+    for (const option of question.options) expect(element().textContent).toContain(option.text);
+    panel.edit(2);
+    panel.text.setValue(question.options[0].text);
+    panel.saveText();
+    expect(panel.errors().options).toContain('duplicates');
+    http.expectNone((req) => req.method === 'PUT');
+    panel.text.setValue('New option');
+    panel.saveText();
+    panel.saveText();
+    editor.lifecycle('archive');
+    const req = http.expectOne(api + '/42/options/2');
+    expect(req.request.body).toEqual({ version: 7, text: 'New option' });
+    expect(editor.canLeave()).toBe(false);
+    req.flush({
+      success: true,
+      data: {
+        ...question,
+        version: 15,
+        options: question.options.map((option) =>
+          option.id === 2 ? { ...option, text: 'New option' } : option,
+        ),
+      },
+      meta,
+    });
+    harness.detectChanges();
+    expect(panel.dirty()).toBe(false);
+    expect(element().textContent).toContain('New option');
+    panel.edit(2);
+    panel.text.setValue('Next option');
+    panel.saveText();
+    const next = http.expectOne(api + '/42/options/2');
+    expect(next.request.body.version).toBe(15);
+    next.flush({ success: true, data: question, meta });
+  });
+
+  it('selects exactly one correct answer and preserves selection after failure', async () => {
+    await open('/42/edit');
+    flushDetail();
+    const panel = editor.optionsComponent()!;
+    const radios = element().querySelectorAll<HTMLInputElement>('input[name="savedCorrectOption"]');
+    radios[2].click();
+    harness.detectChanges();
+    expect(Array.from(radios).filter((radio) => radio.checked)).toHaveLength(1);
+    expect(panel.correctId.value).toBe(3);
+    panel.saveCorrect();
+    const req = http.expectOne(api + '/42/correct-option');
+    expect(req.request.body).toEqual({ version: 7, optionId: 3 });
+    req.flush({}, { status: 500, statusText: 'Error' });
+    harness.detectChanges();
+    expect(panel.correctId.value).toBe(3);
+    expect(panel.dirty()).toBe(true);
+    panel.saveCorrect();
+    http.expectOne(api + '/42/correct-option').flush({
+      success: true,
+      data: {
+        ...question,
+        version: 8,
+        options: question.options.map((option) => ({ ...option, correct: option.id === 3 })),
+      },
+      meta,
+    });
+    harness.detectChanges();
+    expect(panel.dirty()).toBe(false);
+    expect(Array.from(radios).filter((radio) => radio.checked)).toHaveLength(1);
+  });
+
+  it.each(['publish', 'unpublish', 'archive'] as const)(
+    'confirms %s and refreshes status from the response',
+    async (action) => {
+      await open('/42/edit', '?keyword=school&status=DRAFT&page=3&size=20');
+      flushDetail({ ...question, status: action === 'unpublish' ? 'PUBLISHED' : 'DRAFT' });
+      const confirm = vi.spyOn(window, 'confirm').mockReturnValue(false);
+      editor.lifecycle(action);
+      http.expectNone((req) => req.method === 'POST');
+      confirm.mockReturnValue(true);
+      editor.lifecycle(action);
+      editor.lifecycle(action);
+      form().submit();
+      const req = http.expectOne(api + '/42/' + action);
+      expect(req.request.body).toEqual({ version: 7 });
+      const status =
+        action === 'publish' ? 'PUBLISHED' : action === 'archive' ? 'ARCHIVED' : 'DRAFT';
+      req.flush({
+        success: true,
+        data: { ...question, version: 9, status, eligibleForNewGames: action === 'publish' },
+        meta,
+      });
+      harness.detectChanges();
+      expect(element().textContent).toContain(status);
+      expect(element().querySelector('a')?.getAttribute('href')).toContain(
+        'keyword=school&status=DRAFT&page=3&size=20',
+      );
+      expect(editor.optionsComponent()!.question().version).toBe(9);
+    },
+  );
+
+  it('blocks invalid lifecycle transitions, unsaved changes, and archived writes', async () => {
+    await open('/42/edit');
+    flushDetail();
+    const confirm = vi.spyOn(window, 'confirm').mockReturnValue(true);
+    editor.lifecycle('unpublish');
+    editor.optionsComponent()!.edit(1);
+    editor.lifecycle('publish');
+    expect(confirm).not.toHaveBeenCalled();
+    editor.optionsComponent()!.cancel();
+    input('explanationEn', 'Unsaved');
+    editor.lifecycle('archive');
+    expect(confirm).not.toHaveBeenCalled();
+    editor.reloadQuestion();
+    flushDetail({ ...question, status: 'ARCHIVED' });
+    editor.lifecycle('publish');
+    editor.lifecycle('unpublish');
+    editor.lifecycle('archive');
+    editor.updateOption({ optionId: 1, text: 'Changed' });
+    editor.changeCorrectOption(2);
+    editor.optionsComponent()!.edit(1);
+    expect(editor.optionsComponent()!.editingId()).toBeNull();
+    http.expectNone((req) => req.method !== 'GET');
+  });
+
+  it('shows publication validation failures without leaking backend diagnostics', async () => {
+    await open('/42/edit');
+    flushDetail();
+    vi.spyOn(window, 'confirm').mockReturnValue(true);
+    editor.lifecycle('publish');
+    error(400, 'QUIZ_QUESTION_INVALID', [{ field: 'options', message: 'private diagnostics' }]);
+    expect(element().textContent).toContain('four distinct answer options');
+    expect(element().textContent).not.toContain('private diagnostics');
+    expect(editor.locked()).toBe(false);
+  });
+
+  it('retains option edits on conflict and requires reload before any new mutation', async () => {
+    await open('/42/edit');
+    flushDetail();
+    const panel = editor.optionsComponent()!;
+    panel.edit(2);
+    panel.text.setValue('Mine');
+    panel.saveText();
+    error(409);
+    expect(panel.text.value).toBe('Mine');
+    expect(editor.locked()).toBe(true);
+    panel.saveText();
+    editor.lifecycle('publish');
+    http.expectNone((req) => req.method !== 'GET');
+    const confirm = vi.spyOn(window, 'confirm').mockReturnValue(false);
+    editor.reloadQuestion();
+    http.expectNone(api + '/42');
+    confirm.mockReturnValue(true);
+    editor.reloadQuestion();
+    flushDetail({ ...question, version: 30 });
+    expect(editor.optionsComponent()!.dirty()).toBe(false);
+    expect(editor.locked()).toBe(false);
+  });
+
+  it('confirms availability changes when editing published options', async () => {
+    await open('/42/edit');
+    flushDetail({ ...question, status: 'PUBLISHED' });
+    const panel = editor.optionsComponent()!;
+    panel.edit(2);
+    panel.text.setValue('Changed');
+    const confirm = vi.spyOn(window, 'confirm').mockReturnValue(false);
+    panel.saveText();
+    http.expectNone((req) => req.method === 'PUT');
+    confirm.mockReturnValue(true);
+    panel.saveText();
+    http.expectOne(api + '/42/options/2').flush({ success: true, data: question, meta });
+    harness.detectChanges();
+    expect(editor.optionsComponent()!.question().status).toBe('DRAFT');
+  });
+  it.each([401, 403, 404, 409, 500])(
+    'handles lifecycle HTTP %s without retrying or changing status',
+    async (status) => {
+      await open('/42/edit');
+      flushDetail();
+      vi.spyOn(window, 'confirm').mockReturnValue(true);
+      editor.lifecycle('publish');
+      error(status);
+      expect(editor.optionsComponent()!.question().status).toBe('DRAFT');
+      expect(element().querySelector('[role="alert"]')).not.toBeNull();
+      expect(editor.locked()).toBe(status === 409);
+      http.expectNone((req) => req.method === 'POST');
+    },
+  );
+
+  it('guards navigation and browser unload for unsaved option changes', async () => {
+    await open('/42/edit');
+    flushDetail();
+    editor.optionsComponent()!.edit(1);
+    const confirm = vi.spyOn(window, 'confirm').mockReturnValue(false);
+    await harness.navigateByUrl('/admin');
+    expect(TestBed.inject(Router).url).toBe(path + '/42/edit');
+    const event = new Event('beforeunload', { cancelable: true });
+    window.dispatchEvent(event);
+    expect(event.defaultPrevented).toBe(true);
+    confirm.mockReturnValue(true);
+    await harness.navigateByUrl('/admin');
+    expect(TestBed.inject(Router).url).toBe('/admin');
+  });
+  it.each([0, 2, 4])(
+    'blocks publishing and text updates with %s correct options while allowing selection repair',
+    async (count) => {
+      await open('/42/edit');
+      flushDetail({
+        ...question,
+        options: question.options.map((option, index) => ({ ...option, correct: index < count })),
+      });
+      const confirm = vi.spyOn(window, 'confirm').mockReturnValue(true);
+      editor.lifecycle('publish');
+      harness.detectChanges();
+      expect(element().textContent).toContain('Choose exactly one correct answer');
+      expect(confirm).not.toHaveBeenCalled();
+      const panel = editor.optionsComponent()!;
+      panel.edit(2);
+      panel.text.setValue('Changed');
+      panel.saveText();
+      editor.updateOption({ optionId: 2, text: 'Changed' });
+      http.expectNone((req) => req.method !== 'GET');
+      panel.cancel();
+      panel.correctId.setValue(1);
+      panel.saveCorrect();
+      const req = http.expectOne(api + '/42/correct-option');
+      expect(req.request.body).toEqual({ version: 7, optionId: 1 });
+      req.flush({ success: true, data: question, meta });
+    },
+  );
+
+  it.each(['blank', 'duplicate', 'missing'] as const)(
+    'blocks publishing with a %s option',
+    async (kind) => {
+      await open('/42/edit');
+      const options =
+        kind === 'missing'
+          ? question.options.slice(0, 3)
+          : question.options.map((option, index) =>
+            index === 0
+              ? { ...option, text: kind === 'blank' ? '   ' : question.options[1].text }
+              : option,
+          );
+      flushDetail({ ...question, options });
+      vi.spyOn(window, 'confirm').mockReturnValue(true);
+      editor.lifecycle('publish');
+      harness.detectChanges();
+      expect(element().textContent).toContain('Provide four nonblank options');
+      http.expectNone((req) => req.method === 'POST');
+    },
+  );
 });
