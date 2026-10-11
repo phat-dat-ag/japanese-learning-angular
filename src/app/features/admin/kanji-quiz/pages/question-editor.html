@@ -1,0 +1,80 @@
+﻿<p class="text-sm font-semibold text-indigo-700">Administration</p>
+@if (state(); as current) {
+<h1 class="mt-2 text-3xl font-bold text-gray-900">
+  {{
+  current.status === 'ready' && !current.question
+  ? 'Create Kanji Quiz Question'
+  : 'Edit Kanji Quiz Question'
+  }}
+</h1>
+<a [routerLink]="['/admin', 'kanji-quiz', 'questions']" queryParamsHandling="preserve"
+  class="mt-4 inline-flex min-h-11 items-center rounded-xl border border-gray-300 px-4 font-semibold text-indigo-700 focus-visible:outline-2 focus-visible:outline-indigo-600">Back
+  to Question Bank</a>
+@switch (current.status) {
+@case ('loading') {
+<p role="status" class="mt-6 text-gray-700">Loading question…</p>
+}
+@case ('error') {
+<p role="alert" class="mt-6 text-red-700">{{ current.message }}</p>
+<button type="button" (click)="reloadQuestion()"
+  class="mt-3 min-h-11 rounded-xl border border-gray-300 px-4 font-semibold text-indigo-700 focus-visible:outline-2 focus-visible:outline-indigo-600">
+  Try again
+</button>
+}
+@case ('ready') {
+@if (current.question; as question) {
+<p class="mt-4 text-gray-700">
+  Question #{{ question.id }} · {{ question.sourceType }} · {{ question.status }}
+</p>
+@if (question.status === 'PUBLISHED') {
+<p class="mt-2 rounded-xl bg-amber-50 p-4 text-amber-900">
+  Saving changes returns this published question to DRAFT. It will no longer be eligible
+  for new games until published again.
+</p>
+}
+@if (question.status === 'ARCHIVED') {
+<p role="status" class="mt-2 text-amber-900">
+  Archived questions are read-only. Restoring them is not available in this phase.
+</p>
+}
+@if (question.sourceInvalidated) {
+<p class="mt-2 text-amber-900">
+  The example source has changed or was deleted. Verify the current reading and target
+  before saving.
+</p>
+}
+}
+@if (saveState(); as save) {
+@if (save.status === 'saving') {
+<p role="status" class="mt-4 text-indigo-700">
+  Saving question… Please wait before leaving.
+</p>
+}
+@if (save.status === 'saved') {
+<p role="status" class="mt-4 font-medium text-green-800">Question saved as DRAFT.</p>
+}
+@if (save.status === 'error' || save.status === 'conflict') {
+<p role="alert" class="mt-4 text-red-700">{{ save.message }}</p>
+@if (save.status === 'conflict') {
+<button type="button" (click)="reloadQuestion()"
+  class="mt-3 min-h-11 rounded-xl border border-gray-300 px-4 font-semibold text-indigo-700 focus-visible:outline-2 focus-visible:outline-indigo-600">
+  Reload latest question
+</button>
+}
+}
+}
+@if (created(); as question) {
+<a [routerLink]="['/admin', 'kanji-quiz', 'questions', question.id, 'edit']" queryParamsHandling="preserve"
+  class="mt-4 inline-flex min-h-11 items-center rounded-xl border border-gray-300 px-4 font-semibold text-indigo-700 focus-visible:outline-2 focus-visible:outline-indigo-600">Edit
+  created question #{{ question.id }}</a>
+} @else {
+@if (exampleState(); as examples) {
+<app-question-form [initial]="current.question" [locked]="locked()" [backendErrors]="fields()"
+  [examples]="examples.status === 'ready' ? examples.examples : []" [lookupLoading]="examples.status === 'loading'"
+  [lookupMessage]="examples.status === 'ready' ? examples.message : ''" (lookupRequested)="lookup($event)"
+  (submitted)="save($event)" />
+}
+}
+}
+}
+}

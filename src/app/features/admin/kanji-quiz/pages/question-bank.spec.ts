@@ -89,7 +89,7 @@ describe('Kanji Quiz Question Bank', () => {
     control.dispatchEvent(new Event(control.tagName === 'SELECT' ? 'change' : 'input'));
   }
 
-  it('renders loading, summaries, actual metadata, and working view details without mutation links', async () => {
+  it('renders loading, summaries, actual metadata, and working view details with create/edit navigation', async () => {
     await open();
     expect(element().textContent).toContain('Loading questions');
     expect(element().querySelector('[aria-busy]')?.getAttribute('aria-busy')).toBe('true');
@@ -104,7 +104,8 @@ describe('Kanji Quiz Question Bank', () => {
     element().querySelector('summary')?.click();
     expect(element().querySelector('details')?.open).toBe(true);
     expect(element().querySelector('a[href="/admin/vocabulary/12"]')).not.toBeNull();
-    expect(element().querySelector('a[href$="/new"], a[href$="/edit"]')).toBeNull();
+    expect(element().querySelector('a[href="/admin/kanji-quiz/questions/new"]')).not.toBeNull();
+    expect(element().querySelector('a[href="/admin/kanji-quiz/questions/42/edit"]')).not.toBeNull();
   });
 
   it('applies all supported filters together, resets the page, and avoids duplicate requests', async () => {

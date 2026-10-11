@@ -101,6 +101,24 @@ describe('Kanji Quiz Question Bank routing', () => {
     expect(harness.routeNativeElement?.querySelector('nav')).toBeNull();
   });
 
+  it.each(['/new', '/42/edit'])(
+    'protects editor route %s with the existing Admin guards',
+    async (suffix) => {
+      const harness = await RouterTestingHarness.create(path + suffix);
+      expect(TestBed.inject(Router).url).toBe('/login');
+      signIn('User');
+      await harness.navigateByUrl(path + suffix);
+      expect(TestBed.inject(Router).url).toBe('/flashcards');
+      signIn('Admin');
+      if (suffix === '/new') {
+        await harness.navigateByUrl(path + suffix);
+        expect(harness.routeNativeElement?.querySelector('h1')?.textContent).toContain(
+          'Create Kanji Quiz Question',
+        );
+      }
+    },
+  );
+
   it('blocks navigation during logout even when Admin user data remains', async () => {
     signIn('Admin');
     TestBed.inject(AuthSession).ending.set(true);
