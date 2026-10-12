@@ -7,6 +7,7 @@ import { of } from 'rxjs';
 import { routes } from '../../app.routes';
 import { AuthSession } from '../../core/auth/auth-session.service';
 import { QuizPlayerService } from './services/quiz-player.service';
+import { session, nextQuestion } from './testing/quiz-gameplay.fixture';
 import { config, success } from './testing/quiz-player.fixture';
 
 describe('Kanji Quiz player routing', () => {
@@ -16,7 +17,14 @@ describe('Kanji Quiz player routing', () => {
         provideRouter(routes),
         provideHttpClient(),
         provideHttpClientTesting(),
-        { provide: QuizPlayerService, useValue: { getConfig: () => of(success(config)) } },
+        {
+          provide: QuizPlayerService,
+          useValue: {
+            getConfig: () => of(success(config)),
+            getSession: (id: number) => of(success({ ...session, sessionId: id })),
+            getNextQuestion: (id: number) => of(success({ ...nextQuestion, sessionId: id })),
+          },
+        },
       ],
     }),
   );
@@ -57,7 +65,7 @@ describe('Kanji Quiz player routing', () => {
     expect(harness.routeNativeElement?.textContent).toContain('Session 42');
     await harness.navigateByUrl('/kanji-quiz/sessions/73');
     expect(harness.routeNativeElement?.textContent).toContain('Session 73');
-    expect(harness.routeNativeElement?.textContent).toContain('Gameplay is not available yet');
+    expect(harness.routeNativeElement?.textContent).toContain('Choose the kanji');
   });
 
   it.each(['0', '-1', 'abc', '9007199254740992'])('handles invalid session ID %s', async (id) => {
