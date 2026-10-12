@@ -11,6 +11,7 @@ import { FormsModule } from '@angular/forms';
 import { Router, RouterLink } from '@angular/router';
 import { catchError, finalize, map, of, startWith, Subject, switchMap } from 'rxjs';
 import { ApiError } from '../../../core/api/api-error';
+import { QuizPlayerNav } from '../components/quiz-player-nav';
 import { QuizGameConfig } from '../models/quiz-player.model';
 import { QuizPlayerService } from '../services/quiz-player.service';
 
@@ -21,7 +22,7 @@ type ConfigState =
 
 @Component({
   selector: 'app-quiz-game-setup',
-  imports: [FormsModule, RouterLink],
+  imports: [QuizPlayerNav, FormsModule, RouterLink],
   templateUrl: './game-setup.html',
   changeDetection: ChangeDetectionStrategy.OnPush,
 })

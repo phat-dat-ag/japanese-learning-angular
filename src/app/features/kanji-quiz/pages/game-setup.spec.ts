@@ -138,9 +138,11 @@ describe('GameSetup', () => {
     http.expectOne(base + '/sessions').flush(success(created));
     await fixture.whenStable();
     fixture.detectChanges();
-    expect(fixture.nativeElement.querySelector('a')?.getAttribute('href')).toBe(
-      '/kanji-quiz/sessions/42',
-    );
+    expect(
+      fixture.nativeElement
+        .querySelector('a[href="/kanji-quiz/sessions/42"]')
+        ?.getAttribute('href'),
+    ).toBe('/kanji-quiz/sessions/42');
     page.startGame();
     http.expectNone(base + '/sessions');
   });

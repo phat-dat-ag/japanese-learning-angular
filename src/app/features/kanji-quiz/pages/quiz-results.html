@@ -1,0 +1,75 @@
+<section class="mx-auto max-w-4xl">
+  <app-quiz-player-nav />
+  <h1 class="text-3xl font-bold text-gray-900">Quiz Results</h1>
+  @let current = state();
+  @switch (current.status) {
+  @case ('loading') {
+  <p role="status" class="mt-6 text-gray-600">Loading results...</p>
+  }
+  @case ('invalid') {
+  <p role="alert" class="mt-6 text-red-700">Invalid session ID.</p>
+  }
+  @case ('incomplete') {
+  <p role="status" class="mt-6 text-gray-700">
+    This game is not completed. Finish it before reviewing answers.
+  </p>
+  <a [routerLink]="['/kanji-quiz', 'sessions', current.sessionId]"
+    class="mt-4 inline-block font-semibold text-indigo-700 underline">Resume game</a>
+  }
+  @case ('abandoned') {
+  <p role="status" class="mt-6 text-gray-700">
+    This game ended without completion. Results are unavailable.
+  </p>
+  }
+  @case ('error') {
+  <p role="alert" class="mt-6 text-red-700">{{ current.message }}</p>
+  @if (current.retryable) {
+  <button type="button" (click)="retry()" class="mt-4 font-semibold text-indigo-700 underline">
+    Retry results
+  </button>
+  }
+  }
+  @case ('loaded') {
+  @let summary = current.data.session;
+  <div class="mt-6 rounded-2xl border border-gray-200 bg-white p-6">
+    <h2 class="text-xl font-semibold text-gray-900">
+      Session {{ summary.sessionId }} — Completed
+    </h2>
+    <p class="mt-2 text-sm text-gray-600">
+      Completed:
+      <time [attr.datetime]="summary.completedAt + 'Z'">{{ summary.completedAt.replace('T', ' ') }} UTC</time>
+    </p>
+    <dl class="mt-5 grid grid-cols-2 gap-5 sm:grid-cols-4">
+      <div>
+        <dt class="text-sm text-gray-600">Score</dt>
+        <dd class="text-2xl font-bold">{{ summary.score }}</dd>
+      </div>
+      <div>
+        <dt class="text-sm text-gray-600">Questions</dt>
+        <dd class="text-2xl font-bold">{{ summary.questionCount }}</dd>
+      </div>
+      <div>
+        <dt class="text-sm text-gray-600">Correct</dt>
+        <dd class="text-2xl font-bold text-green-800">{{ summary.correctCount }}</dd>
+      </div>
+      <div>
+        <dt class="text-sm text-gray-600">Incorrect</dt>
+        <dd class="text-2xl font-bold text-red-700">{{ summary.incorrectCount }}</dd>
+      </div>
+    </dl>
+    <p class="mt-4 text-sm text-gray-600">
+      Original level: {{ summary.levelId === null ? 'Not recorded' : summary.levelId }} ·
+      Original lesson: {{ summary.lessonId === null ? 'Not recorded' : summary.lessonId }}
+    </p>
+  </div>
+  <h2 class="mt-8 text-xl font-semibold text-gray-900">Question review</h2>
+  <div class="mt-4 space-y-4">
+    @for (question of current.data.questions; track question.sessionQuestionId) {
+    <app-quiz-question-review [question]="question" />
+    } @empty {
+    <p role="status" class="text-gray-600">No question review is available.</p>
+    }
+  </div>
+  }
+  }
+</section>

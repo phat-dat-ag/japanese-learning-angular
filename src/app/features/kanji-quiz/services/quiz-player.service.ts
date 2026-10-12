@@ -1,5 +1,18 @@
+import { HttpParams } from '@angular/common/http';
 import { inject, Injectable } from '@angular/core';
 import { Observable } from 'rxjs';
+import {
+  isQuizHistoryPage,
+  isQuizHistoryDetail,
+  QuizHistoryPage,
+  QuizHistoryDetail,
+} from '../models/quiz-history.model';
+import {
+  isQuizProgress,
+  isQuizProgressBreakdown,
+  QuizProgress,
+  QuizProgressBreakdown,
+} from '../models/quiz-progress.model';
 import {
   isQuizSession,
   isQuizNextQuestion,
@@ -63,5 +76,30 @@ export class QuizPlayerService {
       undefined,
       (value): value is QuizCompletion => isQuizCompletion(value) && value.sessionId === id,
     );
+  }
+
+  getHistory(page = 0, size = 20): Observable<ApiSuccess<QuizHistoryPage>> {
+    const params = new HttpParams().set('page', page).set('size', size);
+    return this.api.get(
+      this.path + '/history?' + params.toString(),
+      (value): value is QuizHistoryPage =>
+        isQuizHistoryPage(value) && value.page === page && value.size === size,
+    );
+  }
+
+  getHistoryDetail(id: number): Observable<ApiSuccess<QuizHistoryDetail>> {
+    return this.api.get(
+      this.path + '/history/' + id,
+      (value): value is QuizHistoryDetail =>
+        isQuizHistoryDetail(value) && value.session.sessionId === id,
+    );
+  }
+
+  getProgress(): Observable<ApiSuccess<QuizProgress>> {
+    return this.api.get(this.path + '/progress', isQuizProgress);
+  }
+
+  getProgressBreakdown(): Observable<ApiSuccess<QuizProgressBreakdown>> {
+    return this.api.get(this.path + '/progress/breakdown', isQuizProgressBreakdown);
   }
 }

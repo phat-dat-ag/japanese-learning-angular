@@ -1,0 +1,90 @@
+<section class="mx-auto max-w-5xl">
+  <app-quiz-player-nav />
+  <h1 class="text-3xl font-bold text-gray-900">Quiz History</h1>
+  <p class="mt-2 text-gray-600">Completed games, newest first. Dates are shown in UTC.</p>
+  @let current = state();
+  @switch (current.status) {
+  @case ('loading') {
+  <p role="status" class="mt-6 text-gray-600">Loading history...</p>
+  }
+  @case ('invalid') {
+  <p role="alert" class="mt-6 text-red-700">
+    Invalid history page. Page must be nonnegative and size must be 1–100, within the server
+    pagination limit.
+  </p>
+  <a [routerLink]="['/kanji-quiz', 'history']" class="mt-4 inline-block font-semibold text-indigo-700 underline">Go to
+    first page</a>
+  }
+  @case ('error') {
+  <p role="alert" class="mt-6 text-red-700">{{ current.message }}</p>
+  @if (current.retryable) {
+  <button type="button" (click)="retry()" class="mt-4 font-semibold text-indigo-700 underline">
+    Retry history
+  </button>
+  }
+  }
+  @case ('loaded') {
+  @let data = current.data;
+  @if (data.items.length) {
+  <div class="mt-6 overflow-x-auto rounded-xl border border-gray-200 bg-white">
+    <table class="w-full text-left text-sm">
+      <caption class="sr-only">
+        Completed quiz sessions
+      </caption>
+      <thead class="bg-gray-50">
+        <tr>
+          <th scope="col" class="p-4">Session</th>
+          <th scope="col" class="p-4">Completed (UTC)</th>
+          <th scope="col" class="p-4">Score</th>
+          <th scope="col" class="p-4">Questions</th>
+          <th scope="col" class="p-4">Correct</th>
+          <th scope="col" class="p-4">Incorrect</th>
+        </tr>
+      </thead>
+      <tbody>
+        @for (session of data.items; track session.sessionId) {
+        <tr class="border-t border-gray-200">
+          <th scope="row" class="p-4">
+            <a [routerLink]="['/kanji-quiz', 'sessions', session.sessionId, 'results']"
+              class="font-semibold text-indigo-700 underline">Session {{ session.sessionId }}</a>
+          </th>
+          <td class="whitespace-nowrap p-4">
+            <time [attr.datetime]="session.completedAt + 'Z'">{{
+              session.completedAt.replace('T', ' ')
+              }}</time>
+          </td>
+          <td class="p-4">{{ session.score }}</td>
+          <td class="p-4">{{ session.questionCount }}</td>
+          <td class="p-4">{{ session.correctCount }}</td>
+          <td class="p-4">{{ session.incorrectCount }}</td>
+        </tr>
+        }
+      </tbody>
+    </table>
+  </div>
+  } @else {
+  <p role="status" class="mt-6 text-gray-700">
+    {{ data.totalElements === 0 ? 'No completed games yet.' : 'No sessions on this page.' }}
+  </p>
+  }
+  <p class="mt-4 text-sm text-gray-600">
+    {{ data.totalElements }} completed sessions.
+    @if (data.totalPages > 0) {
+    Page {{ data.page + 1 }} · {{ data.totalPages }} pages available.
+    }
+  </p>
+  <nav aria-label="History pages" class="mt-4 flex flex-wrap gap-4 font-semibold text-indigo-700">
+    @if (data.page > 0) {
+    <a [routerLink]="['/kanji-quiz', 'history']" [queryParams]="{ page: 0, size: data.size }"
+      class="underline">First</a>
+    <a [routerLink]="['/kanji-quiz', 'history']" [queryParams]="{ page: data.page - 1, size: data.size }"
+      class="underline">Previous</a>
+    }
+    @if (data.page + 1 < data.totalPages && (data.page + 1) * data.size <=2147483647) { <a
+      [routerLink]="['/kanji-quiz', 'history']" [queryParams]="{ page: data.page + 1, size: data.size }"
+      class="underline">Next</a>
+      }
+  </nav>
+  }
+  }
+</section>

@@ -10,7 +10,7 @@ import {
   viewChild,
 } from '@angular/core';
 import { takeUntilDestroyed } from '@angular/core/rxjs-interop';
-import { ActivatedRoute, RouterLink } from '@angular/router';
+import { ActivatedRoute, Router, RouterLink } from '@angular/router';
 import {
   catchError,
   distinctUntilChanged,
@@ -23,6 +23,7 @@ import {
   switchMap,
 } from 'rxjs';
 import { ApiError } from '../../../core/api/api-error';
+import { QuizPlayerNav } from '../components/quiz-player-nav';
 import { QuizAnswer, QuizPlayerQuestion, QuizSession } from '../models/quiz-gameplay.model';
 import { QuizPlayerService } from '../services/quiz-player.service';
 
@@ -48,12 +49,14 @@ type Action =
 
 @Component({
   selector: 'app-quiz-gameplay',
-  imports: [RouterLink],
+  imports: [QuizPlayerNav, RouterLink],
   changeDetection: ChangeDetectionStrategy.OnPush,
   templateUrl: './gameplay.html',
 })
 export class Gameplay {
   private readonly service = inject(QuizPlayerService);
+  private readonly router = inject(Router);
+  readonly resultsNavigationError = signal(false);
   private readonly injector = inject(Injector);
   private readonly heading = viewChild<ElementRef<HTMLHeadingElement>>('heading');
   private readonly actions = new Subject<Action>();
@@ -88,6 +91,7 @@ export class Gameplay {
         // Changing sessions cancels both reads and writes and discards their late responses.
         switchMap((id) => {
           this.sessionId.set(id);
+          this.resultsNavigationError.set(false);
           if (id === null) return of<GameplayState>({ status: 'invalid' });
           return this.actions.pipe(
             startWith<Action>({ kind: 'load' }),
@@ -103,6 +107,17 @@ export class Gameplay {
       )
       .subscribe((state) => {
         this.state.set(state);
+        if (state.status === 'completed') {
+          const id = this.sessionId();
+          void this.router.navigate(['/kanji-quiz', 'sessions', id, 'results']).then(
+            (navigated) => {
+              if (!navigated && this.sessionId() === id) this.resultsNavigationError.set(true);
+            },
+            () => {
+              if (this.sessionId() === id) this.resultsNavigationError.set(true);
+            },
+          );
+        }
         afterNextRender(() => this.heading()?.nativeElement.focus(), { injector: this.injector });
       });
   }

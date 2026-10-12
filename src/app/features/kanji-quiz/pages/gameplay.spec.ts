@@ -1,7 +1,7 @@
 import { provideHttpClient } from '@angular/common/http';
 import { HttpTestingController, provideHttpClientTesting } from '@angular/common/http/testing';
 import { ComponentFixture, TestBed } from '@angular/core/testing';
-import { ActivatedRoute, convertToParamMap, provideRouter } from '@angular/router';
+import { ActivatedRoute, convertToParamMap, provideRouter, Router } from '@angular/router';
 import { BehaviorSubject } from 'rxjs';
 import { QuizNextQuestion, QuizSession } from '../models/quiz-gameplay.model';
 import {
@@ -31,6 +31,7 @@ describe('Gameplay', () => {
       ],
     });
     http = TestBed.inject(HttpTestingController);
+    vi.spyOn(TestBed.inject(Router), 'navigate').mockResolvedValue(true);
     fixture = TestBed.createComponent(Gameplay);
     page = fixture.componentInstance;
     fixture.detectChanges();
@@ -367,5 +368,44 @@ describe('Gameplay', () => {
     const pending = http.expectOne(base + '42');
     fixture.destroy();
     expect(pending.cancelled).toBe(true);
+  });
+  it('opens results after a successful finish without creating or answering again', () => {
+    readyToFinish();
+    vi.spyOn(window, 'confirm').mockReturnValue(true);
+    page.finishGame();
+    http.expectOne(base + '42/finish').flush(success(completion));
+    expect(TestBed.inject(Router).navigate).toHaveBeenCalledWith([
+      '/kanji-quiz',
+      'sessions',
+      42,
+      'results',
+    ]);
+    page.finishGame();
+    http.expectNone(base + '42/finish');
+  });
+
+  it('opens results for an already-completed session restored from its gameplay URL', () => {
+    restore({ ...session, status: 'COMPLETED', answeredCount: 2 });
+    expect(TestBed.inject(Router).navigate).toHaveBeenCalledWith([
+      '/kanji-quiz',
+      'sessions',
+      42,
+      'results',
+    ]);
+  });
+
+  it('keeps a results link if navigation fails after completion', async () => {
+    vi.mocked(TestBed.inject(Router).navigate).mockRejectedValueOnce(
+      new Error('Navigation failed'),
+    );
+    restore({ ...session, status: 'COMPLETED', answeredCount: 2 });
+    await fixture.whenStable();
+    fixture.detectChanges();
+    expect(fixture.nativeElement.textContent).toContain('Unable to open results automatically');
+    expect(
+      fixture.nativeElement.querySelector('a[href="/kanji-quiz/sessions/42/results"]'),
+    ).not.toBeNull();
+    page.finishGame();
+    http.expectNone(base + '42/finish');
   });
 });

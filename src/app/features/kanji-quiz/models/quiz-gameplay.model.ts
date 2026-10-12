@@ -82,7 +82,7 @@ function isOption(value: unknown): value is QuizPlayerOption {
   return isRecord(value) && integer(value['id'], 1) && typeof value['text'] === 'string';
 }
 
-function isQuestion(value: unknown): value is QuizPlayerQuestion {
+export function isQuestion(value: unknown): value is QuizPlayerQuestion {
   return (
     isRecord(value) &&
     integer(value['sessionQuestionId'], 1) &&
