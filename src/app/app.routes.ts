@@ -46,6 +46,11 @@ export const routes: Routes = [
         loadComponent: () => import('./features/home/home').then((m) => m.Home),
       },
       {
+        path: 'kanji-quiz',
+        loadChildren: () =>
+          import('./features/kanji-quiz/kanji-quiz.routes').then((m) => m.KANJI_QUIZ_ROUTES),
+      },
+      {
         path: 'flashcards',
         loadChildren: () =>
           import('./features/flashcard/flashcard.routes').then((m) => m.FLASHCARD_ROUTES),

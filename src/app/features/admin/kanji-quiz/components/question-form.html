@@ -1,0 +1,152 @@
+<form [formGroup]="form" (ngSubmit)="submit()" novalidate
+  class="mt-6 rounded-2xl border border-gray-200 bg-white p-5 sm:p-8">
+  <fieldset [disabled]="locked()" class="min-w-0 space-y-5">
+    <legend class="mb-4 text-lg font-semibold text-gray-900">Question content</legend>
+    <div>
+      <label for="sourceType" class="font-medium text-gray-800">Question type</label>
+      <select id="sourceType" formControlName="sourceType" aria-describedby="sourceType-error type-help"
+        class="mt-2 block min-h-11 w-full rounded-xl border border-gray-300 bg-white px-3 focus-visible:outline-indigo-600">
+        <option value="CUSTOM">CUSTOM — own sentence</option>
+        <option value="EXAMPLE">EXAMPLE — linked source</option>
+      </select>
+      <p id="type-help" class="mt-1 text-sm text-gray-600">
+        The question type cannot be changed after creation.
+      </p>
+      <p id="sourceType-error" class="text-sm text-red-700">{{ error('sourceType') }}</p>
+    </div>
+    @if (form.controls.sourceType.value === 'EXAMPLE') {
+    <section aria-label="Example source" class="space-y-3 rounded-xl bg-gray-50 p-4">
+      <label for="exampleId" class="block font-medium text-gray-800">Example ID (required)</label>
+      <input id="exampleId" type="number" min="1" step="1" formControlName="exampleId"
+        [attr.aria-invalid]="!!error('exampleId')" aria-describedby="exampleId-error example-help"
+        class="min-h-11 w-full rounded-xl border border-gray-300 px-3 focus-visible:outline-indigo-600" />
+      <p id="exampleId-error" class="text-sm text-red-700">{{ error('exampleId') }}</p>
+      <p id="example-help" class="text-sm text-gray-600">
+        The sentence belongs to the example and cannot be edited here. To preview a source, load
+        its linked vocabulary's examples. You may replace the example reference, including a
+        deleted source.
+      </p>
+      <label for="lookup-id" class="block text-sm font-medium text-gray-800">Vocabulary ID for example lookup (not
+        saved)</label>
+      <div class="flex flex-wrap gap-3">
+        <input id="lookup-id" type="number" min="1" step="1" [formControl]="lookupId"
+          (input)="lookupRequested.emit(null)"
+          class="min-h-11 rounded-xl border border-gray-300 px-3 focus-visible:outline-indigo-600" />
+        <button type="button" (click)="loadExamples()" [disabled]="lookupLoading() || !validLookup()"
+          class="min-h-11 rounded-xl border border-gray-300 px-4 font-semibold text-indigo-700 focus-visible:outline-2 focus-visible:outline-indigo-600 disabled:opacity-50">
+          Load examples
+        </button>
+      </div>
+      <p role="status" class="text-sm text-gray-600">
+        {{ lookupLoading() ? 'Loading examples…' : lookupMessage() }}
+      </p>
+      @if (examples().length) {
+      <label for="example-choice" class="block text-sm font-medium text-gray-800">Choose an example</label>
+      <select #choice id="example-choice" (change)="chooseExample(choice.value)"
+        class="min-h-11 w-full rounded-xl border border-gray-300 bg-white px-3 focus-visible:outline-indigo-600">
+        <option value="">Select a source</option>
+        @for (example of examples(); track example.exampleId) {
+        <option [value]="example.exampleId">
+          #{{ example.exampleId }} — {{ example.japaneseReading }}
+        </option>
+        }
+      </select>
+      }
+      @if (exampleReading() === undefined) {
+      <p class="text-sm text-amber-800">
+        Source reading is unavailable. Enter the exact kana target and code-point range
+        manually, or load a linked vocabulary above. The server validates the source and range
+        on save.
+      </p>
+      }
+    </section>
+    } @else {
+    <div>
+      <label for="sentenceReading" class="font-medium text-gray-800">Sentence reading (required, up to 1000 code
+        points)</label>
+      <textarea id="sentenceReading" formControlName="sentenceReading" rows="3" lang="ja"
+        [attr.aria-invalid]="!!error('sentenceReading')" aria-describedby="sentenceReading-error"
+        class="mt-2 block w-full rounded-xl border border-gray-300 p-3 focus-visible:outline-indigo-600"></textarea>
+    </div>
+    }
+    <p id="sentenceReading-error" class="text-sm text-red-700">{{ error('sentenceReading') }}</p>
+    @if (sentence(); as reading) {
+    <app-question-target-selector [sentence]="reading" [disabled]="locked()" (selected)="selectTarget($event)" />
+    }
+    <div class="grid gap-5 sm:grid-cols-2">
+      @for (field of numericFields; track field.key) {
+      <div>
+        <label [for]="field.key" class="font-medium text-gray-800">{{ field.label }}</label>
+        <input [id]="field.key" type="number" [min]="field.min" step="1" [formControlName]="field.key"
+          [attr.aria-invalid]="!!error(field.key)" [attr.aria-describedby]="field.key + '-error'"
+          class="mt-2 block min-h-11 w-full rounded-xl border border-gray-300 px-3 focus-visible:outline-indigo-600" />
+        <p [id]="field.key + '-error'" class="text-sm text-red-700">{{ error(field.key) }}</p>
+      </div>
+      }
+      @for (field of textFields; track field.key) {
+      <div>
+        <label [for]="field.key" class="font-medium text-gray-800">{{ field.label }}</label>
+        <input [id]="field.key" [formControlName]="field.key" [attr.aria-invalid]="!!error(field.key)"
+          [attr.aria-describedby]="field.key + '-error'"
+          class="mt-2 block min-h-11 w-full rounded-xl border border-gray-300 px-3 focus-visible:outline-indigo-600" />
+        <p [id]="field.key + '-error'" class="text-sm text-red-700">{{ error(field.key) }}</p>
+      </div>
+      }
+    </div>
+    <p class="text-sm text-gray-600">
+      JLPT level IDs are database IDs, not N1–N5 codes. For EXAMPLE questions, an optional
+      vocabulary must be linked to the source. Blank optional fields and classifications are cleared
+      when saved.
+    </p>
+    @for (field of explanationFields; track field.key) {
+    <div>
+      <label [for]="field.key" class="font-medium text-gray-800">{{ field.label }} — up to 2000 code points</label>
+      <textarea [id]="field.key" [formControlName]="field.key" rows="3" [attr.aria-invalid]="!!error(field.key)"
+        [attr.aria-describedby]="field.key + '-error'"
+        class="mt-2 block w-full rounded-xl border border-gray-300 p-3 focus-visible:outline-indigo-600"></textarea>
+      <p [id]="field.key + '-error'" class="text-sm text-red-700">{{ error(field.key) }}</p>
+    </div>
+    }
+    @if (!initial()) {
+    <fieldset aria-describedby="options-error correctIndex-error" class="space-y-3 border-t border-gray-200 pt-4">
+      <legend class="font-semibold text-gray-900">Four initial answer options (required)</legend>
+      <p class="text-sm text-gray-600">
+        Choose one correct answer. Options must be distinct after NFKC normalization, without
+        surrounding whitespace, and at most 200 code points each.
+      </p>
+      <div formArrayName="options" class="grid gap-3 sm:grid-cols-2">
+        @for (control of form.controls.options.controls; track $index) {
+        <div>
+          <label [for]="'option-' + $index" class="font-medium text-gray-800">Option {{ $index + 1 }}</label><input
+            [id]="'option-' + $index" [formControlName]="$index" aria-describedby="options-error"
+            [attr.aria-invalid]="!!error('options')"
+            class="mt-2 block min-h-11 w-full rounded-xl border border-gray-300 px-3 focus-visible:outline-indigo-600" />
+        </div>
+        }
+      </div>
+      <div class="flex flex-wrap gap-4">
+        @for (control of form.controls.options.controls; track $index) {
+        <label class="inline-flex min-h-11 items-center gap-2"><input type="radio" formControlName="correctIndex"
+            [value]="$index" aria-describedby="correctIndex-error" />Option {{ $index + 1 }} is correct</label>
+        }
+      </div>
+      <p id="options-error" class="text-sm text-red-700">{{ error('options') }}</p>
+      <p id="correctIndex-error" class="text-sm text-red-700">{{ error('correctIndex') }}</p>
+    </fieldset>
+    } @else {
+    <p class="text-sm text-gray-600">
+      Content and answer options are saved separately. Use the Answer options panel to manage options.
+    </p>
+    <p id="options-error" class="text-sm text-red-700">{{ backendErrors().options }}</p>
+    }
+    @if (attempted() && form.invalid) {
+    <p role="alert" class="font-medium text-red-700">
+      Check the highlighted fields before saving.
+    </p>
+    }
+    <button type="submit" [disabled]="locked()"
+      class="min-h-11 rounded-xl bg-indigo-600 px-5 py-2 font-semibold text-white hover:bg-indigo-700 focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-indigo-600 disabled:opacity-50">
+      {{ initial() ? 'Save changes' : 'Create draft question' }}
+    </button>
+  </fieldset>
+</form>

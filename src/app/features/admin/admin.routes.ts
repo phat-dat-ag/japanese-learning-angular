@@ -1,5 +1,6 @@
 import { Routes } from '@angular/router';
 import { ADMIN_SECTIONS } from './admin-sections';
+import { questionEditorGuard } from './kanji-quiz/question-editor.guard';
 
 export const ADMIN_ROUTES: Routes = [
   {
@@ -31,8 +32,34 @@ export const ADMIN_ROUTES: Routes = [
     loadComponent: () =>
       import('./vocabulary/pages/vocabulary-detail').then((m) => m.VocabularyDetail),
   },
+  {
+    path: 'kanji-quiz/questions',
+    title: 'Kanji Quiz Question Bank',
+    loadComponent: () => import('./kanji-quiz/pages/question-bank').then((m) => m.QuestionBank),
+  },
+  {
+    path: 'kanji-quiz/questions/import',
+    title: 'Kanji Quiz JSON Import Preview',
+    canDeactivate: [questionEditorGuard],
+    loadComponent: () => import('./kanji-quiz/pages/question-import').then((m) => m.QuestionImport),
+  },
+  {
+    path: 'kanji-quiz/questions/new',
+    title: 'Create Kanji Quiz Question',
+    canDeactivate: [questionEditorGuard],
+    loadComponent: () => import('./kanji-quiz/pages/question-editor').then((m) => m.QuestionEditor),
+  },
+  {
+    path: 'kanji-quiz/questions/:questionId/edit',
+    title: 'Edit Kanji Quiz Question',
+    canDeactivate: [questionEditorGuard],
+    loadComponent: () => import('./kanji-quiz/pages/question-editor').then((m) => m.QuestionEditor),
+  },
   ...ADMIN_SECTIONS.filter(
-    (section) => section.path !== 'vocabulary' && section.path !== 'lessons',
+    (section) =>
+      section.path !== 'vocabulary' &&
+      section.path !== 'lessons' &&
+      section.path !== 'kanji-quiz/questions',
   ).map((section) => ({
     path: section.path,
     title: section.title,

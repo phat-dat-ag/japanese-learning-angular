@@ -1,0 +1,279 @@
+<p class="text-sm font-semibold text-indigo-700">Administration</p>
+<h1 class="mt-2 text-3xl font-bold text-gray-900">Kanji Quiz JSON Import Preview</h1>
+<p class="mt-3 text-gray-700">
+  Select a JSON array of question creation objects, each with <code>content</code> and
+  <code>options</code>. CUSTOM and EXAMPLE questions are supported.
+</p>
+<a [routerLink]="['/admin', 'kanji-quiz', 'questions']" queryParamsHandling="preserve"
+  class="mt-4 inline-flex min-h-11 items-center rounded-xl border border-gray-300 px-4 font-semibold text-indigo-700 focus-visible:outline-2 focus-visible:outline-indigo-600">Back
+  to Question Bank</a>
+<section class="mt-6 space-y-4 rounded-2xl border border-gray-200 bg-white p-5" aria-labelledby="file-heading">
+  <h2 id="file-heading" class="text-xl font-semibold text-gray-900">Choose a JSON file</h2>
+  <p id="file-help" class="text-sm text-gray-600">
+    Preview checks run locally. Selecting a file does not upload it; choose Import file to submit
+    the original file. Maximum file size: 1 MiB (1,048,576 bytes). Values are not trimmed or
+    normalized.
+  </p>
+  <label for="quiz-import-file" class="block font-medium text-gray-800">{{
+    file() ? 'Replace selected JSON file' : 'Select JSON file'
+    }}</label>
+  <input id="quiz-import-file" type="file" accept=".json,application/json" (change)="selectFile($event)"
+    [disabled]="submitting()" aria-describedby="file-help"
+    class="block min-h-11 w-full min-w-0 rounded-xl border border-gray-300 p-2 focus-visible:outline-indigo-600" />
+  @if (file(); as selected) {
+  <dl class="grid gap-2 text-sm sm:grid-cols-2">
+    <div class="min-w-0">
+      <dt class="font-semibold">Filename</dt>
+      <dd class="break-all">{{ selected.name }}</dd>
+    </div>
+    <div>
+      <dt class="font-semibold">File size</dt>
+      <dd>{{ selected.size }} bytes</dd>
+    </div>
+    <div>
+      <dt class="font-semibold">Question count</dt>
+      <dd>
+        {{
+        state().status === 'ready'
+        ? questions().length
+        : 'Unavailable until a nonempty array is parsed'
+        }}
+      </dd>
+    </div>
+  </dl>
+  <button type="button" (click)="clear()" [disabled]="submitting()"
+    class="min-h-11 rounded-xl border border-gray-300 px-4 font-semibold text-indigo-700 focus-visible:outline-2 focus-visible:outline-indigo-600">
+    Clear file
+  </button>
+  }
+</section>
+<div class="mt-4 rounded-xl bg-amber-50 p-4 text-sm text-amber-900">
+  These are client-side preview checks, not approval to import. The backend must validate database
+  references, EXAMPLE source readings, source links, and duplicate questions. Server file/count
+  limits are configurable (defaults: 1 MiB and 100 questions). Backend validation is authoritative.
+</div>
+<section class="mt-6 space-y-3 rounded-2xl border border-gray-200 bg-white p-5" aria-labelledby="import-heading"
+  [attr.aria-busy]="submitting()">
+  <h2 id="import-heading" class="text-xl font-semibold text-gray-900">
+    Import questions as drafts
+  </h2>
+  <p id="import-help" class="text-sm text-gray-600">
+    Import is available after all questions pass local checks and an Admin session is active. The
+    backend may still reject individual questions.
+  </p>
+  <p id="retry-warning" class="text-sm text-amber-900">
+    Retrying the entire file may re-import previously successful questions or return duplicate
+    errors. After a server or network error, some questions may already have been committed. Check
+    the Question Bank first, or select a corrected file containing only the questions you intend to
+    import. Retries are never automatic.
+  </p>
+  <button type="button" (click)="submit()" [disabled]="!canSubmit()" aria-describedby="import-help retry-warning"
+    class="min-h-11 rounded-xl bg-indigo-600 px-5 py-2 font-semibold text-white hover:bg-indigo-700 focus-visible:outline-2 focus-visible:outline-indigo-600 disabled:opacity-50">
+    {{
+    submitting()
+    ? 'Importing...'
+    : importState().status === 'idle'
+    ? 'Import file'
+    : 'Retry entire file'
+    }}
+  </button>
+  @if (submitting()) {
+  <p role="status" class="text-indigo-700">
+    Uploading and importing questions. Please wait before leaving. Results will appear when the
+    server finishes processing.
+  </p>
+  }
+  @if (importState(); as submission) {
+  @if (submission.status === 'error') {
+  <div role="alert" class="space-y-2 text-red-700">
+    <h3 class="font-semibold">Import request failed</h3>
+    <p>{{ submission.message }}</p>
+    @if (submission.error.status === 400) {
+    <ul class="list-disc pl-5">
+      @for (detail of submission.error.details; track $index) {
+      <li class="break-words">{{ detail.field }}: {{ detail.message }}</li>
+      }
+    </ul>
+    }
+    @if (submission.error.meta; as meta) {
+    <p class="break-all text-sm">
+      Trace: {{ meta.traceId }} / Correlation: {{ meta.correlationId }}
+    </p>
+    }
+  </div>
+  }
+  }
+  @if (outcome(); as completed) {
+  <div class="space-y-2" aria-labelledby="results-heading">
+    <h3 id="results-heading" class="font-semibold text-gray-900">
+      Last completed import results
+    </h3>
+    <p role="status" class="text-gray-800">
+      Total: {{ completed.data.total }} / Imported: {{ completed.data.imported }} / Failed:
+      {{ completed.data.failed }}
+    </p>
+    @if (completed.data.failed === 0) {
+    <p class="text-green-800">All questions were imported as DRAFT.</p>
+    } @else if (completed.data.imported === 0) {
+    <p class="text-red-700">
+      The request completed, but no questions were imported. Every question failed backend
+      validation or a business rule.
+    </p>
+    } @else {
+    <p class="text-amber-900">
+      Partial success. Imported questions are saved; failed questions were not imported.
+    </p>
+    }
+    <p class="text-sm text-gray-600">
+      Per-question results appear below at their original zero-based array index. These results
+      describe the last completed attempt and remain visible during a retry.
+    </p>
+    <p class="break-all text-sm text-gray-600">
+      Trace: {{ completed.meta.traceId }} / Correlation: {{ completed.meta.correlationId }}
+    </p>
+  </div>
+  }
+</section>
+@switch (state().status) {
+@case ('empty') {
+<p role="status" class="mt-6 text-gray-600">
+  No file selected. Choose a JSON file to preview questions.
+</p>
+}
+@case ('loading') {
+<p role="status" class="mt-6 text-indigo-700">
+  Reading and validating the selected file locally...
+</p>
+}
+@case ('error') {
+@if (state(); as current) {
+@if (current.status === 'error') {
+<p role="alert" class="mt-6 text-red-700">{{ current.message }}</p>
+<button type="button" (click)="retry()" [disabled]="submitting()"
+  class="mt-3 min-h-11 rounded-xl border border-gray-300 px-4 font-semibold text-indigo-700 focus-visible:outline-2 focus-visible:outline-indigo-600">
+  Retry preview
+</button>
+}
+}
+}
+@case ('ready') {
+<section class="mt-6 space-y-4" aria-labelledby="preview-heading">
+  <h2 id="preview-heading" class="text-2xl font-semibold text-gray-900">Question preview</h2>
+  <p role="status" class="text-gray-700">
+    {{ questions().length }} questions: {{ questions().length - invalidCount() }} passed local
+    checks; {{ invalidCount() }} with validation errors. Original array indexes are zero-based.
+  </p>
+  @if (questions().length > 100) {
+  <p class="text-amber-900">
+    This file exceeds the backend default of 100 questions. Its configured limit must be
+    checked before importing.
+  </p>
+  }
+  @for (question of visibleQuestions(); track question.index) {
+  <article class="min-w-0 space-y-3 rounded-2xl border border-gray-200 bg-white p-5"
+    [attr.aria-labelledby]="'preview-' + question.index">
+    <h3 [id]="'preview-' + question.index" class="break-words text-lg font-semibold text-gray-900">
+      Array index [{{ question.index }}] ? {{ question.sourceType }}
+    </h3>
+    <p [class]="
+              question.errors.length ? 'font-semibold text-red-700' : 'font-semibold text-green-800'
+            ">
+      {{
+      question.errors.length
+      ? 'Validation errors'
+      : 'Passed local checks (backend validation pending)'
+      }}
+    </p>
+    @if (question.errors.length) {
+    <ul class="list-disc space-y-1 pl-5 text-sm text-red-700" aria-label="Question validation errors">
+      @for (error of question.errors; track $index) {
+      <li class="break-words">
+        <span class="font-semibold">{{ error.field }}:</span> {{ error.message }}
+      </li>
+      }
+    </ul>
+    }
+    @if (resultsByIndex().get(question.index); as result) {
+    <section class="space-y-2 rounded-xl border border-gray-300 p-3"
+      [attr.aria-label]="'Import result for array index ' + question.index">
+      <h4 class="font-semibold text-gray-900">
+        Backend result [{{ result.index }}]: {{ result.status }}
+      </h4>
+      @if (result.status === 'IMPORTED') {
+      <p class="text-green-800">
+        Created question #{{ result.questionId }}, version {{ result.version }} (DRAFT).
+      </p>
+      <a [routerLink]="['/admin', 'kanji-quiz', 'questions', result.questionId, 'edit']" queryParamsHandling="preserve"
+        class="inline-flex min-h-11 items-center text-indigo-700 underline focus-visible:outline-2 focus-visible:outline-indigo-600">Open
+        question #{{ result.questionId }}</a>
+      } @else {
+      <ul class="list-disc space-y-1 pl-5 text-sm text-red-700">
+        @for (error of result.errors; track $index) {
+        <li class="break-words">
+          <span class="font-semibold">{{ error.field }} ({{ error.code }}):</span>
+          {{ error.message }}
+        </li>
+        }
+      </ul>
+      }
+    </section>
+    }
+    <dl class="grid min-w-0 gap-3 text-sm sm:grid-cols-2">
+      @for (field of question.fields; track field.label) {
+      <div class="min-w-0">
+        <dt class="font-semibold text-gray-700">{{ field.label }}</dt>
+        <dd class="max-h-48 overflow-auto whitespace-pre-wrap break-words text-gray-900">
+          {{ field.value }}
+        </dd>
+      </div>
+      }
+    </dl>
+    <p class="text-sm text-gray-600">
+      Target start is zero-based; target start and length count Unicode code points. JLPT and
+      lesson assignments use database IDs.
+    </p>
+    <h4 class="font-semibold text-gray-900">Answer options</h4>
+    <ol class="grid min-w-0 gap-3 sm:grid-cols-2">
+      @for (option of question.options; track $index) {
+      <li class="min-w-0 rounded-xl bg-gray-50 p-3">
+        <span class="text-sm text-gray-600">Option {{ $index + 1 }}</span>
+        <p lang="ja" class="max-h-48 overflow-auto whitespace-pre-wrap break-words text-xl">
+          {{ option.text }}
+        </p>
+        <p class="text-sm font-semibold">
+          {{
+          option.correct === null
+          ? 'Invalid or missing correct flag'
+          : option.correct
+          ? 'Correct answer'
+          : 'Incorrect answer'
+          }}
+        </p>
+      </li>
+      } @empty {
+      <li class="text-red-700">No answer options to preview.</li>
+      }
+    </ol>
+  </article>
+  }
+  @if (pageCount() > 1) {
+  <nav aria-label="Preview pagination"
+    class="flex flex-wrap items-center justify-between gap-3 rounded-xl bg-gray-50 p-4">
+    <p class="text-sm text-gray-700">
+      Page {{ page() + 1 }} of {{ pageCount() }} ({{ pageSize }} questions per page)
+    </p>
+    <div class="flex gap-3">
+      <button type="button" (click)="changePage(page() - 1)" [disabled]="page() === 0"
+        class="min-h-11 rounded-xl border border-gray-300 px-4 font-semibold text-indigo-700 focus-visible:outline-2 focus-visible:outline-indigo-600 disabled:opacity-50">
+        Previous
+      </button>
+      <button type="button" (click)="changePage(page() + 1)" [disabled]="page() + 1 >= pageCount()"
+        class="min-h-11 rounded-xl border border-gray-300 px-4 font-semibold text-indigo-700 focus-visible:outline-2 focus-visible:outline-indigo-600 disabled:opacity-50">
+        Next
+      </button>
+    </div>
+  </nav>
+  }
+</section>
+}
+}
