@@ -31,30 +31,29 @@
   question.eligibleForNewGames ? 'Eligible for new games' : 'Not eligible for new games'
   }}
 </p>
-@if (question.status !== 'ARCHIVED') {
 <div class="mt-4 flex flex-wrap gap-3" aria-label="Question lifecycle">
-  @if (question.status === 'DRAFT') {
-  <button type="button" (click)="lifecycle('publish')" [disabled]="locked() || hasUnsavedChanges()"
+  @if (question.status !== 'ARCHIVED') {
+  <button type="button" (click)="lifecycle('publish')" [disabled]="lifecycleLocked()"
     class="min-h-11 rounded-xl bg-indigo-600 px-4 font-semibold text-white disabled:opacity-50">
-    Publish question
+    {{ question.status === 'PUBLISHED' ? 'Revalidate question' : 'Publish question' }}
   </button>
-  } @else {
-  <button type="button" (click)="lifecycle('unpublish')" [disabled]="locked() || hasUnsavedChanges()"
-    class="min-h-11 rounded-xl border border-gray-300 px-4 font-semibold text-indigo-700 disabled:opacity-50">
-    Unpublish question
-  </button>
-  }
-  <button type="button" (click)="lifecycle('archive')" [disabled]="locked() || hasUnsavedChanges()"
+  <button type="button" (click)="lifecycle('archive')" [disabled]="lifecycleLocked()"
     class="min-h-11 rounded-xl border border-red-300 px-4 font-semibold text-red-700 disabled:opacity-50">
     Archive question
   </button>
+  }
+  @if (question.status !== 'DRAFT') {
+  <button type="button" (click)="lifecycle('unpublish')" [disabled]="lifecycleLocked()"
+    class="min-h-11 rounded-xl border border-gray-300 px-4 font-semibold text-indigo-700 disabled:opacity-50">
+    {{ question.status === 'ARCHIVED' ? 'Restore to draft' : 'Unpublish question' }}
+  </button>
+  }
 </div>
 @if (hasUnsavedChanges()) {
 <p class="mt-2 text-sm text-amber-900">
   Save or cancel your changes before changing question status. Save content and options
   separately.
 </p>
-}
 }
 @if (question.status === 'PUBLISHED') {
 <p class="mt-2 rounded-xl bg-amber-50 p-4 text-amber-900">
@@ -64,7 +63,7 @@
 }
 @if (question.status === 'ARCHIVED') {
 <p role="status" class="mt-2 text-amber-900">
-  Archived questions are read-only. Restoring them is not available in this phase.
+  Archived questions are read-only. Restore to draft before editing or publishing.
 </p>
 }
 @if (question.sourceInvalidated) {

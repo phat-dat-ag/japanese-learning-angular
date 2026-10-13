@@ -636,7 +636,7 @@ describe('Metadata read contract validation', () => {
     { ...detail, levels: [{ ...detail.levels[0], levelId: undefined }] },
     { ...detail, levels: [detail.levels[0], detail.levels[0]] },
     { ...detail, lessons: [{ ...detail.lessons[0], assignmentDisplayOrder: undefined }] },
-    { ...detail, lessons: [{ ...detail.lessons[0], assignmentDisplayOrder: 0 }] },
+    { ...detail, lessons: [{ ...detail.lessons[0], assignmentDisplayOrder: 2147483648 }] },
     { ...detail, lessons: [{ ...detail.lessons[0], lessonId: 0 }] },
     { ...detail, readings: [{ ...detail.readings[0], pitchAccentDetails: undefined }] },
     {
