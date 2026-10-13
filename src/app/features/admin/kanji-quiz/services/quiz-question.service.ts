@@ -44,7 +44,16 @@ export class QuizQuestionService {
 
   importQuestions(file: File): Observable<ApiSuccess<QuizImportResponse>> {
     const body = new FormData();
-    body.append('file', file);
+    // Browsers may label valid JSON as text/plain. Preserve bytes and filename,
+    // while using one of the file-part media types accepted by the import contract.
+    const upload =
+      !file.type || ['application/json', 'application/octet-stream'].includes(file.type)
+        ? file
+        : new File([file], file.name, {
+            type: 'application/json',
+            lastModified: file.lastModified,
+          });
+    body.append('file', upload);
     return this.api.post(this.path + '/import', body, isQuizImportResponse);
   }
 
