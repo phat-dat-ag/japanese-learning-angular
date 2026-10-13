@@ -1,15 +1,18 @@
 import { inject } from '@angular/core';
-import { Router, UrlTree } from '@angular/router';
+import { CanActivateFn, Router, UrlTree } from '@angular/router';
 import { AuthSession } from './auth-session.service';
-import { authDestination } from './auth-destination';
+import { authDestination, quizSessionDestination } from './auth-destination';
 
-function checkRole(admin: boolean): boolean | UrlTree {
+function checkRole(admin: boolean, url?: string): boolean | UrlTree {
   const session = inject(AuthSession);
   const router = inject(Router);
   const user = session.user();
-  if (!session.authenticated() || !user) return router.createUrlTree(['/login']);
+  if (!session.authenticated() || !user) {
+    const returnUrl = !admin ? quizSessionDestination(url) : null;
+    return router.createUrlTree(['/login'], { queryParams: returnUrl ? { returnUrl } : undefined });
+  }
   return (user.role === 'Admin') === admin || router.createUrlTree([authDestination(user)]);
 }
 
-export const userGuard = (): boolean | UrlTree => checkRole(false);
+export const userGuard: CanActivateFn = (_route, state) => checkRole(false, state.url);
 export const adminGuard = (): boolean | UrlTree => checkRole(true);

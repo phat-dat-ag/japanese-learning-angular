@@ -507,7 +507,12 @@ describe('Question editor', () => {
       meta,
     });
     harness.detectChanges();
+    await harness.fixture.whenStable();
     expect(panel.dirty()).toBe(false);
+    const publish = Array.from(element().querySelectorAll<HTMLButtonElement>('button')).find(
+      (button) => button.textContent?.trim() === 'Publish question',
+    );
+    expect(publish?.disabled).toBe(false);
     expect(Array.from(radios).filter((radio) => radio.checked)).toHaveLength(1);
   });
 

@@ -1,7 +1,7 @@
 import { provideHttpClient, withInterceptors } from '@angular/common/http';
 import { HttpTestingController, provideHttpClientTesting } from '@angular/common/http/testing';
 import { ComponentFixture, TestBed } from '@angular/core/testing';
-import { provideRouter, Router } from '@angular/router';
+import { ActivatedRoute, provideRouter, Router } from '@angular/router';
 import { authInterceptor } from '../../core/auth/auth.interceptor';
 import { Login } from './login';
 
@@ -72,6 +72,28 @@ describe('Login', () => {
     expect(navigate).toHaveBeenCalledWith([destination]);
     expect(page.loading()).toBe(false);
   });
+  it.each(['User', 'Admin'])('restricts quiz return navigation for %s', (role) => {
+    vi.spyOn(TestBed.inject(ActivatedRoute).snapshot.queryParamMap, 'get').mockReturnValue(
+      '/kanji-quiz/sessions/42',
+    );
+    const router = TestBed.inject(Router);
+    const returnToQuiz = vi.spyOn(router, 'navigateByUrl').mockResolvedValue(true);
+    const fallback = vi.spyOn(router, 'navigate').mockResolvedValue(true);
+    const page = fixture.componentInstance;
+    page.email = 'learner@example.test';
+    page.password = 'test-password';
+    page.submit();
+    http
+      .expectOne('/api/auth/login')
+      .flush({ accessToken: 'access', refreshToken: 'refresh', expiresIn: 60 });
+    http.expectOne('/api/auth/me').flush({ userId: 'user-id', email: page.email, role });
+    if (role === 'User') expect(returnToQuiz).toHaveBeenCalledWith('/kanji-quiz/sessions/42');
+    else {
+      expect(returnToQuiz).not.toHaveBeenCalled();
+      expect(fallback).toHaveBeenCalledWith(['/admin']);
+    }
+  });
+
   it('links to registration and rejects invalid email submission', () => {
     const element: HTMLElement = fixture.nativeElement;
     expect(element.querySelector('a')?.getAttribute('href')).toBe('/register');

@@ -7,6 +7,8 @@ import {
   signal,
   SimpleChanges,
 } from '@angular/core';
+import { toSignal } from '@angular/core/rxjs-interop';
+import { map } from 'rxjs';
 import { FormControl, ReactiveFormsModule } from '@angular/forms';
 import {
   QuestionErrors,
@@ -29,6 +31,11 @@ export class QuestionOptions implements OnChanges {
   readonly editingId = signal<number | null>(null);
   readonly text = new FormControl('', { nonNullable: true });
   readonly correctId = new FormControl<number | null>(null);
+  // Parent lifecycle controls must react when a save resets this form control.
+  private readonly correctDirty = toSignal(
+    this.correctId.events.pipe(map(() => this.correctId.dirty)),
+    { initialValue: false },
+  );
   readonly errors = signal<QuestionErrors>({});
 
   ngOnChanges(changes: SimpleChanges): void {
@@ -45,7 +52,7 @@ export class QuestionOptions implements OnChanges {
   }
 
   dirty(): boolean {
-    return this.editingId() !== null || this.correctId.dirty;
+    return this.editingId() !== null || this.correctDirty();
   }
 
   edit(optionId: number): void {

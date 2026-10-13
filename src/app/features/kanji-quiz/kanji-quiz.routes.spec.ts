@@ -53,7 +53,9 @@ describe('Kanji Quiz player routing', () => {
     '/kanji-quiz/progress',
   ])('protects anonymous access to %s', async (url) => {
     await RouterTestingHarness.create(url);
-    expect(TestBed.inject(Router).url).toBe('/login');
+    const redirected = TestBed.inject(Router).parseUrl(TestBed.inject(Router).url);
+    expect(redirected.root.children['primary'].segments[0].path).toBe('login');
+    expect(redirected.queryParams['returnUrl']).toBe(url.includes('/sessions/') ? url : undefined);
   });
 
   it.each([
