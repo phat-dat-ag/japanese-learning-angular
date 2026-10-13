@@ -20,7 +20,6 @@ export type QuestionImportResult =
   | { readonly status: 'ready'; readonly questions: readonly QuestionImportPreview[] };
 
 export function validateQuizFile(file: File): string | null {
-  if (!/\.json$/i.test(file.name)) return 'Choose a file with a .json extension.';
   if (!file.size) return 'The file is empty. Choose a nonempty JSON array of questions.';
   if (file.size > QUIZ_PREVIEW_MAX_BYTES)
     return 'Local preview supports files up to 1 MiB (1,048,576 bytes). Choose a smaller file.';
