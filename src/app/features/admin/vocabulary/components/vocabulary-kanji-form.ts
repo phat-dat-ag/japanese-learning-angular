@@ -50,11 +50,11 @@ export class VocabularyKanjiForm implements OnInit {
     const item = this.initial();
     if (!item) return;
     this.character = item.character;
-    this.strokeCount = item.strokeCount ?? null;
+    this.strokeCount = item.strokeCount;
     this.meaningVi = item.meaningVi ?? '';
     this.meaningEn = item.meaningEn ?? '';
-    this.meaningViUnset = item.meaningVi == null;
-    this.meaningEnUnset = item.meaningEn == null;
+    this.meaningViUnset = item.meaningVi === null;
+    this.meaningEnUnset = item.meaningEn === null;
     this.displayOrder = item.displayOrder;
   }
 

@@ -684,8 +684,8 @@ describe('Phase 4 read contract', () => {
     { ...detail, examples: [detail.examples[0], detail.examples[0]] },
     { ...detail, examples: [{ ...detail.examples[0], displayOrder: undefined }] },
     { ...detail, kanji: [{ ...detail.kanji[0], kanjiId: 0 }] },
-    { ...detail, kanji: [{ ...detail.kanji[0], displayOrder: -2147483649 }] },
-    { ...detail, kanji: [{ ...detail.kanji[0], meaningVi: 42 }] },
+    { ...detail, kanji: [{ ...detail.kanji[0], displayOrder: -1 }] },
+    { ...detail, kanji: [{ ...detail.kanji[0], meaningVi: undefined }] },
     {
       ...detail,
       kanji: [

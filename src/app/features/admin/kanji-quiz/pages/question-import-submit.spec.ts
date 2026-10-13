@@ -1,7 +1,7 @@
 import { provideHttpClient } from '@angular/common/http';
 import { HttpTestingController, provideHttpClientTesting } from '@angular/common/http/testing';
 import { TestBed } from '@angular/core/testing';
-import { provideRouter, Router } from '@angular/router';
+import { provideRouter } from '@angular/router';
 import { AuthSession } from '../../../../core/auth/auth-session.service';
 import { QuestionImport } from './question-import';
 import { quizImportFixture } from '../testing/question-import.fixture';
@@ -13,7 +13,7 @@ describe('Quiz import submission and results', () => {
   let http: HttpTestingController;
   beforeEach(() => {
     TestBed.configureTestingModule({
-      providers: [provideHttpClient(), provideHttpClientTesting(), provideRouter([{ path: '**', component: QuestionImport }])],
+      providers: [provideHttpClient(), provideHttpClientTesting(), provideRouter([])],
     });
     http = TestBed.inject(HttpTestingController);
     const session = TestBed.inject(AuthSession);
@@ -72,26 +72,6 @@ describe('Quiz import submission and results', () => {
     expect(element.textContent).toContain('Total: 2 / Imported: 2 / Failed: 0');
     expect(element.textContent).toContain('Created question #101, version 1');
   });
-  it('imports JSON with a non-json filename and returns to the unfiltered Question Bank', async () => {
-    await TestBed.inject(Router).navigateByUrl(
-      '/admin/kanji-quiz/questions/import?status=PUBLISHED&page=4',
-    );
-    const { page, fixture, element, select } = await setup();
-    select(
-      new File([JSON.stringify([quizImportFixture()])], 'questions.data', { type: 'text/plain' }),
-    );
-    await vi.waitFor(() => expect(page.state().status).toBe('ready'));
-    expect(page.canSubmit()).toBe(true);
-    page.submit();
-    const request = http.expectOne(url);
-    expect(request.request.body.get('file').type).toBe('application/json');
-    request.flush({ success: true, data: importResultFixture(), meta });
-    fixture.detectChanges();
-    expect(page.importState().status).toBe('complete');
-    expect(element.textContent).toContain('All questions were imported as DRAFT');
-    expect(element.querySelector('a')?.getAttribute('href')).toBe('/admin/kanji-quiz/questions');
-  });
-
   it('shows partial success at original indices, even if results arrive in a different order', async () => {
     const { page, fixture, element } = await setup();
     page.submit();

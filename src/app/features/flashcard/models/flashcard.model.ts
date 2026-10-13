@@ -37,7 +37,7 @@ export interface Flashcard {
     readonly levelId: number;
     readonly code: string;
     readonly name: string;
-    readonly displayOrder?: number | null;
+    readonly displayOrder: number;
   }[];
 
   readonly lessons: readonly {
@@ -47,7 +47,7 @@ export interface Flashcard {
     readonly levelName: string;
     readonly lessonNumber: number;
     readonly title: string;
-    readonly description?: string | null;
+    readonly description: string;
     readonly displayOrder: number;
   }[];
 
@@ -55,9 +55,9 @@ export interface Flashcard {
     readonly kanjiId: number;
     readonly displayOrder: number;
     readonly character: string;
-    readonly strokeCount?: number | null;
-    readonly meaningVi?: string | null;
-    readonly meaningEn?: string | null;
+    readonly strokeCount: number | null;
+    readonly meaningVi: string | null;
+    readonly meaningEn: string | null;
     readonly readings: readonly {
       readonly kanjiReadingId: number;
       readonly reading: string;
@@ -88,16 +88,6 @@ function isNonNegativeInteger(value: unknown): value is number {
   return typeof value === 'number' && Number.isSafeInteger(value) && value >= 0;
 }
 
-// Read-side orders are persisted SQL int32 values; write validation is stricter.
-function isStoredOrder(value: unknown): value is number {
-  return (
-    typeof value === 'number' &&
-    Number.isInteger(value) &&
-    value >= -2147483648 &&
-    value <= 2147483647
-  );
-}
-
 function isArrayOf(value: unknown, validate: (item: unknown) => boolean): boolean {
   return Array.isArray(value) && value.every(validate);
 }
@@ -113,19 +103,15 @@ export function isFlashcard(value: unknown): value is Flashcard {
   const kanjiIds = new Set<number>();
   const kanjiReadingIds = new Set<number>();
   const exampleIds = new Set<number>();
-  const validChild = (
-    item: Record<string, unknown>,
-    key: string,
-    ids: Set<number>,
-    optionalOrder = false,
-  ): boolean => {
+  const validChild = (item: Record<string, unknown>, key: string, ids: Set<number>): boolean => {
     const id = item[key];
     const order = item['displayOrder'];
     if (
       !isNonNegativeInteger(id) ||
       id === 0 ||
       ids.has(id) ||
-      (!(optionalOrder && order == null) && !isStoredOrder(order))
+      !isNonNegativeInteger(order) ||
+      order > 2147483647
     )
       return false;
     ids.add(id);
@@ -177,27 +163,28 @@ export function isFlashcard(value: unknown): value is Flashcard {
     isArrayOf(value['partsOfSpeech'], (item) => hasStrings(item, ['code', 'nameVi', 'nameEn'])) &&
     isArrayOf(
       value['levels'],
-      (item) => hasStrings(item, ['code', 'name']) && validChild(item, 'levelId', levelIds, true),
+      (item) => hasStrings(item, ['code', 'name']) && validChild(item, 'levelId', levelIds),
     ) &&
     isArrayOf(
       value['lessons'],
       (item) =>
-        hasStrings(item, ['levelCode', 'levelName', 'title']) &&
-        (item['description'] == null || typeof item['description'] === 'string') &&
+        hasStrings(item, ['levelCode', 'levelName', 'title', 'description']) &&
         validChild(item, 'lessonId', lessonIds) &&
-        isStoredOrder(item['assignmentDisplayOrder']) &&
+        isNonNegativeInteger(item['assignmentDisplayOrder']) &&
+        item['assignmentDisplayOrder'] >= 1 &&
+        item['assignmentDisplayOrder'] <= 2147483647 &&
         isNonNegativeInteger(item['lessonNumber']) &&
         item['lessonNumber'] > 0 &&
-        isStoredOrder(item['displayOrder']),
+        isNonNegativeInteger(item['displayOrder']),
     ) &&
     isArrayOf(
       value['kanji'],
       (item) =>
         hasStrings(item, ['character']) &&
         validChild(item, 'kanjiId', kanjiIds) &&
-        (item['meaningVi'] == null || typeof item['meaningVi'] === 'string') &&
-        (item['meaningEn'] == null || typeof item['meaningEn'] === 'string') &&
-        (item['strokeCount'] == null ||
+        (item['meaningVi'] === null || typeof item['meaningVi'] === 'string') &&
+        (item['meaningEn'] === null || typeof item['meaningEn'] === 'string') &&
+        (item['strokeCount'] === null ||
           (isNonNegativeInteger(item['strokeCount']) && item['strokeCount'] <= 65535)) &&
         isArrayOf(
           item['readings'],

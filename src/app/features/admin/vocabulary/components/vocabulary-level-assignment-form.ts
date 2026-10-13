@@ -49,7 +49,7 @@ export class VocabularyLevelAssignmentForm implements OnInit {
     const item = this.initial();
     if (item) {
       this.level = item.code;
-      this.displayOrder = item.displayOrder ?? null;
+      this.displayOrder = item.displayOrder;
     }
   }
 

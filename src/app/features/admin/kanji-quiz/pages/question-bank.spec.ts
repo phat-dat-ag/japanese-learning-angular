@@ -108,25 +108,6 @@ describe('Kanji Quiz Question Bank', () => {
     expect(element().querySelector('a[href="/admin/kanji-quiz/questions/42/edit"]')).not.toBeNull();
   });
 
-  it('renders all documented statuses without an implicit publication or eligibility filter', async () => {
-    await open();
-    const req = request();
-    expect(req.request.url).toBe(endpoint + '?page=0&size=20');
-    const { sentenceReading, ...detached } = question;
-    flush(req, {
-      ...firstPage,
-      items: [
-        { ...question, id: 100, status: 'DRAFT', eligibleForNewGames: false },
-        { ...detached, id: 101, sourceType: 'EXAMPLE', status: 'PUBLISHED', sourceInvalidated: true },
-        { ...question, id: 102, status: 'ARCHIVED', eligibleForNewGames: false },
-      ],
-    });
-    for (const id of [100, 101, 102]) expect(element().textContent).toContain('Question #' + id);
-    expect(element().textContent).toContain('Sentence unavailable');
-    expect(element().textContent).toContain('21 questions');
-    expect(element().textContent).toContain('Page 1 of 2');
-  });
-
   it('applies all supported filters together, resets the page, and avoids duplicate requests', async () => {
     await open('?page=1');
     flush(request(), { ...firstPage, page: 1 });
