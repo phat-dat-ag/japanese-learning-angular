@@ -320,7 +320,7 @@ describe('VocabularyService read adapter', () => {
     { readingId: 1.5 },
     { readingId: '887' },
     { displayOrder: undefined },
-    { displayOrder: -2147483649 },
+    { displayOrder: -1 },
     { displayOrder: 1.5 },
     { displayOrder: 2147483648 },
   ])('rejects invalid reading identity/order %j at the read boundary', (patch) => {
@@ -356,7 +356,7 @@ describe('VocabularyService read adapter', () => {
     { meaningId: 1.5 },
     { meaningId: '992' },
     { displayOrder: undefined },
-    { displayOrder: -2147483649 },
+    { displayOrder: -1 },
     { displayOrder: 1.5 },
     { displayOrder: 2147483648 },
   ])('rejects invalid meaning identity/order %j at the read boundary', (patch) => {

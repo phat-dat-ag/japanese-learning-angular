@@ -21,13 +21,7 @@ describe('Vocabulary content API boundary', () => {
   afterEach(() => http.verify());
 
   const example = contentDetail.examples[1];
-  const storedKanji = contentDetail.kanji[1];
-  const kanji = {
-    ...storedKanji,
-    strokeCount: storedKanji.strokeCount ?? null,
-    meaningVi: storedKanji.meaningVi ?? null,
-    meaningEn: storedKanji.meaningEn ?? null,
-  };
+  const kanji = contentDetail.kanji[1];
   const reading = kanji.readings[1];
   const cases = [
     {

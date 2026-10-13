@@ -163,18 +163,11 @@ describe('Quiz import local validation', () => {
     expect(preview(original).errors).toEqual([]);
     expect(preview(original).original).toEqual(original);
   });
-  it('accepts JSON content regardless of filename extension, as specified by OpenAPI', () => {
-    expect(
-      validateQuizFile(new File(['[]'], 'questions.data', { type: 'application/octet-stream' })),
-    ).toBeNull();
-    expect(
-      validateQuizFile(new File(['[]'], 'questions.txt', { type: 'application/json' })),
-    ).toBeNull();
-  });
-
-  it('checks empty files and the local size limit without trusting MIME type', () => {
+  it('checks extension, empty files, and the local size limit without trusting MIME type', () => {
     expect(validateQuizFile(new File(['[]'], 'quiz.JSON', { type: '' }))).toBeNull();
-    expect(validateQuizFile(new File(['[]'], 'quiz.txt', { type: 'application/json' }))).toBeNull();
+    expect(validateQuizFile(new File(['[]'], 'quiz.txt', { type: 'application/json' }))).toContain(
+      '.json',
+    );
     expect(validateQuizFile(new File([], 'quiz.json'))).toContain('empty');
     expect(
       validateQuizFile(new File(['x'.repeat(QUIZ_PREVIEW_MAX_BYTES + 1)], 'quiz.json')),

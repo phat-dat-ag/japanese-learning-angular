@@ -257,21 +257,14 @@ export class QuestionEditor {
     );
   }
 
-  lifecycleLocked(): boolean {
-    return (
-      this.saveState().status === 'saving' ||
-      this.saveState().status === 'conflict' ||
-      this.hasUnsavedChanges()
-    );
-  }
-
   lifecycle(action: 'publish' | 'unpublish' | 'archive'): void {
     const state = this.state();
-    if (state.status !== 'ready' || !state.question || this.lifecycleLocked()) return;
+    if (state.status !== 'ready' || !state.question || this.locked() || this.hasUnsavedChanges())
+      return;
     const question = state.question;
     if (
-      (action !== 'unpublish' && question.status === 'ARCHIVED') ||
-      (action === 'unpublish' && question.status === 'DRAFT')
+      (action === 'publish' && question.status !== 'DRAFT') ||
+      (action === 'unpublish' && question.status !== 'PUBLISHED')
     )
       return;
     if (action === 'publish') {
@@ -282,14 +275,8 @@ export class QuestionEditor {
       }
     }
     const prompts = {
-      publish:
-        question.status === 'PUBLISHED'
-          ? 'Revalidate this question against the current source and make it available for new games?'
-          : 'Publish this question and make it available for new games?',
-      unpublish:
-        question.status === 'ARCHIVED'
-          ? 'Restore this archived question to an editable DRAFT?'
-          : 'Return this question to DRAFT? It will no longer be available for new games.',
+      publish: 'Publish this question and make it available for new games?',
+      unpublish: 'Return this question to DRAFT? It will no longer be available for new games.',
       archive: 'Archive this question? It will be unavailable for new games and read-only.',
     };
     if (!window.confirm(prompts[action])) return;
