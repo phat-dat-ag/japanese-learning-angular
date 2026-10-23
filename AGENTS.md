@@ -1,916 +1,153 @@
 # AGENTS.md
 
-## Project Overview
+## 1. Project context
+
+- Angular frontend for Japanese Learning: accounts, flashcards, kanji quizzes, and administration.
+- Locked versions: Angular 22.1.1, CLI/build 22.1.3, TypeScript 6.0.3; npm 11.12.1 is declared in `package.json`.
+- Standalone components, lazy routes, Signals, RxJS, HttpClient, and Tailwind CSS 4; no external state or UI component library.
+- Application requests target the Gateway. Quarkus learning APIs use `ApiClient`; .NET authentication uses `AuthApi` with a different response contract.
+- Follow user requirements and higher-priority instructions first. Use [README.md](README.md) for setup/deployment; keep this file focused on stable coding rules.
+
+## 2. Repository navigation
+
+- `src/main.ts`, `src/app/app.config.ts`, `src/app/app.routes.ts`: bootstrap, providers, top-level routes.
+- `src/app/core/api/`: configuration, HTTP transport, response envelopes, normalized errors.
+- `src/app/core/auth/`: in-memory session state, authentication services, guards, interceptor.
+- `src/app/core/layout/`: guest, learner, and admin shells and shared navigation.
+- `src/app/features/`: `auth/`, `home/`, `flashcard/`, `kanji-quiz/`, `admin/`; inspect the relevant feature first.
+- Larger features use `pages/`, `components/`, `services/`, `models/`, and route files. Small features keep files together; do not force a new hierarchy.
+- Reusable UI usually lives in feature `components/`; do not invent a global shared directory or move domain logic into `core/` for hypothetical reuse.
+- `src/styles.css`, `.postcssrc.json`, `public/`: global Tailwind styles, PostCSS integration, static assets.
+- Colocated `*.spec.ts` and feature `testing/` fixtures; `e2e/`, `scripts/`, `docs/` contain quiz browser tests, live runner, and verification records.
+
+## 3. Token-efficient exploration
+
+- Understand the task, identify the smallest feature, then inspect filenames with targeted `rg --files` before reading contents.
+- Consult this guide and README for orientation; reuse session context instead of rereading unchanged files.
+- Start with the relevant component/template/test or service/model/caller; inspect at most one or two nearby examples before expanding.
+- Search specific symbols and read relevant ranges. Avoid dumping large files, repository-wide scans, and repeated commands.
+- Exclude `node_modules/`, `.angular/`, `dist/`, `coverage/`, generated output, and lockfiles from routine searches. Read dependency metadata only for a concrete tooling question.
+- Batch independent reads where useful; expand only to resolve missing evidence. Never trade correctness, security, or accessibility for fewer tokens.
+
+## 4. Angular and TypeScript conventions
+
+- Follow surrounding names: kebab-case files, descriptive PascalCase classes/types, `app-` selectors; components generally omit `.component`/`Component` suffixes (for example `lesson-list.ts` / `LessonList`).
+- Services generally use `*.service.ts` / `*Service`; preserve established names such as `ApiClient`, `AuthApi`, and `AuthSession`. Models use descriptive types without an `I` prefix.
+- Use standalone components with explicit template `imports`, `inject()`, signal inputs (`input.required<T>()` where required), and `output<T>()`. Preserve OnPush where used; do not introduce NgModules for routine features.
+- Use `@if`, `@for`, `@empty`, and `@switch` as appropriate. Keep complex transformations outside templates.
+- Preserve `loadComponent`/`loadChildren`, role boundaries, and unsaved-change guards. Use RouterLink arrays for parameters; validate route values and observe parameter changes when a component remains mounted.
+- Type API boundaries explicitly; prefer specific unions and `readonly` contracts. Handle null/undefined intentionally and avoid unsafe assertions.
+- `tsconfig.json` enables selected checks, including `noImplicitReturns`, but does not enable full `strict` or `strictTemplates`. Do not weaken checks or enable repository-wide strictness as incidental cleanup.
+- Respect `.editorconfig` and `.prettierrc`: UTF-8, two spaces, final newline, single quotes, 100-character print width, Angular HTML parser. Preserve multilingual text.
+- Match nearby relative imports and grouping; import order is not uniformly enforced. No ESLint configuration is present. Do not reorder or reformat unrelated code.
+
+## 5. Clean Code and SOLID
+
+- Apply SOLID, DRY, KISS, and YAGNI pragmatically: meaningful names, cohesive methods, clear ownership, guard clauses, and shallow nesting.
+- Pages orchestrate routes/state/services; display components handle presentation/interaction; services own reusable feature logic and transport boundaries.
+- Prefer composition and Angular DI over unnecessary inheritance/coupling. Introduce constants for meaningful repeated values, not every literal.
+- Search before adding a helper, interface, service, or abstraction. Extract only for concrete reuse or responsibility boundaries; no speculative CRUD frameworks or premature optimization.
+
+## 6. Components and reusability
+
+- Search the relevant feature and nearby components before creating UI; reuse existing cards, form actions, sections, and navigation when suitable.
+- Preserve signal input/output communication; never mutate inputs or fetch backend data from reusable display components.
+- Separate presentation from orchestration when beneficial, without fragmenting simple templates into needless components.
+- Keep feature-specific UI local. Do not add a UI library when existing components/Angular suffice; justify any required dependency.
+
+## 7. State and reactivity
+
+- Use local signals for synchronous UI state, `computed()` for derived values, and Observables/RxJS for HTTP and reactive routing. Preserve working patterns rather than converting them wholesale.
+- Keep one source of truth and explicit state transitions; use existing discriminated loading/loaded/error states when appropriate, including empty results.
+- Use `toSignal` or lifecycle-aware subscriptions (`takeUntilDestroyed`); preserve request cancellation and use `switchMap` for replaceable reads. Avoid nested subscriptions and duplicate requests.
+- Do not use cancellation semantics that lose required writes. Preserve intentional auth refresh completion even when its original subscriber is destroyed.
+- Avoid unnecessary `effect()` and manually synchronized derived state. Do not introduce NgRx or another global store without an explicit requirement.
+
+## 8. API integration
+
+- Normal flow: page → feature service → `ApiClient` → HttpClient → Gateway. Keep endpoint paths, query/body construction, feature validation, and mapping in services.
+- `ApiClient` owns Quarkus envelope validation, timeout, metadata, and `ApiError` normalization. Reuse its types/runtime guards; preserve trace/correlation metadata and avoid a second response wrapper.
+- `AuthApi` deliberately uses HttpClient directly for .NET plain success bodies and auth error adaptation; do not force it into the Quarkus envelope.
+- `API_CONFIG` in `core/api/api.config.ts` defaults to `/api` and 15 seconds. Feature paths include versions where needed but never repeat `/api`.
+- `proxy.conf.json` forwards development requests to the Gateway; production uses `nginx.conf`. No Angular environment-file/runtime loader exists. Use the existing provider boundary for configuration, not hardcoded service hosts.
+- Verify contracts in existing services/models or backend evidence; never invent endpoints or payloads. Validate external data at the boundary, not repeatedly in presentation layers.
+- Do not add global retries, persistent caching, or duplicate HTTP infrastructure without requirements.
+
+## 9. Authentication and security
+
+- Reuse `AuthService`, `AuthSession`, guards, and `authInterceptor`; preserve registration → login → `/me` identity/role loading.
+- Tokens/user state are memory-only. Do not introduce localStorage/sessionStorage token persistence or decode JWTs as an alternative authority.
+- Preserve API-origin/path-scoped Bearer attachment, auth-endpoint exclusions, shared 401 refresh, one retry, and session clearing on refresh failure/repeated 401. A 403 must not trigger refresh/logout.
+- Preserve logout coordination with rotation, local clearing on failure, role-separated routes, mounted-layout sign-out handling, and allowlisted quiz return URLs.
+- Backend authorization is authoritative; never bypass guards or service authorization for convenience. Do not assume cookie/CSRF mechanisms that are not implemented.
+- Never embed secrets, log credentials/tokens, expose private diagnostics, or bypass Angular sanitization. Avoid untrusted HTML rendering and preserve existing security headers/boundaries.
+
+## 10. Forms and validation
+
+- Follow the nearest form: auth/vocabulary use `FormsModule` and `ngModel`; quiz editing also uses reactive `FormControl` patterns. Do not migrate styles or add form libraries incidentally.
+- Reuse feature validators in `models/` and existing form components; keep constraints aligned with verified API contracts.
+- Guard invalid/pending submissions and repeated writes; preserve server field-error mapping, entered values where appropriate, and intentional password clearing.
+- Associate labels/help/errors with controls, expose invalid/busy state, and preserve focus on form entry, cancellation, and error recovery.
+
+## 11. UI/UX and styling
+
+- Use existing Tailwind utilities and nearby layouts: gray surfaces/text, indigo actions, rounded bordered panels, responsive spacing, visible focus, and disabled states.
+- Reuse feature UI patterns; there is no separate component-library design system. Avoid duplicate utility abstractions, unnecessary inline/custom styles, or unrelated redesign.
+- If adding component CSS, attach it through component metadata; an existing sibling stylesheet is not proof that it is loaded.
+- Preserve responsive behavior and distinct loading, empty, success, and error feedback; do not treat empty data as a failed request.
+
+## 12. Performance and accessibility
+
+- Preserve lazy loading, suitable list `track` keys, efficient derived state, and subscription cleanup. Avoid expensive template work and repeated requests; optimize only with a concrete need.
+- Use semantic HTML, buttons for actions, links for navigation, accessible names, keyboard operation, and visible focus. Preserve contrast and meaningful heading structure.
+- Use existing `role="status"`, `role="alert"`, `aria-busy`, and field descriptions when appropriate; avoid redundant ARIA or click-only nonsemantic controls.
 
-This repository contains the Angular frontend for the Japanese Learning application.
+## 13. Errors and feedback
 
-The application communicates with the Quarkus backend and follows modern Angular standalone and reactive patterns.
+- Normalize transport errors centrally; interpret expected feature errors locally with safe messages and relevant recovery/retry actions.
+- Reuse inline feedback and feature error helpers; no global toast library is established. Avoid duplicate notifications or silently swallowed failures.
+- Preserve validation details/trace metadata internally without displaying raw backend messages or stack traces. Do not add catch blocks that only rethrow unchanged errors.
 
-Primary goals for all changes:
+## 14. Production quality
 
-- Correctness
-- Clean Code
-- SOLID principles where appropriate
-- Readability and maintainability
-- Strong typing
-- Accessibility
-- Consistency with existing architecture
-- Minimal and focused changes
-- Efficient repository exploration
+- Deliver typed, readable, maintainable code that preserves contracts/behavior and handles affected null, invalid, empty, failure, and concurrency cases.
+- Keep configuration at established boundaries, dependencies minimal, UI responsive/accessible, and code testable. Do not rely on TypeScript types to validate remote JSON.
 
-Follow the user's task and higher-priority instructions first.
+## 15. Testing and verification
 
----
+- Use Angular TestBed, Vitest/jsdom, colocated specs, existing fixtures, and router harnesses. HTTP tests use `provideHttpClient()` before `provideHttpClientTesting()` and verify outstanding requests.
+- Add/update deterministic behavior tests for meaningful success, failure, empty, and affected edge cases; mock external dependencies in unit tests. Diagnose failures rather than blindly changing expectations.
+- Focused: `npm test -- --watch=false --include=src/app/core/auth/auth.service.spec.ts` (substitute the relevant spec).
+- Broader: `npm test -- --watch=false` only for cross-cutting changes or explicit requests; do not repeat the full suite after every edit.
+- Production build: `npm run build` when scope warrants; investigate budget failures instead of weakening limits. Skip tests/builds for documentation-only edits unless needed.
+- Formatting: `npx --no-install prettier --check <files>`; use `--write` only on relevant files.
+- Type checking when needed: `npx --no-install tsc --noEmit -p tsconfig.app.json` and `npx --no-install tsc --noEmit -p tsconfig.spec.json`. These are local tools, not npm scripts; no lint/typecheck script or coverage threshold is configured.
+- `npm run test:quiz:live` creates Docker resources; `npm run test:quiz:e2e` writes temporary fixtures to the development stack. Consult [docs/kanji-quiz-integration.md](docs/kanji-quiz-integration.md) before running; ordinary unit tests need no backend.
+- Use `npm.cmd` / `npx.cmd` if PowerShell blocks wrappers; do not change execution policy. Never claim an unexecuted check passed.
 
-## Tech Stack
+## 16. Minimal change policy
 
-- Angular 22
-- TypeScript 6
-- RxJS
-- Angular Signals
-- Angular Router
-- Angular HttpClient
-- Tailwind CSS 4
-- Vitest / jsdom
-- npm
+- Change only task-required files. Preserve unrelated user edits; no incidental refactoring, renaming, formatting, dependency upgrades, configuration changes, or new documentation files.
+- Do not change public contracts, routing, auth behavior, or architectural layers without task requirements. Report unrelated defects rather than fixing them automatically.
+- Before editing, run `git branch --show-current` and `git status --short`. Do not commit, push, pull, create/switch branches, rebase, reset, clean, stash, discard changes, or open PRs unless explicitly requested.
+- Review-only tasks are read-only: inspect the diff first, prioritize concrete regressions, and avoid unnecessary expensive checks.
 
-Do not introduce alternative frameworks, state-management libraries, UI libraries, or dependencies when Angular or the existing project already provides sufficient functionality.
+## 17. Agent workflow
 
----
+1. Understand requirements and Git state; ask only if ambiguity materially affects correctness, security, contracts, or UX.
+2. Locate the smallest feature and nearest implementation; search for reusable code and choose the smallest correct change.
+3. Implement within established boundaries; add/update relevant tests without unrelated cleanup.
+4. Run focused checks, inspect `git diff --stat` and `git diff`, and confirm only intended files changed with no debug code.
+5. Report completed behavior, affected files, actual verification, and unresolved limitations. Completion requires relevant verification or an explicit account of what remains unverified.
 
-## Architecture
+## 18. Communication and token efficiency
 
-Follow the existing project structure and conventions.
+- Be concise and precise; give meaningful progress updates, not tool-by-tool narration. Do not repeat the request, dump files, or explain basic Angular concepts unless asked.
+- Final responses state what changed, files affected, checks/results, and important risks. Show code only when useful; avoid unrelated recommendations.
+- Keep this file stable: no route catalogs, historical test counts, feature-status reports, or work logs. Link detailed setup/verification documentation instead.
 
-Typical flow:
+## 19. Prohibited practices
 
-```text
-Page / Component
-      ↓
-Feature Service
-      ↓
-ApiClient
-      ↓
-Quarkus Backend
-```
-
-Responsibilities:
-
-- Page: route orchestration, page state, feature composition
-- Component: presentation, interaction, local UI state
-- Feature Service: feature logic, API calls, payload validation/mapping
-- ApiClient: HTTP transport, response envelope, timeout, normalized errors
-- Model / DTO: typed contracts
-
-Rules:
-
-- Keep components focused on UI responsibilities.
-- Keep backend/API access in services.
-- Keep shared HTTP concerns in `core/api/`.
-- Keep page-level orchestration in feature pages.
-- Do not introduce new architectural layers unless clearly required.
-- Do not introduce NgModules for routine features.
-- Preserve lazy loading.
-- Prefer existing project patterns over introducing new ones.
-
----
-
-## Project Structure
-
-Keep application-wide concerns under:
-
-```text
-src/app/core/
-```
-
-Keep feature-specific code under:
-
-```text
-src/app/features/<feature>/
-```
-
-Typical feature structure:
-
-```text
-components/
-pages/
-services/
-models/
-*.routes.ts
-```
-
-Shared API infrastructure belongs in:
-
-```text
-src/app/core/api/
-```
-
-Application layout belongs in:
-
-```text
-src/app/core/layout/
-```
-
-Do not move feature logic into `core/` based only on hypothetical future reuse.
-
-Do not create generic shared abstractions without actual reuse.
-
----
-
-## Clean Code and SOLID
-
-All new or modified code must be:
-
-- readable
-- simple
-- maintainable
-- testable
-- strongly typed
-- focused
-- easy to understand
-
-Apply SOLID pragmatically.
-
-Rules:
-
-- A component, service, class, or method should have one clear responsibility.
-- Keep methods focused and reasonably small.
-- Use clear and descriptive names.
-- Prefer early returns when they reduce nesting.
-- Avoid deeply nested logic.
-- Avoid duplicated logic.
-- Avoid magic values when constants or typed values are appropriate.
-- Avoid `any` unless genuinely necessary.
-- Avoid unsafe type assertions.
-- Keep interfaces and models focused.
-- Keep templates readable.
-- Move complex logic out of templates.
-- Prefer straightforward code over clever code.
-- Avoid unnecessary comments; comment intent or constraints, not obvious code.
-- Avoid premature abstraction.
-- Avoid speculative functionality.
-- Do not over-engineer simple behavior.
-- Refactor only when it directly supports the requested task.
-
-Do not split simple code into unnecessary layers merely to satisfy theoretical SOLID rules.
-
-Code should be understandable by another developer without extensive explanation.
-
----
-
-## Existing Code Is the Source of Truth
-
-When implementation details are not explicitly specified:
-
-1. Find the closest existing implementation.
-2. Inspect one or two similar examples.
-3. Follow existing conventions.
-4. Reuse existing components before creating new ones.
-
-Before creating a new:
-
-- service
-- model / DTO
-- component / page
-- pipe / directive
-- helper
-- error type
-- API wrapper
-- state abstraction
-
-search for an existing equivalent first.
-
-Prefer actual repository code over assumptions.
-
-If this guide conflicts with current implementation, verify the relevant source code before making a broad change.
-
----
-
-## Angular Conventions
-
-Use modern Angular patterns already present in the project.
-
-Prefer:
-
-```typescript
-inject()
-signal()
-computed()
-input.required<T>()
-output<T>()
-```
-
-Use modern template control flow:
-
-```html
-@if (...) {
-}
-
-@for (item of items; track item.id) {
-}
-
-@empty {
-}
-```
-
-Rules:
-
-- Use standalone components.
-- Keep template dependencies explicit in `imports`.
-- Do not introduce NgModules for routine additions.
-- Use signals for appropriate synchronous UI state.
-- Use `computed()` for derived state.
-- Avoid redundant state.
-- Avoid unnecessary `effect()`.
-- Preserve `OnPush` where currently used.
-- Use Angular dependency injection instead of manual service construction.
-- Do not convert working RxJS flows to signals or vice versa without a concrete reason.
-
----
-
-## TypeScript
-
-Keep TypeScript strongly typed.
-
-Rules:
-
-- Avoid `any`.
-- Prefer specific types and unions.
-- Type API and service boundaries explicitly.
-- Handle `undefined` and missing results intentionally.
-- Avoid unsafe type assertions.
-- Avoid broad `object`, `Function`, or loosely typed dictionaries without reason.
-- Reuse existing models instead of duplicating them.
-- Separate transport DTOs from UI/domain models only when they genuinely differ.
-- Use `readonly` where consistent with existing immutable contracts.
-
-Do not introduce repository-wide compiler configuration changes as part of an unrelated task.
-
----
-
-## Components and Pages
-
-Components should focus on presentation and interaction.
-
-Rules:
-
-- Keep components small and understandable.
-- Use required signal inputs where appropriate.
-- Use outputs for explicit child-to-parent communication.
-- Do not fetch backend data directly from reusable display components.
-- Do not mutate inputs.
-- Avoid storing values that can be derived.
-- Keep complex transformations out of templates.
-- Keep local state local unless it genuinely needs to be shared.
-
-Feature pages may coordinate:
-
-- route parameters
-- services
-- loading/error/empty states
-- page-level state
-- child components
-
-Do not let pages become containers for unrelated logic.
-
----
-
-## State Management
-
-Use the smallest appropriate mechanism:
-
-```text
-Local UI state       -> signal
-Derived state        -> computed
-Async HTTP flow      -> Observable / RxJS
-Shared feature state -> focused service when needed
-```
-
-Rules:
-
-- Prefer one source of truth.
-- Avoid redundant state.
-- Avoid unnecessary `effect()`.
-- Keep state transitions explicit.
-- Do not introduce NgRx or another global state library unless explicitly required.
-
----
-
-## RxJS
-
-Use RxJS deliberately.
-
-Rules:
-
-- Avoid nested subscriptions.
-- Prefer operator composition.
-- Preserve request cancellation when relevant.
-- Use `switchMap` when stale requests should be replaced.
-- Avoid manual subscriptions when Angular/template/signal integration can manage lifecycle safely.
-- Avoid unnecessary operators.
-- Avoid difficult-to-read operator chains.
-- Handle errors where they can be meaningfully interpreted.
-
-Follow nearby implementations before introducing a new reactive pattern.
-
----
-
-## Routing
-
-Preserve existing lazy-loading and `loadComponent` patterns.
-
-Rules:
-
-- Use RouterLink arrays for parameterized internal navigation.
-- Avoid manual URL concatenation when router APIs provide a safer option.
-- Handle invalid/missing route parameters intentionally.
-- Do not assume `ActivatedRoute.snapshot.paramMap` reacts to parameter changes.
-- Use reactive route APIs when the same component may remain mounted while parameters change.
-
-Do not hardcode current route structures into new abstractions when existing route definitions can be inspected directly.
-
----
-
-## API Integration
-
-Use the existing API architecture:
-
-```text
-Component / Page
-      ↓
-Feature Service
-      ↓
-ApiClient
-      ↓
-Backend
-```
-
-`ApiClient` owns common transport concerns such as:
-
-- HTTP transport
-- timeout
-- API envelope validation
-- normalized errors
-- response metadata
-
-Feature services own:
-
-- endpoint paths
-- query parameters
-- request payloads
-- feature payload validation
-- feature-specific mapping
-
-Rules:
-
-- Do not make direct `HttpClient` calls from components when the existing API abstraction should be used.
-- Do not duplicate `ApiClient` responsibilities in feature services.
-- Do not introduce another API response wrapper.
-- Reuse existing response types and runtime guards.
-- Preserve backend metadata and normalized errors.
-- Validate external data at appropriate boundaries.
-- Do not trust API data merely because TypeScript types compile.
-- Do not introduce generic CRUD abstractions without a concrete use case.
-- Do not add global retries or persistent caching unless explicitly required.
-
----
-
-## API Configuration
-
-Use existing API configuration and proxy infrastructure.
-
-Do not hardcode development backend URLs into production application code.
-
-Development currently uses the project proxy configuration for `/api/**`.
-
-When configuration behavior matters, inspect:
-
-```text
-src/app/core/api/
-proxy.conf.json
-```
-
-Production API origins must use the project's deployment/configuration strategy rather than hardcoded localhost values.
-
----
-
-## Validation and Error Handling
-
-Validate data at the appropriate boundary.
-
-Possible validation areas:
-
-- user input
-- route parameters
-- API response envelopes
-- feature payloads
-
-Rules:
-
-- Do not duplicate validation across layers.
-- Keep feature payload validation in the relevant service/API boundary.
-- Normalize transport errors through existing API infrastructure.
-- Keep feature-specific error interpretation in the feature layer.
-- Display safe user-facing messages.
-- Do not expose backend stack traces or internal diagnostics.
-- Do not silently swallow errors.
-- Avoid catch blocks that only rethrow the same error.
-- Preserve trace/correlation metadata when the existing design requires it.
-
-Handle errors at the layer where they can be meaningfully interpreted.
-
----
-
-## UI States
-
-Backend-driven pages should intentionally handle relevant states:
-
-```text
-loading
-loaded
-empty
-error
-```
-
-Do not treat empty data as a request failure.
-
-Prefer existing discriminated state patterns over multiple overlapping booleans when appropriate.
-
----
-
-## Styling and Accessibility
-
-The project primarily uses Tailwind CSS utilities.
-
-Rules:
-
-- Follow existing visual patterns.
-- Prefer existing Tailwind utilities.
-- Avoid introducing another CSS framework.
-- Avoid unnecessary custom CSS.
-- Avoid unrelated UI redesign.
-- Preserve responsive behavior.
-- Preserve accessible contrast.
-
-Accessibility is part of correctness.
-
-When editing UI:
-
-- use semantic HTML
-- use buttons for actions
-- use links for navigation
-- preserve keyboard interaction
-- provide accessible labels
-- preserve focus behavior
-- avoid click-only non-semantic elements
-- preserve useful ARIA attributes
-
-If adding component CSS, verify that the stylesheet is actually attached to the component.
-
----
-
-## Security
-
-Anything bundled into the Angular application must be considered visible to users.
-
-Rules:
-
-- Never embed secrets or API credentials.
-- Do not expose internal backend diagnostics.
-- Treat backend data as untrusted input.
-- Avoid bypassing Angular sanitization.
-- Do not render untrusted HTML without a clear reason.
-- Do not log sensitive user data.
-- Preserve existing authentication/security boundaries.
-
----
-
-## Performance
-
-Avoid premature optimization, but do not introduce obvious inefficiencies.
-
-Rules:
-
-- Preserve lazy loading.
-- Avoid unnecessary subscriptions.
-- Avoid accidental repeated HTTP calls.
-- Use appropriate `track` expressions in `@for`.
-- Avoid heavy template logic.
-- Avoid duplicate large state.
-- Avoid large dependencies for small utilities.
-- Consider bundle impact when adding dependencies.
-
-Do not sacrifice readability for speculative performance improvements.
-
----
-
-## Formatting
-
-Follow existing formatting conventions:
-
-- UTF-8
-- 2-space indentation
-- single quotes in TypeScript
-- final newline
-- Prettier
-- Angular HTML formatting
-
-Avoid unrelated formatting churn.
-
-Format/check only relevant files when appropriate:
-
-```bash
-npx --no-install prettier --check <files>
-npx --no-install prettier --write <files>
-```
-
----
-
-## Testing
-
-Use the existing Angular test infrastructure and conventions.
-
-Rules:
-
-- Add or update tests when behavior changes.
-- Prefer focused tests.
-- Test meaningful behavior rather than implementation details.
-- Cover important success, failure, empty, and affected edge cases.
-- Reuse existing TestBed patterns.
-- Do not modify unrelated tests merely to make them pass.
-- Do not blindly change expected values.
-
-When a test fails:
-
-1. Determine whether the implementation or test is wrong.
-2. Understand the intended behavior.
-3. Fix the root cause.
-
-During implementation, run the smallest relevant test set first:
-
-```bash
-npm test -- --watch=false --include=<spec-file>
-```
-
-Run the full suite only when justified by broader/cross-cutting changes or explicitly requested:
-
-```bash
-npm test -- --watch=false
-```
-
-Do not run the full test suite after every small change.
-
----
-
-## Build Verification
-
-Run a production build when appropriate for the scope:
-
-```bash
-npm run build
-```
-
-Do not run full builds unnecessarily for documentation-only or trivial changes.
-
-Investigate build or bundle-budget failures instead of automatically weakening limits.
-
-Never claim an unrun test or build passed.
-
----
-
-## Git Safety
-
-Before editing:
-
-```bash
-git branch --show-current
-git status --short
-```
-
-Preserve unrelated user changes.
-
-Do not:
-
-- commit
-- push
-- pull
-- create/switch branches
-- rebase
-- reset
-- clean
-- stash
-- discard changes
-- open pull requests
-
-unless explicitly requested.
-
-Never overwrite unrelated uncommitted work.
-
----
-
-## Scope Control
-
-Keep every task narrowly scoped.
-
-Rules:
-
-- Implement only the requested behavior.
-- Prefer the smallest correct change.
-- Do not fix unrelated issues automatically.
-- Do not refactor unrelated code.
-- Do not rename unrelated files, classes, selectors, methods, or models.
-- Do not restructure folders without a concrete reason.
-- Do not redesign unrelated UI.
-- Do not upgrade dependencies unless required.
-- Do not reformat unrelated files.
-- Do not introduce global configuration changes for local problems.
-
-If an unrelated issue is discovered, report it instead of automatically fixing it.
-
----
-
-## Repository Exploration
-
-Use progressive discovery.
-
-Do not scan the entire repository by default.
-
-Preferred workflow:
-
-1. Read this guide once.
-2. Understand the task.
-3. Inspect files explicitly mentioned by the task.
-4. Inspect the nearest related implementation.
-5. Inspect at most one or two similar examples if needed.
-6. Use targeted searches for missing information.
-7. Expand scope only when current context is insufficient.
-
-For component work, usually start with:
-
-```text
-component.ts
-component.html
-component.spec.ts if relevant
-```
-
-For API work, usually start with:
-
-```text
-feature service
-relevant model / DTO
-relevant page/component
-closest similar API integration
-relevant tests
-```
-
-Inspect CSS only when styling is relevant.
-
-Do not preload large parts of the repository "for context."
-
----
-
-## Context and Command Efficiency
-
-Minimize unnecessary context usage.
-
-Rules:
-
-- Read only relevant sections of files.
-- Prefer targeted `rg` searches.
-- Avoid repeatedly reading unchanged files.
-- Avoid repository-wide exploration when a nearby example is sufficient.
-- Do not load unrelated documentation.
-- Do not inspect generated output unless debugging requires it.
-- Avoid large command outputs.
-- Do not repeat commands when results are already known.
-- Use existing code as documentation whenever possible.
-
-Prefer targeted commands:
-
-```bash
-git status --short
-git branch --show-current
-git diff --stat
-git diff
-rg "<search-term>" src
-```
-
-Do not routinely scan:
-
-```text
-node_modules/
-.angular/
-dist/
-coverage/
-package-lock.json
-generated output
-```
-
-Inspect dependency metadata only when a specific tooling/dependency question requires it.
-
----
-
-## Before Coding
-
-Before modifying files:
-
-1. Understand the requested behavior.
-2. Inspect Git state.
-3. Identify the smallest relevant file set.
-4. Find the closest existing implementation.
-5. Check existing conventions.
-6. Determine the minimal change.
-7. Identify the smallest useful verification step.
-
-Ask for clarification only when ambiguity could significantly affect:
-
-- architecture
-- API contracts
-- routing
-- shared state
-- security
-- backend compatibility
-- public behavior
-
-For small implementation details, follow existing conventions rather than asking unnecessary questions.
-
----
-
-## During Coding
-
-While implementing:
-
-- Keep changes minimal.
-- Write clean, readable, maintainable code.
-- Apply SOLID where appropriate.
-- Preserve Angular conventions.
-- Preserve existing architecture.
-- Keep components focused.
-- Keep API logic out of components.
-- Keep state predictable.
-- Avoid duplication.
-- Avoid unnecessary dependencies.
-- Avoid unnecessary abstractions.
-- Avoid speculative functionality.
-- Preserve accessibility.
-- Do not modify generated files.
-- Do not perform unrelated cleanup.
-
-Do not trade readability for fewer lines.
-
-Do not over-engineer simple behavior.
-
----
-
-## After Coding
-
-After implementation:
-
-1. Run relevant focused tests.
-2. Run formatting/build checks when appropriate.
-3. Inspect the final diff.
-4. Confirm no unrelated files changed.
-5. Remove debug code or accidental `console` logging.
-6. Verify code remains readable and maintainable.
-7. Report actual verification results.
-
-Use:
-
-```bash
-git diff --stat
-git diff
-```
-
-Do not commit or push unless explicitly requested.
-
----
-
-## Review Tasks
-
-When asked only to review:
-
-- Treat the task as read-only.
-- Do not modify files.
-- Review the current diff first when applicable.
-- Inspect surrounding code only when needed.
-- Avoid expensive commands unless necessary.
-
-Focus on:
-
-- correctness and regressions
-- Clean Code / SOLID
-- readability and maintainability
-- Angular conventions
-- component responsibilities
-- RxJS and signal correctness
-- API compatibility
-- routing
-- error handling
-- accessibility
-- security
-- performance regressions
-- test coverage
-- unnecessary complexity
-
-Prioritize concrete defects and maintainability risks over subjective style preferences.
-
----
-
-## Windows Notes
-
-When PowerShell script execution prevents npm/npx wrappers, use:
-
-```text
-npm.cmd
-npx.cmd
-```
-
-Do not change the user's PowerShell execution policy solely to run project commands.
-
-Preserve UTF-8 for multilingual files.
-
-Verify source content before assuming terminal rendering artifacts indicate file corruption.
-
----
-
-## Documentation
-
-Keep `AGENTS.md` focused on stable agent instructions.
-
-Update it only when changes materially affect:
-
-- architecture
-- project conventions
-- API conventions
-- important tooling
-- testing workflow
-- persistent implementation constraints
-
-Do not turn this file into:
-
-- project documentation
-- a route catalog
-- a feature status report
-- a known-bug backlog
-- a chronological work log
-
-Implementation details that can be discovered from source code should generally remain in source code.
-
----
-
-## Response Style
-
-Keep final responses concise.
-
-For implementation tasks, report:
-
-- what changed
-- files changed
-- tests/build actually executed
-- result
-- important risks or unresolved issues
-
-Do not:
-
-- repeat code already written to files
-- narrate repository exploration
-- list every command
-- provide long theoretical explanations unless requested
-- claim unrun tests or builds passed
-
-Example:
-
-```text
-Implemented lesson API integration.
-
-Changed:
-- lesson.service.ts
-- lesson-list.ts
-- lesson-list.spec.ts
-
-Verification:
-- lesson-list.spec.ts: PASS
-- npm run build: PASS
-
-No unrelated files changed.
-```
-
----
-
-## Definition of Done
-
-A task is complete when:
-
-- requested behavior is implemented correctly
-- code is clean, readable, and maintainable
-- SOLID is respected where appropriate
-- Angular conventions and architecture are preserved
-- state and API boundaries remain clear
-- accessibility and security are preserved
-- relevant tests pass
-- build passes when appropriate
-- no unrelated files were modified
-- final Git diff was reviewed
-- important risks or limitations were reported
-
-Do not commit or push unless explicitly requested.
+- No invented project features/contracts, duplicate business logic, unrelated architectural migrations, speculative abstractions, or unjustified `any`.
+- No insecure HTML/token handling, secret logging, security bypasses, ignored subscription cleanup, or false verification claims.
+- No destructive commands without explicit authorization; never overwrite unrelated work or modify generated output as source.
