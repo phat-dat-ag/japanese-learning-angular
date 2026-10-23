@@ -126,7 +126,7 @@ describe('Kanji Quiz Question Bank routing', () => {
     expect(TestBed.inject(Router).url).toBe('/login');
     expect(harness.routeNativeElement?.querySelector('nav')).toBeNull();
   });
-  it('opens the import preview from the bank and preserves filter and pagination parameters', async () => {
+  it('opens import with the current query and returns to an unfiltered first page', async () => {
     signIn('Admin');
     const query = '?status=DRAFT&page=2&size=50&keyword=school';
     const harness = await RouterTestingHarness.create(path + query);
@@ -142,10 +142,10 @@ describe('Kanji Quiz Question Bank routing', () => {
       'Kanji Quiz JSON Import Preview',
     );
     harness.routeNativeElement
-      ?.querySelector<HTMLAnchorElement>('main a[href*="/questions?"]')
+      ?.querySelector<HTMLAnchorElement>('main a[href="/admin/kanji-quiz/questions"]')
       ?.click();
     await TestBed.inject(ApplicationRef).whenStable();
-    expect(TestBed.inject(Router).url).toBe(path + query);
+    expect(TestBed.inject(Router).url).toBe(path);
   });
 
   it('protects direct import preview navigation with the existing Admin guards', async () => {

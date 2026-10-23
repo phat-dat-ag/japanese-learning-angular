@@ -52,6 +52,29 @@ describe('Quiz multipart import transport', () => {
     request.flush({ success: true, data: importResultFixture(), meta });
     expect(next).toHaveBeenCalledWith({ success: true, data: importResultFixture(), meta });
   });
+  it('uploads validated JSON with a supported part media type even when the browser labels it text/plain', async () => {
+    const original = new File(['[ { "content": {} } ]\n'], 'questions.txt', {
+      type: 'text/plain',
+      lastModified: 123,
+    });
+    service.importQuestions(original).subscribe();
+    const request = http.expectOne(url);
+    const uploaded: unknown = request.request.body.get('file');
+    expect(uploaded).toBeInstanceOf(File);
+    if (!(uploaded instanceof File)) throw new Error('Expected File');
+    expect(uploaded.type).toBe('application/json');
+    expect(uploaded.name).toBe(original.name);
+    expect(request.request.headers.has('Content-Type')).toBe(false);
+    const text = (file: File) =>
+      new Promise<string>((resolve) => {
+        const reader = new FileReader();
+        reader.onload = () => resolve(String(reader.result));
+        reader.readAsText(file);
+      });
+    expect(await text(uploaded)).toBe(await text(original));
+    request.flush({ success: true, data: importResultFixture(), meta });
+  });
+
   it.each([
     ['IMPORTED', 'IMPORTED'],
     ['IMPORTED', 'FAILED'],

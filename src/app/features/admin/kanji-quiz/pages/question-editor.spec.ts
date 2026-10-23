@@ -546,6 +546,104 @@ describe('Question editor', () => {
     },
   );
 
+  it.each([
+    { status: 'PUBLISHED', action: 'publish', label: 'Revalidate question', result: 'PUBLISHED' },
+    { status: 'ARCHIVED', action: 'unpublish', label: 'Restore to draft', result: 'DRAFT' },
+  ] as const)(
+    'supports the documented $status -> $action transition',
+    async ({ status, action, label, result }) => {
+      await open('/42/edit');
+      flushDetail({ ...question, status, sourceInvalidated: true });
+      const confirm = vi.spyOn(window, 'confirm').mockReturnValue(false);
+      const button = Array.from(element().querySelectorAll('button')).find(
+        (item) => item.textContent?.trim() === label,
+      );
+      expect(button).toBeDefined();
+      button!.click();
+      http.expectNone(api + '/42/' + action);
+      confirm.mockReturnValue(true);
+      button!.click();
+      editor.lifecycle(action);
+      const request = http.expectOne(api + '/42/' + action);
+      expect(request.request.method).toBe('POST');
+      expect(request.request.body).toEqual({ version: question.version });
+      request.flush({
+        success: true,
+        data: {
+          ...question,
+          status: result,
+          version: 19,
+          sourceInvalidated: false,
+          eligibleForNewGames: result === 'PUBLISHED',
+        },
+        meta,
+      });
+      harness.detectChanges();
+      expect(editor.optionsComponent()!.question().version).toBe(19);
+      expect(element().textContent).toContain(result);
+      expect(editor.locked()).toBe(false);
+    },
+  );
+
+  it.each([undefined, null])(
+    'loads EXAMPLE choices with optional vocabulary metadata %s',
+    async (missing) => {
+      await open();
+      form().form.controls.sourceType.setValue('EXAMPLE');
+      form().lookupId.setValue(10);
+      form().loadExamples();
+      // openapi.yaml: FlashcardLevelResponse, FlashcardLessonResponse, FlashcardKanjiResponse.
+      http.expectOne('/api/v1/flashcards/10').flush({
+        success: true,
+        data: {
+          ...vocabularyDetailFixture(10),
+          levels: [{ levelId: 5, code: 'N5', name: 'Beginner', displayOrder: missing }],
+          lessons: [
+            {
+              lessonId: 7,
+              levelCode: 'N5',
+              levelName: 'Beginner',
+              lessonNumber: 2,
+              title: 'Lesson',
+              description: missing,
+              displayOrder: 0,
+              assignmentDisplayOrder: 0,
+            },
+          ],
+          kanji: [
+            {
+              kanjiId: 8,
+              character: 'A',
+              strokeCount: missing,
+              meaningVi: missing,
+              meaningEn: missing,
+              displayOrder: 0,
+              readings: [],
+            },
+          ],
+          examples: [
+            {
+              exampleId: 3,
+              japaneseText: 'School',
+              japaneseReading: '????',
+              meaningVi: 'School',
+              meaningEn: 'School',
+              targetText: 'School',
+              displayOrder: 0,
+            },
+          ],
+        },
+        meta,
+      });
+      harness.detectChanges();
+      expect(element().textContent).not.toContain('Unable to load examples');
+      form().chooseExample('3');
+      harness.detectChanges();
+      expect(form().form.controls.exampleId.value).toBe(3);
+      expect(form().exampleReading()).toBe('????');
+    },
+  );
+
   it('blocks invalid lifecycle transitions, unsaved changes, and archived writes', async () => {
     await open('/42/edit');
     flushDetail();
@@ -561,7 +659,6 @@ describe('Question editor', () => {
     editor.reloadQuestion();
     flushDetail({ ...question, status: 'ARCHIVED' });
     editor.lifecycle('publish');
-    editor.lifecycle('unpublish');
     editor.lifecycle('archive');
     editor.updateOption({ optionId: 1, text: 'Changed' });
     editor.changeCorrectOption(2);
