@@ -31,8 +31,12 @@ export class ApiClient {
     return this.request('POST', path, isData, body);
   }
 
+  delete<T>(path: string, isData: (value: unknown) => value is T): Observable<ApiSuccess<T>> {
+    return this.request('DELETE', path, isData);
+  }
+
   private request<T>(
-    method: 'GET' | 'PUT' | 'POST',
+    method: 'GET' | 'PUT' | 'POST' | 'DELETE',
     path: string,
     isData: (value: unknown) => value is T,
     body?: unknown,

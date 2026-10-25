@@ -1,4 +1,11 @@
-import { ChangeDetectionStrategy, Component, computed, input, linkedSignal } from '@angular/core';
+import {
+  ChangeDetectionStrategy,
+  Component,
+  computed,
+  input,
+  linkedSignal,
+  output,
+} from '@angular/core';
 import { Flashcard as FlashcardModel } from '../../models/flashcard.model';
 
 function splitMorae(reading: string): string[] {
@@ -38,7 +45,10 @@ export class Flashcard {
     }),
   );
 
+  readonly flippedChange = output<boolean>();
+
   flip(): void {
     this.flipped.update((value) => !value);
+    this.flippedChange.emit(this.flipped());
   }
 }

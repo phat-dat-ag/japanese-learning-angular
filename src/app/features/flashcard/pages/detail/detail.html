@@ -20,7 +20,36 @@
         </button>
         }
         @case ('loaded') {
+        <div class="mb-3 flex flex-wrap items-center justify-between gap-3">
+          <p class="text-sm text-gray-600">SRS: {{ current.card.progress.status }}</p>
+          <app-bookmark-button [vocabularyId]="current.card.vocabulary.id" [bookmarked]="
+                  bookmarks.values().get(current.card.vocabulary.id) ?? current.card.bookmarked
+                " [busy]="bookmarks.saving() !== null"
+            (changed)="bookmarks.save(current.card.vocabulary.id, $event)" />
+        </div>
+        @if (bookmarks.error()) {
+        <p role="alert" class="mb-3 text-red-700">{{ bookmarks.error() }}</p>
+        }
         <app-flashcard class="card-arrival" [card]="current.card" />
+        <section class="mt-5 rounded-xl border border-gray-200 p-4" aria-label="Learn in a lesson">
+          <h2 class="font-semibold">Learn or practice in a lesson</h2>
+          <p class="my-2 text-sm text-gray-600">
+            Sessions select eligible cards from the lesson; this vocabulary may not be selected.
+          </p>
+          <ul class="space-y-2">
+            @for (lesson of current.card.lessons; track lesson.lessonId) {
+            <li>
+              <a [routerLink]="['/flashcards/learn', lesson.lessonId]" class="text-indigo-700 underline">{{
+                lesson.levelName }} &middot; Lesson {{ lesson.lessonNumber }} &middot;
+                {{ lesson.title }}</a>
+            </li>
+            } @empty {
+            <li class="text-gray-500">
+              This vocabulary has no lesson available for a session.
+            </li>
+            }
+          </ul>
+        </section>
         }
         }
       </div>

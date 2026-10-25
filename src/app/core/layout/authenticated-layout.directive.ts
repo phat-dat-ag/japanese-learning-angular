@@ -1,5 +1,6 @@
 import { Directive, effect, inject } from '@angular/core';
 import { Router } from '@angular/router';
+import { learningSessionDestination } from '../auth/auth-destination';
 import { AuthSession } from '../auth/auth-session.service';
 
 @Directive({
@@ -13,7 +14,11 @@ export class AuthenticatedLayout {
     // Guards protect navigation; this also leaves a mounted layout when the session ends.
     effect(() => {
       if (!this.session.authenticated()) {
-        void this.router.navigate(['/login'], { replaceUrl: true });
+        const returnUrl = learningSessionDestination(this.router.url);
+        void this.router.navigate(['/login'], {
+          replaceUrl: true,
+          queryParams: returnUrl ? { returnUrl } : undefined,
+        });
       }
     });
   }

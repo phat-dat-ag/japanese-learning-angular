@@ -3,7 +3,7 @@ import { takeUntilDestroyed, toSignal } from '@angular/core/rxjs-interop';
 import { FormsModule } from '@angular/forms';
 import { ActivatedRoute, Router, RouterLink } from '@angular/router';
 import { finalize, map } from 'rxjs';
-import { authDestination, quizSessionDestination } from '../../core/auth/auth-destination';
+import { authDestination, learningSessionDestination } from '../../core/auth/auth-destination';
 import { AuthService } from '../../core/auth/auth.service';
 
 @Component({
@@ -48,7 +48,7 @@ export class Login {
         next: (user) => {
           const destination =
             user.role === 'User'
-              ? quizSessionDestination(this.route.snapshot.queryParamMap.get('returnUrl'))
+              ? learningSessionDestination(this.route.snapshot.queryParamMap.get('returnUrl'))
               : null;
           if (destination) void this.router.navigateByUrl(destination);
           else void this.router.navigate([authDestination(user)]);

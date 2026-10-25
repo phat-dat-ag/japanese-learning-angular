@@ -2,6 +2,10 @@ import { ChangeDetectionStrategy, Component, computed, inject, signal } from '@a
 import { toSignal } from '@angular/core/rxjs-interop';
 import { ActivatedRoute, Router, RouterLink } from '@angular/router';
 import { catchError, distinctUntilChanged, map, of, startWith, Subject, switchMap } from 'rxjs';
+import { BookmarkButton } from '../../components/bookmark-button';
+import { BookmarkState } from '../../services/bookmark-state';
+import { FlashcardLearningService } from '../../services/flashcard-learning.service';
+import { PersonalDetail } from '../../models/learning.model';
 import { ApiError } from '../../../../core/api/api-error';
 import { Flashcard } from '../../components/flashcard/flashcard';
 import { Flashcard as FlashcardModel } from '../../models/flashcard.model';
@@ -13,16 +17,20 @@ type NavigationState =
 
 type DetailState =
   | { readonly status: 'loading' | 'missing' | 'error' }
-  | { readonly status: 'loaded'; readonly card: FlashcardModel };
+  | { readonly status: 'loaded'; readonly card: PersonalDetail };
 
 @Component({
   selector: 'app-flashcard-detail',
-  imports: [RouterLink, Flashcard],
+  imports: [RouterLink, Flashcard, BookmarkButton],
+  providers: [BookmarkState],
+  host: { '(window:focus)': 'retry()' },
   templateUrl: './detail.html',
   styleUrl: './detail.css',
   changeDetection: ChangeDetectionStrategy.OnPush,
 })
 export class FlashcardDetail {
+  readonly bookmarks = inject(BookmarkState);
+  private readonly learning = inject(FlashcardLearningService);
   private readonly route = inject(ActivatedRoute);
   private readonly service = inject(FlashcardService);
   private readonly reload = new Subject<void>();
@@ -38,7 +46,7 @@ export class FlashcardDetail {
         return this.reload.pipe(
           startWith(undefined),
           switchMap(() =>
-            this.service.getFlashcard(id).pipe(
+            this.learning.detail(id).pipe(
               map((response): DetailState => ({ status: 'loaded', card: response.data })),
               catchError((error: unknown) =>
                 of<DetailState>({
@@ -65,21 +73,21 @@ export class FlashcardDetail {
   readonly navigationState = toSignal(
     this.route.queryParamMap.pipe(
       map((params) => ({
-        lessonId: Number(params.get('lesson')),
+        lessonNumber: Number(params.get('lesson')),
         level: (params.get('level') ?? '').toLowerCase(),
       })),
       distinctUntilChanged(
         (previous, current) =>
-          previous.lessonId === current.lessonId && previous.level === current.level,
+          previous.lessonNumber === current.lessonNumber && previous.level === current.level,
       ),
-      switchMap(({ lessonId, level }) => {
-        if (!Number.isSafeInteger(lessonId) || lessonId <= 0 || !/^n[1-5]$/.test(level)) {
+      switchMap(({ lessonNumber, level }) => {
+        if (!Number.isSafeInteger(lessonNumber) || lessonNumber <= 0 || !/^n[1-5]$/.test(level)) {
           return of<NavigationState>({ status: 'unavailable' });
         }
         return this.navigationReload.pipe(
           startWith(undefined),
           switchMap(() =>
-            this.service.getLessonFlashcardIds(lessonId, level).pipe(
+            this.service.getLessonFlashcardIds(lessonNumber, level).pipe(
               map((ids): NavigationState => ({ status: 'loaded', ids })),
               catchError(() => of<NavigationState>({ status: 'error' })),
               startWith<NavigationState>({ status: 'loading' }),
@@ -127,6 +135,7 @@ export class FlashcardDetail {
   }
 
   retry(): void {
+    this.bookmarks.values.set(new Map());
     this.reload.next();
   }
 }

@@ -1,6 +1,6 @@
 # Japanese Learning — Angular Frontend
 
-Angular frontend for the Japanese Learning application. It provides account registration and sign-in, JLPT vocabulary flashcards, kanji quizzes with results/history/progress, and administration tools for vocabulary, lesson imports, and quiz questions.
+Angular frontend for the Japanese Learning application. It provides account registration and sign-in, JLPT vocabulary flashcards with personal SRS learning, resumable sessions, bookmarks and statistics, kanji quizzes with results/history/progress, and administration tools for vocabulary, lesson imports, and quiz questions.
 
 This repository is the frontend submodule of a microservices system. The .NET service owns accounts and authentication; Quarkus provides learning APIs. Browser requests use a shared API Gateway root rather than individual service addresses. The frontend proxy configuration expects an HTTP Gateway at port 8080; Gateway implementation and backend deployment are managed outside this submodule.
 
@@ -111,9 +111,9 @@ Use the nearest existing feature as a pattern: preserve lazy loading, service-ow
 | `POST /api/auth/refresh`  | Exchange the refresh token for replacement tokens                           |
 | `POST /api/auth/logout`   | Submit the refresh token for server-side revocation                         |
 
-Registration returns to login. Login loads `/me`, then normally routes Admin users to `/admin` and learners to `/flashcards`. Only validated quiz session/result return URLs can survive sign-in; arbitrary redirect URLs are not accepted.
+Registration returns to login. Login loads `/me`, then normally routes Admin users to `/admin` and learners to `/flashcards`. Only validated quiz session/result and flashcard session return URLs can survive sign-in; arbitrary redirect URLs are not accepted.
 
-`AuthSession` stores tokens and user state **in memory only**. Reloading or closing the page requires signing in again; tokens are not stored in localStorage/sessionStorage. Reloading discards the local session without revoking it on the server. The frontend does not decode JWTs or run a refresh timer.
+`AuthSession` stores tokens and user state **in memory only**. Reloading or closing the page requires signing in again; a flashcard session URL resumes its saved server state after sign-in; tokens are not stored in localStorage/sessionStorage. Reloading discards the local session without revoking it on the server. The frontend does not decode JWTs or run a refresh timer.
 
 The interceptor attaches Bearer credentials only within the configured API origin and path boundary. Register/login/refresh/logout bypass its token and refresh logic. An authenticated request receiving HTTP 401 shares a single in-flight refresh and retries once. Refresh failure or a second 401 clears the session; 403 does not trigger refresh or sign-out. Logout coordinates with pending refresh, attempts revocation, and clears local state even on failure.
 
@@ -216,3 +216,47 @@ docker build -t japanese-learning-frontend .
 - **Sign-in disappears after reload:** this is expected with memory-only authentication.
 - **Production deep links return 404:** configure the host's SPA fallback. The supplied NGINX configuration already falls back to `index.html` for application routes.
 - **Quiz browser tests refuse to start:** verify the explicit project opt-in, required healthy development containers, and browser installation/channel. See the linked integration guide rather than running these fixtures against another environment.
+
+### Flashcard learning verification
+
+The feature uses the sibling Quarkus OpenAPI contract and existing Gateway API root.
+Deploy the Flashcard Learning backend and migrations through V11 before enabling these flows.
+The dashboard links to due/forgotten queues, bookmarks and scoped statistics. Lesson pages retain
+vocabulary browsing and add session setup; ALL is practice without SRS changes.
+
+Run the contract and player tests with the ordinary Angular unit suite. Browser interaction
+coverage uses the current Angular checkout, controlled API responses and no database writes:
+
+```powershell
+$env:QUIZ_E2E_BROWSER_CHANNEL = 'chrome'
+npx.cmd --no-install playwright test --config=playwright.flashcard.config.mjs flashcard-learning.browser.mjs
+```
+
+The separate live scenario uses the existing development-only fixture checks described above,
+creates temporary accounts, reads existing N5 vocabulary, and removes only those accounts'
+learning records afterward. It requires a populated N5 lesson with at least two vocabulary items.
+Scenarios use the configured Gateway. On a statistics 404, the diagnostic also probes the local
+Quarkus port 8082 to identify the failing layer without logging tokens:
+
+```powershell
+$env:QUIZ_E2E_PROJECT = 'jp_learning_dev'
+$env:QUIZ_E2E_BROWSER_CHANNEL = 'chrome'
+npx.cmd --no-install playwright test --config=playwright.flashcard.config.mjs flashcard-learning.live.mjs
+```
+
+Both commands start the current Angular application on port 4200; stop another server using
+that port first. Traces, screenshots, videos and authentication storage snapshots remain disabled.
+The live preflight fails explicitly if the deployed Gateway does not expose learning statistics.
+
+To test the rebuilt local frontend at port 8088 instead, set
+`$env:FLASHCARD_E2E_DEPLOYED = 'true'` before the live command; no development server is started.
+Remove that variable to return to port 4200. The live scenario simulates elapsed SRS time only
+for its disposable learner, verifies populated due queues and version conflicts, and cleans up
+that learner's records. Practice assertions verify unchanged SRS state, regardless of prior study.
+
+For a statistics 404, inspect the Gateway correlation ID and `upstream_status`, compare the
+running Quarkus OpenAPI with the checkout, and check Flyway history. In the local parent Compose
+project, apply pending migrations with `docker compose -p jp_learning_dev run --rm --no-deps
+flyway-vocabulary migrate`, then run `validate` with the same service. Rebuild `vocabulary-api`
+and recreate it with `up -d --no-deps --wait vocabulary-api`. Rebuild/recreate `frontend` when
+its bundle is stale. Keep the existing project name and volumes; never reset data to fix this.

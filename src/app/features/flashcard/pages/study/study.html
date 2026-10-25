@@ -28,6 +28,22 @@
     </p>
     <h1 class="mt-1 text-xl font-bold text-gray-900">{{ current.lesson.title }}</h1>
     <p class="mt-2 text-gray-500">{{ current.lesson.description }}</p>
+    <a [routerLink]="['/flashcards/learn', current.lesson.id]"
+      class="mt-5 inline-block rounded-lg bg-indigo-600 px-5 py-2 text-white focus-visible:outline-2">Start or continue
+      learning</a>
+    @let summary = progress();
+    @if (summary.status === 'loaded') {
+    <div class="mt-5"><app-progress-summary [statistics]="summary.data" /></div>
+    } @else if (summary.status === 'error') {
+    <p role="alert" class="mt-4">
+      {{ summary.message }}
+      <a [routerLink]="['/flashcards/statistics']"
+        [queryParams]="{ lessonId: current.lesson.id, level: current.levelId }" class="text-indigo-700 underline">Open
+        statistics</a>
+    </p>
+    } @else {
+    <p role="status">Loading lesson progress...</p>
+    }
     <h2 class="mt-8 text-lg font-semibold text-gray-900">Flashcards</h2>
     <p class="mt-2 text-sm text-gray-500" role="status">
       {{ current.cards.totalElements }} flashcards
@@ -35,14 +51,25 @@
     <ul class="mt-4 grid gap-4 sm:grid-cols-2 lg:grid-cols-3">
       @for (card of current.cards.flashcardItems; track card.id) {
       <li>
-        <a [routerLink]="['/flashcards', 'detail', card.id]"
-          [queryParams]="{ lesson: current.lesson.id, level: current.levelId }"
+        <a [routerLink]="['/flashcards', 'detail', card.id]" [queryParams]="{
+                  lesson: current.lesson.lessonNumber,
+                  lessonId: current.lesson.id,
+                  level: current.levelId,
+                }"
           class="block rounded-xl border border-gray-200 bg-white p-6 shadow-sm hover:border-indigo-300 hover:shadow-md focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-indigo-600">
           <span lang="ja" class="break-words text-2xl font-semibold text-gray-900">{{
             card.word
             }}</span>
           <span class="mt-3 block text-sm font-medium text-indigo-600">View details &rarr;</span>
         </a>
+        @if (card.progress) {
+        <p class="mt-2 text-sm text-gray-500">{{ card.progress.status }}</p>
+        }
+        <div class="mt-2">
+          <app-bookmark-button [vocabularyId]="card.id"
+            [bookmarked]="bookmarks.values().get(card.id) ?? card.bookmarked ?? false"
+            [busy]="bookmarks.saving() !== null" (changed)="bookmarks.save(card.id, $event)" />
+        </div>
       </li>
       } @empty {
       <li class="col-span-full rounded-xl border border-dashed border-gray-300 p-12 text-center text-gray-500"
@@ -51,6 +78,9 @@
       </li>
       }
     </ul>
+    @if (bookmarks.error()) {
+    <p role="alert" class="mt-3 text-red-700">{{ bookmarks.error() }}</p>
+    }
     @if (current.cards.totalPages > 1) {
     <nav aria-label="Flashcard pagination" class="mt-6 flex items-center justify-between gap-4">
       <button type="button" (click)="changePage(current.cards.page - 1)" [disabled]="current.cards.page === 0"
