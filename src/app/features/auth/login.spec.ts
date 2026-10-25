@@ -72,9 +72,14 @@ describe('Login', () => {
     expect(navigate).toHaveBeenCalledWith([destination]);
     expect(page.loading()).toBe(false);
   });
-  it.each(['User', 'Admin'])('restricts quiz return navigation for %s', (role) => {
+  it.each([
+    ['User', '/kanji-quiz/sessions/42'],
+    ['Admin', '/kanji-quiz/sessions/42'],
+    ['User', '/flashcards/sessions/9'],
+    ['Admin', '/flashcards/sessions/9'],
+  ])('restricts session return navigation for %s to %s', (role, returnUrl) => {
     vi.spyOn(TestBed.inject(ActivatedRoute).snapshot.queryParamMap, 'get').mockReturnValue(
-      '/kanji-quiz/sessions/42',
+      returnUrl,
     );
     const router = TestBed.inject(Router);
     const returnToQuiz = vi.spyOn(router, 'navigateByUrl').mockResolvedValue(true);
@@ -87,7 +92,7 @@ describe('Login', () => {
       .expectOne('/api/auth/login')
       .flush({ accessToken: 'access', refreshToken: 'refresh', expiresIn: 60 });
     http.expectOne('/api/auth/me').flush({ userId: 'user-id', email: page.email, role });
-    if (role === 'User') expect(returnToQuiz).toHaveBeenCalledWith('/kanji-quiz/sessions/42');
+    if (role === 'User') expect(returnToQuiz).toHaveBeenCalledWith(returnUrl);
     else {
       expect(returnToQuiz).not.toHaveBeenCalled();
       expect(fallback).toHaveBeenCalledWith(['/admin']);

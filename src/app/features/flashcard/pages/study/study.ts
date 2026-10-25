@@ -1,8 +1,23 @@
 import { ChangeDetectionStrategy, Component, inject } from '@angular/core';
-import { toSignal } from '@angular/core/rxjs-interop';
+import { toSignal, toObservable } from '@angular/core/rxjs-interop';
 import { ActivatedRoute, RouterLink } from '@angular/router';
-import { catchError, map, of, startWith, Subject, switchMap } from 'rxjs';
+import {
+  catchError,
+  distinctUntilChanged,
+  filter,
+  map,
+  of,
+  startWith,
+  Subject,
+  switchMap,
+} from 'rxjs';
 
+import { BookmarkState } from '../../services/bookmark-state';
+import { BookmarkButton } from '../../components/bookmark-button';
+import { ProgressSummary } from '../../components/progress-summary';
+import { FlashcardLearningService } from '../../services/flashcard-learning.service';
+import { LearningStatistics } from '../../models/learning.model';
+import { learningView, LearningViewState } from '../../models/learning-view-state';
 import { FlashcardPage } from '../../models/flashcard-page.model';
 import { FlashcardService } from '../../services/flashcard.service';
 import { FlashcardLesson } from '../../models/flashcard-lesson.model';
@@ -21,11 +36,14 @@ type StudyState =
 
 @Component({
   selector: 'app-study',
-  imports: [RouterLink],
+  imports: [RouterLink, ProgressSummary, BookmarkButton],
+  providers: [BookmarkState],
   templateUrl: './study.html',
+  host: { '(window:focus)': 'retry()' },
   changeDetection: ChangeDetectionStrategy.OnPush,
 })
 export class Study {
+  readonly bookmarks = inject(BookmarkState);
   private readonly route = inject(ActivatedRoute);
   private readonly lessonService = inject(LessonService);
   private readonly flashcardService = inject(FlashcardService);
@@ -50,15 +68,17 @@ export class Study {
                 return this.pageChanges.pipe(
                   startWith(0),
                   switchMap((page) =>
-                    this.flashcardService.getFlashcards(lessonId, levelId, page).pipe(
-                      map((cards): StudyState => ({
-                        status: 'loaded',
-                        levelId,
-                        lesson,
-                        cards: cards.data,
-                      })),
-                      startWith<StudyState>({ status: 'loading', levelId }),
-                    ),
+                    this.flashcardService
+                      .getFlashcards(lesson.lessonNumber, levelId, page, true)
+                      .pipe(
+                        map((cards): StudyState => ({
+                          status: 'loaded',
+                          levelId,
+                          lesson,
+                          cards: cards.data,
+                        })),
+                        startWith<StudyState>({ status: 'loading', levelId }),
+                      ),
                   ),
                 );
               }),
@@ -70,6 +90,24 @@ export class Study {
       }),
     ),
     { initialValue: { status: 'loading', levelId: '' } as StudyState },
+  );
+
+  private readonly learning = inject(FlashcardLearningService);
+  readonly progress = toSignal(
+    toObservable(this.state).pipe(
+      filter((state) => state.status === 'loaded'),
+      map((state) => state.lesson.id),
+      distinctUntilChanged(),
+      switchMap((lessonId) =>
+        this.reload.pipe(
+          startWith(undefined),
+          switchMap(() =>
+            learningView(this.learning.statistics({ lessonId }).pipe(map((r) => r.data))),
+          ),
+        ),
+      ),
+    ),
+    { initialValue: { status: 'loading' } as LearningViewState<LearningStatistics> },
   );
 
   changePage(page: number): void {
@@ -86,6 +124,7 @@ export class Study {
   }
 
   retry(): void {
+    this.bookmarks.values.set(new Map());
     this.reload.next();
   }
 }

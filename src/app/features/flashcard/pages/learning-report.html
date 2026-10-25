@@ -1,0 +1,149 @@
+<div class="mx-auto max-w-5xl px-6 py-8">
+  <app-learning-nav />
+  @let selected = selection();
+  <h1 class="text-2xl font-bold text-gray-900">
+    {{
+    selected.kind === 'statistics'
+    ? 'Learning statistics'
+    : selected.kind === 'bookmarks'
+    ? 'Bookmarked vocabulary'
+    : 'Vocabulary review'
+    }}
+  </h1>
+  @if (!selected.valid) {
+  <p role="alert" class="my-4">
+    Invalid filters. <a [routerLink]="[]" class="text-indigo-700 underline">Clear filters</a>
+  </p>
+  } @else {
+  <div class="my-5 flex flex-wrap gap-4">
+    <div>
+      <label for="learning-level">JLPT level</label><select id="learning-level" [ngModel]="selected.scope.level ?? ''"
+        (ngModelChange)="filter($event)" class="ml-2 rounded border p-2">
+        <option value="">All levels</option>
+        @let levelState = levels();
+        @if (levelState.status === 'loaded') {
+        @for (level of levelState.data; track level.code) {
+        <option [value]="level.code">{{ level.name }}</option>
+        }
+        }
+      </select>
+    </div>
+    <div>
+      <label for="learning-lesson">Lesson</label><select id="learning-lesson"
+        [ngModel]="selected.scope.lessonId?.toString() ?? ''"
+        (ngModelChange)="filter(selected.scope.level ?? '', $event)" [disabled]="!selected.scope.level"
+        class="ml-2 rounded border p-2">
+        <option value="">All lessons</option>
+        @let lessonState = lessons();
+        @if (lessonState.status === 'loaded') {
+        @for (lesson of lessonState.data; track lesson.id) {
+        <option [value]="lesson.id.toString()">
+          Lesson {{ lesson.lessonNumber }} · {{ lesson.title }}
+        </option>
+        }
+        }
+      </select>
+    </div>
+    @if (selected.kind === 'review') {
+    <div>
+      <label for="learning-queue">Queue</label><select id="learning-queue" [ngModel]="selected.queue"
+        (ngModelChange)="queue($event)" class="ml-2 rounded border p-2">
+        <option value="due">Due vocabulary</option>
+        <option value="forgotten">Frequently forgotten</option>
+      </select>
+    </div>
+    }
+    <button (click)="refresh()" class="rounded border px-4 py-2">Refresh</button>
+  </div>
+  @if (levels().status === 'error' || lessons().status === 'error') {
+  <p role="alert">Unable to load filter choices. Refresh to retry.</p>
+  }
+  @if (statistics(); as state) {
+  @if (state.status === 'loaded') {
+  <app-progress-summary [statistics]="state.data" />
+  <dl class="my-5 grid grid-cols-2 gap-4 rounded-xl border bg-white p-5 sm:grid-cols-3">
+    <div>
+      <dt>Accepted attempts</dt>
+      <dd>{{ state.data.totalReviewAttempts }}</dd>
+    </div>
+    <div>
+      <dt>Scheduled attempts</dt>
+      <dd>{{ state.data.scheduledReviewAttempts }}</dd>
+    </div>
+    <div>
+      <dt>Practice attempts</dt>
+      <dd>{{ state.data.practiceReviewAttempts }}</dd>
+    </div>
+    <div>
+      <dt>Remembered self-ratings</dt>
+      <dd>{{ state.data.rememberedCount }}</dd>
+    </div>
+    <div>
+      <dt>Forgotten self-ratings</dt>
+      <dd>{{ state.data.forgottenCount }}</dd>
+    </div>
+  </dl>
+  <p class="text-sm text-gray-600">
+    Studied includes practice. Mastered reflects current SRS progress. Due vocabulary can
+    include mastered cards. Level and lesson totals overlap and must not be added together.
+  </p>
+  } @else if (state.status === 'error') {
+  <p role="alert">{{ state.message }}</p>
+  } @else {
+  <p role="status">Loading statistics…</p>
+  }
+  }
+  @if (collection(); as state) {
+  @if (state.status === 'loaded') {
+  @if (selected.queue === 'forgotten' && selected.kind === 'review') {
+  <p class="mb-4 text-sm text-gray-600">
+    Ranked by AGAIN history, including practice. These words may not currently be due.
+  </p>
+  }
+  <p role="status" class="my-3">{{ state.data.totalElements }} vocabulary</p>
+  <ul class="grid gap-4 sm:grid-cols-2">
+    @for (card of state.data.items; track card.id) {
+    <li class="rounded-xl border border-gray-200 bg-white p-5">
+      <a [routerLink]="['/flashcards/detail', card.id]" class="text-xl font-semibold text-indigo-700 underline"
+        lang="ja">{{ card.word }}</a>
+      <p class="my-2 text-sm text-gray-600">
+        {{ card.progress.status }}
+        @if (card.progress.nextReviewAt) {
+        · Due {{ card.progress.nextReviewAt | date: 'medium' }}
+        }
+      </p>
+      <app-bookmark-button [vocabularyId]="card.id" [bookmarked]="bookmarks.values().get(card.id) ?? card.bookmarked"
+        [busy]="bookmarks.saving() !== null" (changed)="bookmark(card.id, $event)" />
+      <p class="mt-2 text-sm text-gray-500">
+        Open vocabulary details to choose a lesson for learning or practice.
+      </p>
+    </li>
+    } @empty {
+    <li class="rounded-xl border border-dashed p-6 text-gray-500">
+      No vocabulary in this collection.
+    </li>
+    }
+  </ul>
+  @if (state.data.totalPages > 1 || state.data.page > 0) {
+  <nav aria-label="Vocabulary pages" class="mt-5 flex items-center gap-4">
+    <button (click)="page(state.data.page - 1)" [disabled]="state.data.page === 0" class="rounded border px-4 py-2">
+      Previous
+    </button>
+    <span>Page {{ state.data.page + 1 }} of {{ state.data.totalPages || 1 }}</span>
+    <button (click)="page(state.data.page + 1)" [disabled]="state.data.page + 1 >= state.data.totalPages"
+      class="rounded border px-4 py-2">
+      Next
+    </button>
+  </nav>
+  }
+  } @else if (state.status === 'error') {
+  <p role="alert">{{ state.message }}</p>
+  } @else {
+  <p role="status">Loading vocabulary…</p>
+  }
+  }
+  @if (bookmarks.error()) {
+  <p role="alert" class="mt-4 text-red-700">{{ bookmarks.error() }}</p>
+  }
+  }
+</div>

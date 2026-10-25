@@ -4,7 +4,7 @@ export interface FlashcardLesson {
   readonly id: number;
   readonly lessonNumber: number;
   readonly title: string;
-  readonly description: string;
+  readonly description?: string | null;
 }
 
 export function isFlashcardLessons(value: unknown): value is readonly FlashcardLesson[] {
@@ -24,7 +24,7 @@ export function isFlashcardLessons(value: unknown): value is readonly FlashcardL
       lesson['lessonNumber'] <= 0 ||
       typeof lesson['title'] !== 'string' ||
       lesson['title'].trim().length === 0 ||
-      typeof lesson['description'] !== 'string' ||
+      (lesson['description'] != null && typeof lesson['description'] !== 'string') ||
       ids.has(lesson['id'])
     ) {
       return false;

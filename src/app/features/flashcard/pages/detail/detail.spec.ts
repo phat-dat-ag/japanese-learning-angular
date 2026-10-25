@@ -4,10 +4,13 @@ import { ComponentFixture, TestBed } from '@angular/core/testing';
 import { ActivatedRoute, convertToParamMap, provideRouter, Router } from '@angular/router';
 import { BehaviorSubject } from 'rxjs';
 import { FlashcardDetail } from './detail';
-import { Flashcard } from '../../models/flashcard.model';
+import { PersonalDetail as Flashcard } from '../../models/learning.model';
+import { unseenProgress } from '../../testing/learning.fixture';
 
 const meta = { timestamp: '2026-09-14T14:52:10Z', traceId: 'trace', correlationId: 'correlation' };
 const card: Flashcard = {
+  progress: unseenProgress,
+  bookmarked: false,
   vocabulary: { id: 1, word: '会社', normalizedWord: '会社' },
   readings: [
     {
@@ -97,7 +100,7 @@ describe('Flashcard detail', () => {
   it('requests the card by ID and renders backend detail sections', () => {
     expect(element.textContent).toContain('Loading flashcard');
 
-    const request = http.expectOne('/api/v1/flashcards/1');
+    const request = http.expectOne('/api/v1/flashcards/1?includeLearning=true');
 
     expect(request.request.method).toBe('GET');
     expect(request.request.headers.get('Accept')).toBe('application/json');
@@ -122,7 +125,9 @@ describe('Flashcard detail', () => {
   });
 
   it('places readings beneath focusable words and removes kanji connections', () => {
-    http.expectOne('/api/v1/flashcards/1').flush({ success: true, data: card, meta });
+    http
+      .expectOne('/api/v1/flashcards/1?includeLearning=true')
+      .flush({ success: true, data: card, meta });
     fixture.detectChanges();
 
     const words = element.querySelector('.card-front .word-block')!;
@@ -145,7 +150,7 @@ describe('Flashcard detail', () => {
   });
 
   it('renders empty collections without invented content', () => {
-    http.expectOne('/api/v1/flashcards/1').flush({
+    http.expectOne('/api/v1/flashcards/1?includeLearning=true').flush({
       success: true,
       data: {
         ...card,
@@ -170,19 +175,23 @@ describe('Flashcard detail', () => {
 
   it('shows safe errors and retries', () => {
     http
-      .expectOne('/api/v1/flashcards/1')
+      .expectOne('/api/v1/flashcards/1?includeLearning=true')
       .flush('private diagnostic', { status: 500, statusText: 'Server Error' });
     fixture.detectChanges();
     expect(element.textContent).toContain('Unable to load flashcard');
     expect(element.textContent).not.toContain('private diagnostic');
     element.querySelector<HTMLButtonElement>('button')!.click();
-    http.expectOne('/api/v1/flashcards/1').flush({ success: true, data: card, meta });
+    http
+      .expectOne('/api/v1/flashcards/1?includeLearning=true')
+      .flush({ success: true, data: card, meta });
     fixture.detectChanges();
     expect(element.querySelector('h1')?.textContent?.trim()).toBe('会社');
   });
 
   it('handles a missing flashcard', () => {
-    http.expectOne('/api/v1/flashcards/1').flush(null, { status: 404, statusText: 'Not Found' });
+    http
+      .expectOne('/api/v1/flashcards/1?includeLearning=true')
+      .flush(null, { status: 404, statusText: 'Not Found' });
     fixture.detectChanges();
     expect(element.textContent).toContain('Flashcard not found');
   });
@@ -190,7 +199,7 @@ describe('Flashcard detail', () => {
   it.each(['0', '-1', 'abc', '1.5', '1e2', '9007199254740992', ''])(
     'rejects invalid ID %s without a new request',
     (id) => {
-      const previous = http.expectOne('/api/v1/flashcards/1');
+      const previous = http.expectOne('/api/v1/flashcards/1?includeLearning=true');
 
       params.next(convertToParamMap({ flashcardId: id }));
       expect(previous.cancelled).toBe(true);
@@ -201,11 +210,11 @@ describe('Flashcard detail', () => {
   );
 
   it('cancels stale requests and loads a new route ID', () => {
-    const previous = http.expectOne('/api/v1/flashcards/1');
+    const previous = http.expectOne('/api/v1/flashcards/1?includeLearning=true');
 
     params.next(convertToParamMap({ flashcardId: '2' }));
     expect(previous.cancelled).toBe(true);
-    http.expectOne('/api/v1/flashcards/2').flush({
+    http.expectOne('/api/v1/flashcards/2?includeLearning=true').flush({
       success: true,
       data: { ...card, vocabulary: { id: 2, word: '学校', normalizedWord: '学校' } },
       meta,
@@ -240,14 +249,18 @@ describe('Flashcard detail', () => {
     { ...card, examples: [{ japaneseText: '会社' }] },
     null,
   ])('rejects malformed payloads', (data) => {
-    http.expectOne('/api/v1/flashcards/1').flush({ success: true, data, meta });
+    http
+      .expectOne('/api/v1/flashcards/1?includeLearning=true')
+      .flush({ success: true, data, meta });
     fixture.detectChanges();
     expect(element.textContent).toContain('Unable to load flashcard');
     expect(element.querySelector('app-flashcard')).toBeNull();
   });
 
   it('flips both ways using a native keyboard-accessible button', () => {
-    http.expectOne('/api/v1/flashcards/1').flush({ success: true, data: card, meta });
+    http
+      .expectOne('/api/v1/flashcards/1?includeLearning=true')
+      .flush({ success: true, data: card, meta });
     fixture.detectChanges();
 
     const button = element.querySelector<HTMLButtonElement>('.flip-control')!;
@@ -279,7 +292,7 @@ describe('Flashcard detail', () => {
   it('shows two plain Japanese examples on the front and their readings on the back', () => {
     const example = card.examples[0]!;
 
-    http.expectOne('/api/v1/flashcards/1').flush({
+    http.expectOne('/api/v1/flashcards/1?includeLearning=true').flush({
       success: true,
       data: {
         ...card,
@@ -311,7 +324,7 @@ describe('Flashcard detail', () => {
   });
 
   it.each(['', 'absent'])('preserves example text when target is %s', (targetText) => {
-    http.expectOne('/api/v1/flashcards/1').flush({
+    http.expectOne('/api/v1/flashcards/1?includeLearning=true').flush({
       success: true,
       data: {
         ...card,
@@ -327,13 +340,15 @@ describe('Flashcard detail', () => {
   });
 
   it('starts on the front when navigating from a flipped card to another card', () => {
-    http.expectOne('/api/v1/flashcards/1').flush({ success: true, data: card, meta });
+    http
+      .expectOne('/api/v1/flashcards/1?includeLearning=true')
+      .flush({ success: true, data: card, meta });
     fixture.detectChanges();
     element.querySelector<HTMLButtonElement>('.flip-control')!.click();
     fixture.detectChanges();
 
     params.next(convertToParamMap({ flashcardId: '2' }));
-    http.expectOne('/api/v1/flashcards/2').flush({
+    http.expectOne('/api/v1/flashcards/2?includeLearning=true').flush({
       success: true,
       data: { ...card, vocabulary: { ...card.vocabulary, id: 2 } },
       meta,
@@ -355,7 +370,7 @@ describe('Flashcard detail', () => {
   ])(
     'renders API accent variants for $reading with $accents',
     ({ reading, accents, morae, highlighted }) => {
-      http.expectOne('/api/v1/flashcards/1').flush({
+      http.expectOne('/api/v1/flashcards/1?includeLearning=true').flush({
         success: true,
         data: {
           ...card,
@@ -411,7 +426,9 @@ describe('Flashcard detail', () => {
       meta,
     });
 
-    http.expectOne('/api/v1/flashcards/1').flush({ success: true, data: card, meta });
+    http
+      .expectOne('/api/v1/flashcards/1?includeLearning=true')
+      .flush({ success: true, data: card, meta });
     fixture.detectChanges();
   }
 
@@ -435,7 +452,7 @@ describe('Flashcard detail', () => {
 
       if (current !== 1) {
         params.next(convertToParamMap({ flashcardId: String(current) }));
-        http.expectOne('/api/v1/flashcards/' + current).flush({
+        http.expectOne('/api/v1/flashcards/' + current + '?includeLearning=true').flush({
           success: true,
           data: { ...card, vocabulary: { ...card.vocabulary, id: current } },
           meta,
@@ -469,7 +486,7 @@ describe('Flashcard detail', () => {
         queryParamsHandling: 'preserve',
       });
 
-      http.expectOne('/api/v1/flashcards/' + target).flush({
+      http.expectOne('/api/v1/flashcards/' + target + '?includeLearning=true').flush({
         success: true,
         data: {
           ...card,
@@ -519,7 +536,9 @@ describe('Flashcard detail', () => {
       meta,
     });
 
-    http.expectOne('/api/v1/flashcards/1').flush({ success: true, data: card, meta });
+    http
+      .expectOne('/api/v1/flashcards/1?includeLearning=true')
+      .flush({ success: true, data: card, meta });
 
     fixture.detectChanges();
 
@@ -536,7 +555,9 @@ describe('Flashcard detail', () => {
     http
       .expectOne('/api/v1/flashcards?lesson=1&level=N5&page=0&size=20')
       .flush('private diagnostic', { status: 500, statusText: 'Server Error' });
-    http.expectOne('/api/v1/flashcards/1').flush({ success: true, data: card, meta });
+    http
+      .expectOne('/api/v1/flashcards/1?includeLearning=true')
+      .flush({ success: true, data: card, meta });
     fixture.detectChanges();
 
     expect(element.querySelector('h1')?.textContent).toBe(card.vocabulary.word);
@@ -592,7 +613,9 @@ describe('Flashcard detail', () => {
 
     queryParams.next(convertToParamMap({ lesson: 'invalid', level: 'n5' }));
     expect(request.cancelled).toBe(true);
-    http.expectOne('/api/v1/flashcards/1').flush({ success: true, data: card, meta });
+    http
+      .expectOne('/api/v1/flashcards/1?includeLearning=true')
+      .flush({ success: true, data: card, meta });
     fixture.detectChanges();
     expect(element.querySelector('nav')).toBeNull();
   });

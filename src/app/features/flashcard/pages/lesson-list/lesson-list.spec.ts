@@ -2,7 +2,9 @@ import { provideHttpClient } from '@angular/common/http';
 import { HttpTestingController, provideHttpClientTesting } from '@angular/common/http/testing';
 import { ComponentFixture, TestBed } from '@angular/core/testing';
 import { ActivatedRoute, convertToParamMap, provideRouter } from '@angular/router';
-import { BehaviorSubject } from 'rxjs';
+import { BehaviorSubject, of } from 'rxjs';
+import { FlashcardLearningService } from '../../services/flashcard-learning.service';
+import { learningSuccess, statisticsFixture } from '../../testing/learning.fixture';
 
 import { LessonList } from './lesson-list';
 
@@ -24,6 +26,10 @@ describe('LessonList API integration', () => {
         provideRouter([]),
         provideHttpClient(),
         provideHttpClientTesting(),
+        {
+          provide: FlashcardLearningService,
+          useValue: { statistics: () => of(learningSuccess(statisticsFixture)) },
+        },
         { provide: ActivatedRoute, useValue: { paramMap: params } },
       ],
     }).compileComponents();
@@ -53,6 +59,12 @@ describe('LessonList API integration', () => {
     expect(element.querySelector('section')?.getAttribute('aria-busy')).toBe('false');
   });
 
+  it.each([undefined, null])('accepts optional lesson descriptions (%s)', (description) => {
+    http.expectOne(url).flush({ success: true, data: [{ ...lesson, description }], meta });
+    fixture.detectChanges();
+    expect(element.querySelector('app-lesson-card')).not.toBeNull();
+  });
+
   it('shows an empty state without an error', () => {
     http.expectOne(url).flush({ success: true, data: [], meta });
     fixture.detectChanges();
@@ -62,16 +74,14 @@ describe('LessonList API integration', () => {
   });
 
   it('shows a safe error and retries successfully', () => {
-    http
-      .expectOne(url)
-      .flush(
-        {
-          success: false,
-          error: { code: 'INTERNAL_ERROR', message: 'private diagnostic', details: [] },
-          meta,
-        },
-        { status: 500, statusText: 'Server Error' },
-      );
+    http.expectOne(url).flush(
+      {
+        success: false,
+        error: { code: 'INTERNAL_ERROR', message: 'private diagnostic', details: [] },
+        meta,
+      },
+      { status: 500, statusText: 'Server Error' },
+    );
     fixture.detectChanges();
     expect(element.querySelector('[role="alert"]')?.textContent).toContain(
       'Unable to load lessons',
@@ -90,7 +100,7 @@ describe('LessonList API integration', () => {
     [[{ ...lesson, id: 0 }]],
     [[{ ...lesson, lessonNumber: 1.5 }]],
     [[{ ...lesson, title: '' }]],
-    [[{ ...lesson, description: null }]],
+    [[{ ...lesson, description: 123 }]],
     [[lesson, lesson]],
     [{ lesson }],
   ])('rejects malformed lesson payloads: %j', (data) => {

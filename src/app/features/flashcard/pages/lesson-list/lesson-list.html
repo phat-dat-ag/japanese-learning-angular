@@ -38,14 +38,40 @@
     </div>
     }
     @case ('loaded') {
-    @for (lesson of current.lessons; track lesson.id) {
-    <app-lesson-card [lesson]="lesson" [levelId]="current.levelId" />
+    @for (lesson of visibleLessons(); track lesson.id) {
+    <div class="space-y-2">
+      <app-lesson-card [lesson]="lesson" [levelId]="current.levelId" />
+      @let summary = progress()[lesson.id];
+      @if (summary?.status === 'loaded') {
+      <app-progress-summary [statistics]="summary.data" />
+      } @else if (summary?.status === 'error') {
+      <p role="alert">
+        {{ summary.message }}
+        <button (click)="retry()" class="text-indigo-700 underline">
+          Retry progress
+        </button>
+      </p>
+      } @else {
+      <p role="status" class="text-sm text-gray-500">Loading lesson progress...</p>
+      }
+    </div>
     } @empty {
     <p role="status" class="rounded-xl border border-dashed border-gray-300 p-12 text-center text-gray-500">
       No lessons available.
     </p>
     }
     }
+    }
+    @if (current.status === 'loaded' && current.lessons.length > 12) {
+    <nav aria-label="Lesson pages" class="flex gap-3">
+      <button (click)="page.set(page() - 1)" [disabled]="page() === 0" class="rounded border px-3 py-2">
+        Previous lessons
+      </button>
+      <button (click)="page.set(page() + 1)" [disabled]="(page() + 1) * 12 >= current.lessons.length"
+        class="rounded border px-3 py-2">
+        Next lessons
+      </button>
+    </nav>
     }
   </section>
   }

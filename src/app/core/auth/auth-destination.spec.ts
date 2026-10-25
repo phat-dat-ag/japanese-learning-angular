@@ -1,4 +1,4 @@
-﻿import { quizSessionDestination } from './auth-destination';
+﻿import { quizSessionDestination, learningSessionDestination } from './auth-destination';
 
 describe('quiz session sign-in destination', () => {
   it.each(['/kanji-quiz/sessions/42', '/kanji-quiz/sessions/42/results'])(
@@ -23,4 +23,23 @@ describe('quiz session sign-in destination', () => {
   ])('rejects unsupported destination %s', (path) =>
     expect(quizSessionDestination(path)).toBeNull(),
   );
+});
+
+describe('Flashcard session sign-in destinations', () => {
+  it.each(['/flashcards/sessions/9', '/kanji-quiz/sessions/3', '/kanji-quiz/sessions/3/results'])(
+    'preserves %s',
+    (value) => {
+      expect(learningSessionDestination(value)).toBe(value);
+    },
+  );
+  it.each([
+    '/flashcards/sessions/0',
+    '/flashcards/sessions/1?next=https://example.com',
+    '//example.com',
+    '/flashcards/sessions/1/other',
+    '/flashcards/sessions/9007199254740992',
+    '/flashcards/learn/12',
+  ])('rejects %s', (value) => {
+    expect(learningSessionDestination(value)).toBeNull();
+  });
 });

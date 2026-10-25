@@ -2,12 +2,14 @@ import { provideHttpClient } from '@angular/common/http';
 import { HttpTestingController, provideHttpClientTesting } from '@angular/common/http/testing';
 import { ComponentFixture, TestBed } from '@angular/core/testing';
 import { ActivatedRoute, convertToParamMap, provideRouter } from '@angular/router';
-import { BehaviorSubject } from 'rxjs';
+import { BehaviorSubject, of } from 'rxjs';
+import { FlashcardLearningService } from '../../services/flashcard-learning.service';
+import { learningSuccess, statisticsFixture, unseenProgress } from '../../testing/learning.fixture';
 
 import { Study } from './study';
 
 const url = '/api/v1/lessons?level=n5';
-const cardsUrl = '/api/v1/flashcards?lesson=1&level=N5&page=0&size=20';
+const cardsUrl = '/api/v1/flashcards?lesson=1&level=N5&page=0&size=20&includeLearning=true';
 const emptyPage = { flashcardItems: [], page: 0, size: 20, totalElements: 0, totalPages: 0 };
 const meta = { timestamp: '2026-09-14T09:51:32Z', traceId: 'trace', correlationId: 'correlation' };
 const lesson = {
@@ -31,6 +33,10 @@ describe('Study lesson metadata', () => {
         provideRouter([]),
         provideHttpClient(),
         provideHttpClientTesting(),
+        {
+          provide: FlashcardLearningService,
+          useValue: { statistics: () => of(learningSuccess(statisticsFixture)) },
+        },
         { provide: ActivatedRoute, useValue: { paramMap: params } },
       ],
     }).compileComponents();
@@ -85,7 +91,7 @@ describe('Study lesson metadata', () => {
     });
     fixture.detectChanges();
     http
-      .expectOne('/api/v1/flashcards?lesson=2&level=N4&page=0&size=20')
+      .expectOne('/api/v1/flashcards?lesson=1&level=N4&page=0&size=20&includeLearning=true')
       .flush({ success: true, data: emptyPage, meta });
     fixture.detectChanges();
     expect(element.querySelector('h1')?.textContent?.trim()).toBe('Second lesson');
@@ -106,7 +112,7 @@ describe('Study lesson metadata', () => {
     request.flush({
       success: true,
       data: {
-        flashcardItems: [{ id: 7, word: '会社' }],
+        flashcardItems: [{ progress: unseenProgress, bookmarked: false, id: 7, word: '会社' }],
         page: 0,
         size: 20,
         totalElements: 21,
@@ -115,18 +121,20 @@ describe('Study lesson metadata', () => {
       meta,
     });
     fixture.detectChanges();
-    expect(element.querySelector('li a')?.getAttribute('href')).toBe('/flashcards/detail/7?lesson=1&level=n5');
+    expect(element.querySelector('li a')?.getAttribute('href')).toBe(
+      '/flashcards/detail/7?lesson=1&lessonId=1&level=n5',
+    );
     expect(element.textContent).toContain('会社');
     expect(element.textContent).toContain('Page 1 of 2');
     const buttons = element.querySelectorAll<HTMLButtonElement>('nav button');
     expect(buttons[0].disabled).toBe(true);
     buttons[1].click();
     http
-      .expectOne('/api/v1/flashcards?lesson=1&level=N5&page=1&size=20')
+      .expectOne('/api/v1/flashcards?lesson=1&level=N5&page=1&size=20&includeLearning=true')
       .flush({
         success: true,
         data: {
-          flashcardItems: [{ id: 8, word: '学校' }],
+          flashcardItems: [{ progress: unseenProgress, bookmarked: false, id: 8, word: '学校' }],
           page: 1,
           size: 20,
           totalElements: 21,
@@ -167,7 +175,7 @@ describe('Study lesson metadata', () => {
       .expectOne('/api/v1/lessons?level=n4')
       .flush({ success: true, data: [{ ...lesson, id: 2 }], meta });
     http
-      .expectOne('/api/v1/flashcards?lesson=2&level=N4&page=0&size=20')
+      .expectOne('/api/v1/flashcards?lesson=1&level=N4&page=0&size=20&includeLearning=true')
       .flush({ success: true, data: emptyPage, meta });
     fixture.detectChanges();
     expect(element.textContent).toContain('N4 / Lesson 1');
