@@ -9,6 +9,12 @@ import { authInterceptor } from './auth.interceptor';
 
 const first = { accessToken: 'access-first', refreshToken: 'refresh-first', expiresIn: 60 };
 const rotated = { accessToken: 'access-rotated', refreshToken: 'refresh-rotated', expiresIn: 60 };
+const meta = {
+  timestamp: '2026-11-04T08:00:00Z',
+  traceId: 'trace-id',
+  correlationId: 'request-id',
+};
+const envelope = (data: unknown) => ({ success: true, data, meta });
 const user = {
   userId: 'user-id',
   username: 'learner',
@@ -36,7 +42,7 @@ describe('Authentication through the Gateway', () => {
   });
   afterEach(() => http.verify());
 
-  it('logs in using the actual plain JSON contract and loads authoritative /me data', () => {
+  it('unwraps login and /me envelopes and loads authoritative identity data', () => {
     const localWrite = vi.spyOn(Storage.prototype, 'setItem');
     const next = vi.fn();
     auth.login({ email: user.email, password: 'test-password' }).subscribe(next);
@@ -44,10 +50,10 @@ describe('Authentication through the Gateway', () => {
     expect(login.request.method).toBe('POST');
     expect(login.request.body).toEqual({ email: user.email, password: 'test-password' });
     expect(login.request.headers.has('Authorization')).toBe(false);
-    login.flush(first);
+    login.flush(envelope(first));
     const me = http.expectOne('/api/auth/me');
     expect(me.request.headers.get('Authorization')).toBe('Bearer access-first');
-    me.flush(user);
+    me.flush(envelope(user));
     expect(next).toHaveBeenCalledWith(user);
     expect(session.user()).toEqual(user);
     expect(session.tokens()).toEqual({
@@ -73,6 +79,8 @@ describe('Authentication through the Gateway', () => {
     { ...first, refreshToken: ' ' },
     { ...first, expiresIn: 0 },
     { success: true, data: first },
+    { ...first, success: false },
+    { ...first, success: true, meta: {} },
   ])('rejects invalid token responses', (body) => {
     const error = vi.fn();
     auth.login({ email: user.email, password: 'test-password' }).subscribe({ error });
@@ -129,7 +137,7 @@ describe('Authentication through the Gateway', () => {
     const refresh = http.expectOne('/api/auth/refresh');
     expect(refresh.request.body).toEqual({ refreshToken: 'refresh-first' });
     expect(refresh.request.headers.has('Authorization')).toBe(false);
-    refresh.flush(rotated);
+    refresh.flush(envelope(rotated));
     for (const url of ['/api/one', '/api/two']) {
       const retry = http.expectOne(url);
       expect(retry.request.headers.get('Authorization')).toBe('Bearer access-rotated');
