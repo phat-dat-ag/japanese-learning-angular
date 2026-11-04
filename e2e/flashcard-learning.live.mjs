@@ -46,7 +46,8 @@ test('learning, exact retries, conflicts, bookmarks, practice and authenticated 
   try {
     const signIn = page.waitForResponse((r) => r.url().endsWith('/api/auth/login'));
     await login(page, fixtures.player);
-    const tokens = await (await signIn).json();
+    const loginBody = await (await signIn).json();
+    const tokens = loginBody.data ?? loginBody;
     const headers = { Authorization: `Bearer ${tokens.accessToken}` };
     const root = '/api/v1/flashcards';
     const readiness = await request.get(`${root}/statistics`, {
@@ -171,7 +172,8 @@ test('learning, exact retries, conflicts, bookmarks, practice and authenticated 
       data: { email: fixtures.other.email, password: fixtures.other.password },
     });
     expect(otherLogin.status()).toBe(200);
-    const otherHeaders = { Authorization: 'Bearer ' + (await otherLogin.json()).accessToken };
+    const otherBody = await otherLogin.json();
+    const otherHeaders = { Authorization: 'Bearer ' + (otherBody.data ?? otherBody).accessToken };
     for (const path of ['/sessions/' + created.sessionId, '/sessions/' + stale.sessionId]) {
       expect((await request.get(root + path, { headers: otherHeaders })).status()).toBe(404);
     }

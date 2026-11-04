@@ -87,7 +87,7 @@ export class AuthApi {
     )
       return normalized;
 
-    // .NET failures carry traceId directly, without Quarkus response metadata.
+    // Accept the legacy error shape while older .NET instances finish rolling out.
     return new ApiError(
       detail['code'],
       'The request could not be completed. Please try again.',
@@ -105,7 +105,7 @@ export class AuthApi {
     };
   }
 
-  // .NET success bodies are plain JSON, not the Quarkus ApiClient envelope.
+  // Unwrap the shared envelope; accept legacy DTOs during a rolling backend deployment.
   private validate<T>(
     request: Observable<unknown>,
     guard: (value: unknown) => value is T,
@@ -113,7 +113,20 @@ export class AuthApi {
     return request.pipe(
       timeout(this.config.timeoutMs),
       map((body) => {
-        if (!guard(body)) throw ApiError.invalidResponse(200);
+        if (isApiResponse(body)) {
+          if (!body.success)
+            throw new ApiError(
+              body.error.code,
+              body.error.message,
+              200,
+              body.error.details,
+              body.meta,
+            );
+          if (!guard(body.data)) throw ApiError.invalidResponse(200, body.meta);
+          return body.data;
+        }
+        if ((isRecord(body) && 'success' in body) || !guard(body))
+          throw ApiError.invalidResponse(200);
         return body;
       }),
       catchError((error: unknown) => throwError(() => this.normalizeError(error))),

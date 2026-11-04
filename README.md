@@ -101,7 +101,7 @@ Use the nearest existing feature as a pattern: preserve lazy loading, service-ow
 
 ## Authentication and authorization
 
-[AuthApi](src/app/core/auth/auth-api.service.ts) calls these Gateway endpoints using the plain JSON response contract expected from .NET:
+[AuthApi](src/app/core/auth/auth-api.service.ts) calls these Gateway endpoints using the shared `{ success, data, meta }` success envelope from .NET. It validates and unwraps `data` before returning domain DTOs to the UI; `meta` contains timestamp, trace ID and correlation ID. Legacy plain DTOs remain accepted during rolling deployments:
 
 | Method / path             | Purpose                                                                     |
 | ------------------------- | --------------------------------------------------------------------------- |
@@ -134,7 +134,7 @@ Current API families, relative to `/api`, include:
 | `v1/admin/kanji-quiz/questions/...`             | Question bank, editing, publication, archival, import               |
 | `auth/...`                                      | .NET authentication via `AuthApi`                                   |
 
-`AuthApi` uses HttpClient directly because .NET success bodies do not use the Quarkus envelope. It still shares API configuration, timeout, validation, and error normalization. Both transport paths target the Gateway; application services do not call individual backend hosts directly. The isolated live test harness deliberately uses its temporary Quarkus address instead.
+`AuthApi` uses HttpClient directly to control auth/refresh interceptor bypass and token DTO validation. It shares the Quarkus envelope structure, API configuration, timeout, and error normalization. Logout remains an empty 204 response. Both transport paths target the Gateway; application services do not call individual backend hosts directly. The isolated live test harness deliberately uses its temporary Quarkus address instead.
 
 ## Available commands
 

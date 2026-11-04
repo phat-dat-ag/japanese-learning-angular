@@ -7,6 +7,11 @@ import { AuthSession } from './auth-session.service';
 import { authInterceptor } from './auth.interceptor';
 
 const request = { username: 'learner', email: 'learner@example.test', password: 'test-password' };
+const meta = {
+  timestamp: '2026-11-04T08:00:00Z',
+  traceId: 'trace-id',
+  correlationId: 'request-id',
+};
 const response = {
   id: '11111111-1111-1111-1111-111111111111',
   username: 'learner',
@@ -43,7 +48,7 @@ describe('AuthApi registration', () => {
     const pending = http.expectOne('https://gateway.example/api/auth/register');
     expect(pending.request.body).toEqual(request);
     expect(pending.request.headers.has('Authorization')).toBe(false);
-    pending.flush(response, { status: 201, statusText: 'Created' });
+    pending.flush({ success: true, data: response, meta }, { status: 201, statusText: 'Created' });
     expect(next).toHaveBeenCalledWith(response);
     expect(session.tokens()?.accessToken).toBe('access');
   });
@@ -58,6 +63,37 @@ describe('AuthApi registration', () => {
     TestBed.inject(AuthApi).register(request).subscribe({ error });
     http.expectOne('https://gateway.example/api/auth/register').flush(body);
     expect(error).toHaveBeenCalledWith(expect.objectContaining({ code: 'INVALID_RESPONSE' }));
+  });
+
+  it('accepts a legacy registration DTO during a rolling deployment', () => {
+    const next = vi.fn();
+    TestBed.inject(AuthApi).register(request).subscribe(next);
+    http.expectOne('https://gateway.example/api/auth/register').flush(response);
+    expect(next).toHaveBeenCalledWith(response);
+  });
+
+  it.each([
+    { success: true, data: response },
+    { success: true, data: response, meta: {} },
+    { success: true, data: { ...response, id: 123 }, meta },
+  ])('rejects malformed success envelopes', (body) => {
+    const error = vi.fn();
+    TestBed.inject(AuthApi).register(request).subscribe({ error });
+    http.expectOne('https://gateway.example/api/auth/register').flush(body);
+    expect(error).toHaveBeenCalledWith(expect.objectContaining({ code: 'INVALID_RESPONSE' }));
+  });
+
+  it('does not accept an error envelope returned with HTTP 200 as a successful registration', () => {
+    const next = vi.fn();
+    const error = vi.fn();
+    TestBed.inject(AuthApi).register(request).subscribe({ next, error });
+    http.expectOne('https://gateway.example/api/auth/register').flush({
+      success: false,
+      error: { code: 'UNAVAILABLE', message: 'Unavailable', details: [] },
+      meta,
+    });
+    expect(next).not.toHaveBeenCalled();
+    expect(error).toHaveBeenCalledWith(expect.objectContaining({ code: 'UNAVAILABLE', meta }));
   });
 
   it('preserves .NET validation details and trace ID without surfacing diagnostics as the message', () => {
