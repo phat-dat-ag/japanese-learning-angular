@@ -25,7 +25,7 @@ let stopped = false;
 const { privateKey, publicKey } = generateKeyPairSync('rsa', { modulusLength: 2048 });
 const jwk = { ...publicKey.export({ format: 'jwk' }), kid: runId, alg: 'RS256', use: 'sig' };
 const server = createServer((request, response) => {
-  if (request.url !== '/jwks') {
+  if (request.url !== '/api/v1/jwks/user') {
     response.writeHead(404).end();
     return;
   }
@@ -188,7 +188,7 @@ try {
       '--env',
       `DB_REACTIVE_URL=mysql://${database}:3306/angular_quiz_test`,
       '--env',
-      `AUTH_JWKS_URL=http://host.docker.internal:${jwksPort}/jwks`,
+      `AUTH_JWKS_URL=http://host.docker.internal:${jwksPort}/api/v1/jwks/user`,
       '--env',
       `AUTH_JWT_ISSUER=${issuer}`,
       '--env',
