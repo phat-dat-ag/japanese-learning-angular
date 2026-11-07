@@ -28,7 +28,17 @@ export class AdminLayout {
     inject(Router).events.pipe(
       filter((event) => event instanceof NavigationEnd),
       startWith(null),
-      map(() => this.route.firstChild?.snapshot?.title ?? 'Admin Dashboard'),
+      map(() => {
+        let child = this.route.firstChild;
+        let title = 'Admin Dashboard';
+
+        while (child) {
+          title = child.snapshot?.title ?? title;
+          child = child.firstChild;
+        }
+
+        return title;
+      }),
     ),
     { initialValue: 'Admin Dashboard' },
   );

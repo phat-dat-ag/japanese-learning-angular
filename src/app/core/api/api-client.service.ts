@@ -1,4 +1,4 @@
-import { HttpClient } from '@angular/common/http';
+import { HttpClient, HttpHeaders, HttpResponse } from '@angular/common/http';
 import { inject, Injectable } from '@angular/core';
 import { catchError, map, Observable, throwError, timeout } from 'rxjs';
 
@@ -41,17 +41,38 @@ export class ApiClient {
     isData: (value: unknown) => value is T,
     body?: unknown,
   ): Observable<ApiSuccess<T>> {
+    return this.requestWithResponse(method, path, isData, body).pipe(
+      map((response) => {
+        if (!response.body) throw ApiError.invalidResponse(response.status);
+
+        return response.body;
+      }),
+    );
+  }
+
+  requestWithResponse<T>(
+    method: 'GET' | 'PUT' | 'POST' | 'DELETE',
+    path: string,
+    isData: (value: unknown) => value is T,
+    body?: unknown,
+    headers: HttpHeaders | Record<string, string> = {},
+  ): Observable<HttpResponse<ApiSuccess<T>>> {
     const url = this.config.baseUrl.replace(/\/$/, '') + '/' + path.replace(/^\//, '');
 
     return this.http
       .request<unknown>(method, url, {
         body,
         observe: 'response',
-        headers: { Accept: 'application/json' },
+        headers: (headers instanceof HttpHeaders ? headers : new HttpHeaders(headers)).set(
+          'Accept',
+          'application/json',
+        ),
       })
       .pipe(
         timeout(this.config.timeoutMs),
-        map(({ body, status }) => {
+        map((response) => {
+          const { body, status } = response;
+
           if (!isApiResponse(body)) {
             throw ApiError.invalidResponse(status);
           }
@@ -70,7 +91,9 @@ export class ApiClient {
             throw ApiError.invalidResponse(status, body.meta);
           }
 
-          return { success: true as const, data: body.data, meta: body.meta };
+          return response.clone({
+            body: { success: true as const, data: body.data, meta: body.meta },
+          });
         }),
         catchError((error: unknown) => throwError(() => normalizeApiError(error))),
       );

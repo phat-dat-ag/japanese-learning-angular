@@ -1,0 +1,195 @@
+<fieldset [disabled]="locked()" class="min-w-0 space-y-4">
+  <legend class="mb-3 font-semibold capitalize">{{ block().type }} properties</legend>
+  @if (block(); as current) {
+    @switch (current.type) {
+      @case ('heading') {
+        <label class="block text-sm font-medium"
+          >Heading level
+          <select
+            [ngModel]="current.level"
+            (ngModelChange)="heading($event)"
+            class="ml-2 min-h-11 rounded-lg border border-gray-300 px-3"
+          >
+            @for (level of headingLevels; track level) {
+              <option [ngValue]="level">{{ level }}</option>
+            }
+          </select>
+        </label>
+        <app-grammar-inline-editor
+          label="Heading text"
+          [inlines]="current.inlines"
+          [locked]="locked()"
+          (changed)="inline($event)"
+        />
+      }
+      @case ('paragraph') {
+        <app-grammar-inline-editor
+          label="Paragraph text"
+          [inlines]="current.inlines"
+          [locked]="locked()"
+          (changed)="inline($event)"
+        />
+      }
+      @case ('quote') {
+        <app-grammar-inline-editor
+          label="Quote text"
+          [inlines]="current.inlines"
+          [locked]="locked()"
+          (changed)="inline($event)"
+        />
+      }
+      @case ('callout') {
+        <label class="block text-sm font-medium"
+          >Callout style
+          <select
+            [ngModel]="current.variant"
+            (ngModelChange)="variant($event)"
+            class="ml-2 min-h-11 rounded-lg border border-gray-300 px-3"
+          >
+            @for (variant of variants; track variant) {
+              <option [value]="variant">{{ variant }}</option>
+            }
+          </select>
+        </label>
+        <app-grammar-inline-editor
+          label="Callout text"
+          [inlines]="current.inlines"
+          [locked]="locked()"
+          (changed)="inline($event)"
+        />
+      }
+      @case ('example') {
+        @for (field of exampleFields; track field) {
+          @let value =
+            field === 'vi' || field === 'en' ? current.translations[field] : current[field];
+          <label class="block text-sm font-medium"
+            >{{ exampleLabels[field] }}
+            <textarea
+              [ngModel]="value"
+              (ngModelChange)="example(field, $event)"
+              rows="3"
+              maxlength="10000"
+              [attr.lang]="field === 'japanese' || field === 'reading' ? 'ja' : field"
+              [attr.aria-invalid]="!validText(value, true)"
+              class="mt-1 w-full rounded-lg border border-gray-300 p-3 focus-visible:outline-indigo-600"
+            ></textarea>
+            @if (!validText(value, true)) {
+              <span class="text-sm text-red-800"
+                >Required plain text, up to 10,000 characters, without angle brackets or control
+                characters.</span
+              >
+            }
+          </label>
+        }
+      }
+      @case ('list') {
+        <label class="flex min-h-11 items-center gap-2"
+          ><input type="checkbox" [ngModel]="current.ordered" (ngModelChange)="ordered($event)" />
+          Numbered list</label
+        >
+        @for (item of current.items; track $index; let i = $index) {
+          <div>
+            <app-grammar-inline-editor
+              [label]="'List item ' + (i + 1)"
+              [inlines]="item"
+              [locked]="locked()"
+              (changed)="listItem(i, $event)"
+            /><button
+              type="button"
+              (click)="removeItem(i)"
+              [disabled]="current.items.length <= 1"
+              [attr.aria-label]="'Remove list item ' + (i + 1)"
+              class="min-h-11 text-sm text-red-700 underline disabled:opacity-50"
+            >
+              Remove item
+            </button>
+          </div>
+        }
+        <button
+          type="button"
+          (click)="addItem()"
+          [disabled]="current.items.length >= 100"
+          class="min-h-11 text-indigo-700 underline disabled:opacity-50"
+        >
+          Add list item
+        </button>
+      }
+      @case ('table') {
+        <label class="flex min-h-11 items-center gap-2"
+          ><input
+            type="checkbox"
+            [ngModel]="!!current.headers.length"
+            (ngModelChange)="headers($event)"
+          />
+          Include header row</label
+        >
+        <p class="text-sm text-gray-600">
+          {{ current.rows.length }} rows × {{ current.rows[0].length }} columns. Maximum 100 rows
+          and 20 columns.
+        </p>
+        <div class="flex flex-wrap gap-3">
+          <button
+            type="button"
+            (click)="addRow()"
+            [disabled]="current.rows.length >= 100"
+            class="min-h-11 text-indigo-700 underline disabled:opacity-50"
+          >
+            Add table row</button
+          ><button
+            type="button"
+            (click)="addColumn()"
+            [disabled]="current.rows[0].length >= 20"
+            class="min-h-11 text-indigo-700 underline disabled:opacity-50"
+          >
+            Add table column
+          </button>
+        </div>
+        <div class="flex flex-wrap gap-2">
+          @for (cell of current.rows[0]; track $index; let c = $index) {
+            <button
+              type="button"
+              (click)="removeColumn(c)"
+              [disabled]="current.rows[0].length <= 1"
+              class="min-h-11 text-sm text-red-700 underline disabled:opacity-50"
+            >
+              Remove column {{ c + 1 }}
+            </button>
+          }
+        </div>
+        @for (cell of current.headers; track $index; let c = $index) {
+          <app-grammar-inline-editor
+            [label]="'Header column ' + (c + 1)"
+            [inlines]="cell"
+            [locked]="locked()"
+            (changed)="updateCell(null, c, $event)"
+          />
+        }
+        @for (row of current.rows; track $index; let r = $index) {
+          <fieldset class="space-y-3 rounded-lg border border-gray-300 p-3">
+            <legend class="px-1 text-sm font-medium">Row {{ r + 1 }}</legend>
+            @for (cell of row; track $index; let c = $index) {
+              <app-grammar-inline-editor
+                [label]="'Row ' + (r + 1) + ', column ' + (c + 1)"
+                [inlines]="cell"
+                [locked]="locked()"
+                (changed)="updateCell(r, c, $event)"
+              />
+            }
+            <button
+              type="button"
+              (click)="removeRow(r)"
+              [disabled]="current.rows.length <= 1"
+              class="min-h-11 text-sm text-red-700 underline disabled:opacity-50"
+            >
+              Remove row {{ r + 1 }}
+            </button>
+          </fieldset>
+        }
+      }
+      @case ('divider') {
+        <p class="text-sm text-gray-600">A horizontal separator with no text or settings.</p>
+        <hr class="border-gray-300" />
+      }
+    }
+  }
+</fieldset>

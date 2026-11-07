@@ -1,0 +1,185 @@
+<nav aria-label="Breadcrumb" class="mb-4 flex flex-wrap gap-2 text-sm text-indigo-700">
+  <a routerLink="/admin" class="underline">Admin</a><span aria-hidden="true">/</span
+  ><a routerLink="/admin/lessons" class="underline">Lessons</a>
+  @if (lesson(); as current) {
+    <span aria-hidden="true">/</span
+    ><a [routerLink]="['/admin/lessons', current.id, 'edit']" class="underline"
+      >Lesson {{ current.lessonNumber }}</a
+    >
+  }
+  <span aria-hidden="true">/</span
+  ><span aria-current="page" class="text-gray-700">Grammar content</span>
+</nav>
+<h1 class="text-3xl font-bold text-gray-900">
+  Grammar content{{ lesson() ? ': ' + lesson()?.title : '' }}
+</h1>
+@if (state() === 'loading') {
+  <p role="status" class="mt-4">Loading grammar content…</p>
+}
+@if (message()) {
+  <p role="alert" class="mt-4 rounded-xl border border-red-200 bg-red-50 p-4 text-red-800">
+    {{ message() }}
+  </p>
+}
+@if (success()) {
+  <p role="status" class="mt-4 rounded-xl border border-green-200 bg-green-50 p-4 text-green-800">
+    {{ success() }}
+  </p>
+}
+@if (!authorized()) {
+  <p role="alert" class="mt-4 text-red-800">
+    An Admin session is required. Export your draft before signing in again.
+  </p>
+}
+<div class="my-5 flex flex-wrap items-center gap-3">
+  @if (state() === 'ready') {
+    <button
+      type="button"
+      (click)="save()"
+      [disabled]="!canSave()"
+      class="min-h-11 rounded-xl bg-indigo-600 px-5 py-2 font-semibold text-white focus-visible:outline-2 focus-visible:outline-indigo-600 disabled:opacity-50"
+    >
+      {{ operation() === 'saving' ? 'Saving…' : 'Save content' }}
+    </button>
+    <button
+      type="button"
+      (click)="deleteContent()"
+      [disabled]="locked() || requiresReload() || !revision()"
+      class="min-h-11 rounded-xl border border-red-300 px-4 text-red-700 focus-visible:outline-red-700 disabled:opacity-50"
+    >
+      {{ operation() === 'deleting' ? 'Deleting…' : 'Delete content' }}
+    </button>
+    <span class="text-sm text-gray-600"
+      >{{ revision() ? 'Version ' + revision()?.version : 'No saved content yet' }} ·
+      {{ dirty() ? 'Unsaved changes' : 'No unsaved changes' }}</span
+    >
+  }
+  <button
+    type="button"
+    (click)="exportDraft()"
+    [disabled]="busy()"
+    class="min-h-11 rounded-xl border border-gray-300 px-4 text-indigo-700 focus-visible:outline-indigo-600 disabled:opacity-50"
+  >
+    Export draft JSON
+  </button>
+  <button
+    type="button"
+    (click)="reloadServer()"
+    [disabled]="busy() || state() === 'loading'"
+    class="min-h-11 rounded-xl border border-gray-300 px-4 text-indigo-700 focus-visible:outline-indigo-600 disabled:opacity-50"
+  >
+    Reload server version
+  </button>
+</div>
+@if (requiresReload()) {
+  <p class="mb-4 text-sm text-amber-900">
+    Saving and deletion are blocked until you reload. You can still edit or export your local draft.
+  </p>
+}
+@if (serverIssues().length) {
+  <ul role="alert" class="mb-4 list-disc pl-5 text-sm text-red-800">
+    @for (issue of serverIssues(); track $index) {
+      <li>{{ issue.field }}: {{ issue.message }}</li>
+    }
+  </ul>
+}
+@if (state() === 'ready') {
+  @if (validation().length) {
+    <ul aria-label="Content validation" class="mb-4 list-disc pl-5 text-sm text-red-800">
+      @for (issue of validation(); track $index) {
+        <li>{{ issue.message }}</li>
+      }
+    </ul>
+  }
+  <div class="grid min-w-0 gap-6 xl:grid-cols-2" [attr.aria-busy]="busy()">
+    <section
+      aria-labelledby="blocks-heading"
+      class="min-w-0 rounded-2xl border border-gray-200 bg-white p-4 sm:p-6"
+    >
+      <h2 id="blocks-heading" class="text-xl font-semibold">
+        Blocks ({{ draft().blocks.length }}/200)
+      </h2>
+      <fieldset [disabled]="locked()" class="mt-4 flex flex-wrap items-end gap-3">
+        <legend class="sr-only">Add a block</legend>
+        <label class="text-sm font-medium"
+          >Block type<select
+            [(ngModel)]="addType"
+            class="ml-2 min-h-11 rounded-lg border border-gray-300 px-3"
+          >
+            @for (type of blockTypes; track type) {
+              <option [value]="type">{{ type }}</option>
+            }
+          </select></label
+        >
+        <button
+          type="button"
+          (click)="addBlock()"
+          [disabled]="draft().blocks.length >= 200"
+          class="min-h-11 rounded-lg bg-indigo-600 px-4 text-white disabled:opacity-50"
+        >
+          Add block
+        </button>
+      </fieldset>
+      <ol aria-label="Document blocks" class="my-4 space-y-2">
+        @for (block of draft().blocks; track block.id; let i = $index) {
+          <li
+            class="flex flex-wrap items-center gap-2 rounded-lg border border-gray-200 p-2"
+            [class.bg-indigo-50]="selectedId() === block.id"
+          >
+            <button
+              type="button"
+              (click)="selectedId.set(block.id)"
+              [attr.aria-pressed]="selectedId() === block.id"
+              class="min-h-11 flex-1 text-left font-medium text-indigo-700"
+            >
+              {{ i + 1 }}. {{ block.type }}
+            </button>
+            <button
+              type="button"
+              (click)="moveBlock(block.id, -1)"
+              [disabled]="locked() || i === 0"
+              [attr.aria-label]="'Move block ' + (i + 1) + ' up'"
+              class="min-h-11 px-2 text-sm text-indigo-700 underline disabled:opacity-50"
+            >
+              Up
+            </button>
+            <button
+              type="button"
+              (click)="moveBlock(block.id, 1)"
+              [disabled]="locked() || i === draft().blocks.length - 1"
+              [attr.aria-label]="'Move block ' + (i + 1) + ' down'"
+              class="min-h-11 px-2 text-sm text-indigo-700 underline disabled:opacity-50"
+            >
+              Down
+            </button>
+            <button
+              type="button"
+              (click)="removeBlock(block.id)"
+              [disabled]="locked()"
+              [attr.aria-label]="'Remove block ' + (i + 1)"
+              class="min-h-11 px-2 text-sm text-red-700 underline disabled:opacity-50"
+            >
+              Remove
+            </button>
+          </li>
+        } @empty {
+          <li class="text-sm text-gray-600">Add a block to begin, or save an empty document.</li>
+        }
+      </ol>
+      @if (selected(); as block) {
+        <app-grammar-block-editor
+          [block]="block"
+          [locked]="locked()"
+          (changed)="updateBlock($event)"
+        />
+      }
+    </section>
+    <section
+      aria-labelledby="preview-heading"
+      class="min-w-0 rounded-2xl border border-gray-200 bg-white p-4 sm:p-6"
+    >
+      <h2 id="preview-heading" class="mb-5 text-xl font-semibold">Live preview</h2>
+      <app-grammar-preview [document]="draft()" />
+    </section>
+  </div>
+}

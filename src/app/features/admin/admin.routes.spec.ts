@@ -91,6 +91,11 @@ describe('Admin interface', () => {
     '/admin',
     '/admin/vocabulary/import',
     '/admin/vocabulary/42',
+    '/admin/lessons/new',
+    '/admin/lessons/42/edit',
+    '/admin/lessons/42/content',
+    '/admin/lessons/import/metadata',
+    '/admin/lessons/import',
     ...sections.map(([path]) => '/admin/' + path),
   ])('blocks Guests and Users from %s', async (url) => {
     const harness = await RouterTestingHarness.create(url);
@@ -113,6 +118,15 @@ describe('Admin interface', () => {
 
     for (const [path, title] of sections.filter(([path]) => path !== 'vocabulary')) {
       shell?.querySelector<HTMLAnchorElement>('nav a[href="/admin/' + path + '"]')?.click();
+
+      if (path === 'lessons') {
+        await vi.waitFor(() => expect(TestBed.inject(Router).url).toBe('/admin/lessons'));
+
+        TestBed.inject(HttpTestingController)
+          .expectOne('/api/v1/lessons?level=N5')
+          .flush({ success: true, data: [], meta: vocabularyMeta });
+      }
+
       await TestBed.inject(ApplicationRef).whenStable();
       harness.detectChanges();
       expect(harness.routeNativeElement).toBe(shell);
@@ -187,7 +201,7 @@ describe('Admin interface', () => {
 
   it.each([
     ['/admin/vocabulary/import', 'Import Vocabulary'],
-    ['/admin/lessons', 'Lesson Management'],
+    ['/admin/lessons/import/metadata', 'Import Lesson Metadata'],
   ])('opens the Admin import page at %s without fetching data', async (url, title) => {
     signIn();
 
@@ -264,6 +278,12 @@ describe('Admin interface', () => {
     toggle?.click();
     harness.detectChanges();
     nav?.querySelector<HTMLAnchorElement>('a[href="/admin/lessons"]')?.click();
+    await vi.waitFor(() => expect(TestBed.inject(Router).url).toBe('/admin/lessons'));
+
+    TestBed.inject(HttpTestingController)
+      .expectOne('/api/v1/lessons?level=N5')
+      .flush({ success: true, data: [], meta: vocabularyMeta });
+
     await TestBed.inject(ApplicationRef).whenStable();
     harness.detectChanges();
     expect(toggle?.getAttribute('aria-expanded')).toBe('false');

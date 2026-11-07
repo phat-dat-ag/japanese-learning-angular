@@ -17,17 +17,17 @@ import { ImportKind, LessonBatchResponse, VocabularyImportResult } from './impor
 
 type ImportOutcome =
   | {
-    readonly filename: string;
-    readonly kind: 'vocabulary';
-    readonly data: VocabularyImportResult;
-    readonly meta: ApiMeta;
-  }
+      readonly filename: string;
+      readonly kind: 'vocabulary';
+      readonly data: VocabularyImportResult;
+      readonly meta: ApiMeta;
+    }
   | {
-    readonly filename: string;
-    readonly kind: 'lessons';
-    readonly data: LessonBatchResponse;
-    readonly meta: ApiMeta;
-  };
+      readonly filename: string;
+      readonly kind: 'lessons';
+      readonly data: LessonBatchResponse;
+      readonly meta: ApiMeta;
+    };
 
 interface ImportFeedback {
   readonly message: string;
@@ -47,7 +47,7 @@ export class FileImport {
   private readonly session = inject(AuthSession);
   readonly kind: ImportKind =
     inject(ActivatedRoute).snapshot.data['importKind'] === 'lessons' ? 'lessons' : 'vocabulary';
-  readonly title = this.kind === 'lessons' ? 'Lesson Management' : 'Import Vocabulary';
+  readonly title = this.kind === 'lessons' ? 'Import Lesson Metadata' : 'Import Vocabulary';
   readonly file = signal<File | null>(null);
   readonly submitting = signal(false);
   readonly feedback = signal<ImportFeedback | null>(null);
@@ -90,19 +90,19 @@ export class FileImport {
     const request =
       this.kind === 'lessons'
         ? this.service.importLessons(file).pipe(
-          map((response): ImportOutcome => ({
-            kind: 'lessons',
-            filename: file.name,
-            ...response,
-          })),
-        )
+            map((response): ImportOutcome => ({
+              kind: 'lessons',
+              filename: file.name,
+              ...response,
+            })),
+          )
         : this.service.importVocabulary(file).pipe(
-          map((response): ImportOutcome => ({
-            kind: 'vocabulary',
-            filename: file.name,
-            ...response,
-          })),
-        );
+            map((response): ImportOutcome => ({
+              kind: 'vocabulary',
+              filename: file.name,
+              ...response,
+            })),
+          );
 
     request.pipe(takeUntilDestroyed(this.destroyRef)).subscribe({
       next: (outcome) => {

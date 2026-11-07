@@ -54,6 +54,25 @@ describe('ApiClient', () => {
     expect(next).toHaveBeenCalledWith({ success: true, data: ['N5'], meta });
   });
 
+  it('preserves exact response headers and caller preconditions', () => {
+    const etag = '"9:2026-11-06T01:00:00.123456:2"';
+    const next = vi.fn();
+    client
+      .requestWithResponse('PUT', 'lessons/9/content', isStrings, {}, { 'If-Match': etag })
+      .subscribe(next);
+    const request = http.expectOne('/api/v1/lessons/9/content');
+    expect(request.request.headers.get('If-Match')).toBe(etag);
+    expect(request.request.headers.get('Accept')).toBe('application/json');
+    request.flush(
+      { success: true, data: [], meta },
+      { headers: { ETag: etag, 'X-Test': 'preserved' } },
+    );
+    const response = next.mock.calls[0][0];
+    expect(response.headers.get('ETag')).toBe(etag);
+    expect(response.headers.get('X-Test')).toBe('preserved');
+    expect(response.body).toEqual({ success: true, data: [], meta });
+  });
+
   it.each([200, 400, 401, 403, 500])(
     'preserves structured API errors with HTTP status %s',
     (status) => {
