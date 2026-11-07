@@ -22,9 +22,7 @@ export const ADMIN_ROUTES: Routes = [
   },
   {
     path: 'lessons',
-    title: 'Lesson Management',
-    data: { importKind: 'lessons' },
-    loadComponent: () => import('./imports/file-import').then((m) => m.FileImport),
+    loadChildren: () => import('./lessons/lesson.routes').then((m) => m.LESSON_ROUTES),
   },
   {
     path: 'vocabulary/:vocabularyId',

@@ -1,10 +1,10 @@
 # Japanese Learning — Angular Frontend
 
-Angular frontend for the Japanese Learning application. It provides account registration and sign-in, JLPT vocabulary flashcards with personal SRS learning, resumable sessions, bookmarks and statistics, kanji quizzes with results/history/progress, and administration tools for vocabulary, lesson imports, and quiz questions.
+Angular frontend for the Japanese Learning application. It provides account registration and sign-in, JLPT vocabulary flashcards with personal SRS learning, resumable sessions, bookmarks and statistics, kanji quizzes with results/history/progress, and administration tools for vocabulary, lesson metadata/grammar content and imports, and quiz questions.
 
 This repository is the frontend submodule of a microservices system. The .NET service owns accounts and authentication; Quarkus provides learning APIs. Browser requests use a shared API Gateway root rather than individual service addresses. The frontend proxy configuration expects an HTTP Gateway at port 8080; Gateway implementation and backend deployment are managed outside this submodule.
 
-Admin user-management and settings pages are placeholders. Lesson administration currently provides file import, not a general lesson editor.
+Admin user-management and settings pages are placeholders. Lesson administration provides metadata CRUD, a structured grammar content editor, and separate complete-grammar and metadata-only JSON imports. See [Admin Grammar Lesson Management](docs/admin-grammar-lessons.md) for workflows, backend requirements, and manual live verification.
 
 ## Technology stack and prerequisites
 

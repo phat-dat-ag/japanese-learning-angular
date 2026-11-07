@@ -1,0 +1,200 @@
+<p class="text-sm font-semibold text-indigo-700">Administration</p>
+<h1 class="mt-2 text-3xl font-bold text-gray-900">Import complete grammar lessons</h1>
+<nav aria-label="Lesson management" class="mt-4 flex flex-wrap gap-4 text-sm text-indigo-700">
+  <a routerLink="/admin/lessons" class="underline">Back to lesson management</a>
+  <a routerLink="/admin/lessons/import/metadata" class="underline">Metadata-only JSON import</a>
+</nav>
+<section
+  class="mt-6 rounded-2xl border border-gray-200 bg-white p-5 sm:p-8"
+  aria-labelledby="upload-heading"
+  [attr.aria-busy]="submitting() || preview().status === 'reading'"
+>
+  <h2 id="upload-heading" class="text-xl font-semibold">Upload a grammar lesson JSON file</h2>
+  <div id="grammar-file-help" class="mt-3 space-y-2 text-sm text-gray-600">
+    <p>
+      Choose a UTF-8 JSON array of 1–100 lessons, up to 5 MiB (5,242,880 bytes). Each item requires
+      level, lessonNumber, title, displayOrder, schemaVersion: 1, expectedVersion, and content.
+      Description is optional.
+    </p>
+    <p>
+      For new or absent content use expectedVersion: 0 and omit etag. Replacing existing content
+      requires its positive version and exact quoted ETag in the file's etag field. Files are
+      uploaded exactly as selected.
+    </p>
+    <p>
+      Local checks cover metadata and grammar schema v1. The server checks duplicate JSON keys,
+      existing levels, occupied display orders, revisions, and its configured limits before writing.
+      Swapping occupied display orders is unsupported.
+    </p>
+  </div>
+  <form (ngSubmit)="submit()" class="mt-5 space-y-5">
+    <fieldset [disabled]="submitting()" class="space-y-4">
+      <legend class="font-medium">Import mode</legend>
+      @for (option of modes; track option) {
+        <label class="flex items-start gap-3 rounded-lg border border-gray-200 p-3"
+          ><input
+            type="radio"
+            name="grammar-mode"
+            [value]="option"
+            [ngModel]="mode()"
+            (ngModelChange)="changeMode($event)"
+            class="mt-1"
+          /><span
+            ><span class="block text-sm font-semibold">{{ option }}</span
+            ><span class="mt-1 block text-sm text-gray-600">{{
+              option === 'SKIP_EXISTING'
+                ? 'Create missing lessons; leave existing lesson metadata and content unchanged, even when content is absent.'
+                : 'Create missing lessons; replace existing metadata and content together using the versions and ETags in the file. Stale preconditions fail that item.'
+            }}</span></span
+          ></label
+        >
+      }
+    </fieldset>
+    <label class="block font-medium" for="grammar-file">Grammar JSON file</label>
+    <input
+      #fileInput
+      id="grammar-file"
+      type="file"
+      accept=".json,application/json"
+      [disabled]="submitting()"
+      (change)="selectFile($event)"
+      aria-describedby="grammar-file-help grammar-file-validation"
+      [attr.aria-invalid]="preview().status === 'error'"
+      class="block w-full rounded-lg border border-gray-300 p-3 text-sm focus-visible:outline-indigo-600"
+    />
+    @if (file(); as selected) {
+      <p class="break-all text-sm text-gray-600">
+        Selected: {{ selected.name }} ({{ selected.size }} bytes)
+      </p>
+    }
+    <div id="grammar-file-validation" aria-live="polite">
+      @if (preview(); as current) {
+        @switch (current.status) {
+          @case ('reading') {
+            <p role="status" class="text-sm text-indigo-700">
+              Reading and validating the selected file…
+            </p>
+          }
+          @case ('error') {
+            <ul class="list-disc pl-5 text-sm text-red-800">
+              @for (issue of current.issues; track $index) {
+                <li>{{ issue }}</li>
+              }
+            </ul>
+          }
+          @case ('ready') {
+            <p class="text-sm text-green-800">
+              Local validation passed for {{ current.count }} lessons. Server preflight is still
+              required.
+            </p>
+          }
+          @case ('idle') {
+            <p class="text-sm text-gray-600">Choose a JSON file to begin.</p>
+          }
+        }
+      }
+    </div>
+    @if (!authorized()) {
+      <p role="alert" class="text-red-800">An Admin session is required to import lessons.</p>
+    }
+    <button
+      type="submit"
+      [disabled]="!canSubmit()"
+      class="min-h-11 rounded-xl bg-indigo-600 px-5 py-2 font-semibold text-white focus-visible:outline-2 focus-visible:outline-indigo-600 disabled:opacity-50"
+    >
+      {{ submitting() ? 'Importing…' : 'Import grammar lessons' }}
+    </button>
+    @if (submitting()) {
+      <p role="status" class="text-sm text-indigo-700">
+        Uploading and processing the file. Wait for the report before starting another import.
+        Individual items commit independently after preflight.
+      </p>
+    }
+    @if (consumed()) {
+      <p class="text-sm text-gray-600">
+        Select a file again to start another import. Check the last outcome and current server data
+        first.
+      </p>
+    }
+  </form>
+  @if (feedback(); as error) {
+    <div
+      role="alert"
+      class="mt-5 rounded-xl border border-red-200 bg-red-50 p-4 text-sm text-red-800"
+    >
+      <p class="font-semibold">
+        {{
+          error.kind === 'rejected'
+            ? 'Whole-file rejection'
+            : error.kind === 'uncertain'
+              ? 'Import outcome unknown'
+              : 'Import unavailable'
+        }}
+      </p>
+      <p class="mt-2">{{ error.message }}</p>
+      @if (error.code) {
+        <p class="mt-2">Code: {{ error.code }}</p>
+      }
+      @if (error.kind === 'rejected') {
+        <p class="mt-2">No item report was returned. Check the file and server preflight errors.</p>
+      }
+      @if (error.details.length) {
+        <ul class="mt-2 list-disc pl-5">
+          @for (detail of error.details; track $index) {
+            <li>{{ detail.field }}: {{ detail.message }}</li>
+          }
+        </ul>
+      }
+    </div>
+  }
+</section>
+@if (outcome(); as last) {
+  <section
+    class="mt-6 rounded-2xl border border-gray-200 bg-white p-5 sm:p-8"
+    aria-labelledby="grammar-results-heading"
+  >
+    <h2 id="grammar-results-heading" class="text-xl font-semibold">Last completed import report</h2>
+    <p class="mt-2 break-all text-sm text-gray-600">{{ last.filename }} · {{ last.mode }}</p>
+    <p
+      role="status"
+      class="mt-3 font-medium"
+      [class.text-amber-900]="last.report.failed > 0"
+      [class.text-green-800]="last.report.failed === 0"
+    >
+      Total: {{ last.report.total }} · Created: {{ last.report.created }} · Updated:
+      {{ last.report.updated }} · Skipped: {{ last.report.skipped }} · Failed:
+      {{ last.report.failed }}
+    </p>
+    <p class="mt-2 text-sm text-gray-600">
+      Successful items remain committed when other items fail. Correct failed items before
+      intentionally resubmitting; refresh versions and ETags before UPDATE_EXISTING. Item numbers
+      below start at 1.
+    </p>
+    <ol class="mt-4 divide-y divide-gray-200">
+      @for (item of last.report.results; track item.index) {
+        <li class="space-y-2 py-4 text-sm break-words">
+          <p class="font-semibold">
+            Item {{ item.index + 1 }}: {{ item.level }} · Lesson {{ item.lessonNumber }} ·
+            {{ item.status }}
+          </p>
+          @if (item.lessonId; as id) {
+            <p>
+              Lesson ID: {{ id }} ·
+              <a [routerLink]="['/admin/lessons', id, 'content']" class="text-indigo-700 underline"
+                >Open grammar content</a
+              >
+            </p>
+          }
+          @if (item.status === 'FAILED') {
+            <p class="text-red-800">{{ item.error.code }}: {{ item.error.message }}</p>
+            <ul class="list-disc pl-5 text-red-800">
+              @for (detail of item.error.details; track $index) {
+                <li>{{ detail.field }}: {{ detail.message }}</li>
+              }
+            </ul>
+          }
+        </li>
+      }
+    </ol>
+  </section>
+}
