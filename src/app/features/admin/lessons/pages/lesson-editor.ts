@@ -118,7 +118,7 @@ export class LessonEditor {
       levelId: lesson.levelId,
       lessonNumber: lesson.lessonNumber,
       title: lesson.title,
-      description: lesson.description,
+      description: lesson.description ?? null,
       displayOrder: lesson.displayOrder,
     };
   }

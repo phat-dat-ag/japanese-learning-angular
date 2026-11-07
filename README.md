@@ -87,7 +87,7 @@ Feature folders organize pages, display components, models, and services as need
 
 `main.ts` bootstraps the standalone `App` component with `appConfig`. Providers register Angular Router, HttpClient with the functional authentication interceptor, and browser error listeners.
 
-Routes use `loadComponent` and `loadChildren` for lazy loading. Guest pages include `/`, `/login`, and `/register`. Authenticated learner routes include `/flashcards` and `/kanji-quiz`; administration lives under `/admin`. Parent and child guards separate learner and admin areas. Unknown routes redirect to `/`.
+Routes use `loadComponent` and `loadChildren` for lazy loading. Guest pages include `/`, `/login`, and `/register`. Authenticated learner routes include `/flashcards` and `/kanji-quiz`; administration lives under `/admin`. Grammar learning at `/grammar?level=N5` and `/grammar/:lessonId` is available to both User and Admin accounts. Its catalogue preserves backend order; the read-only renderer is shared with Admin preview. Parent and child guards preserve existing role boundaries. Unknown routes redirect to `/`.
 
 The normal data flow is:
 

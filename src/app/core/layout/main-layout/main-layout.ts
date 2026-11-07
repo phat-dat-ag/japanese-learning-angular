@@ -1,4 +1,5 @@
-import { Component, signal } from '@angular/core';
+import { DOCUMENT } from '@angular/common';
+import { Component, inject, signal } from '@angular/core';
 import { RouterOutlet } from '@angular/router';
 import { Header } from '../header/header';
 import { Sidebar } from '../sidebar/sidebar';
@@ -12,7 +13,9 @@ import { AuthenticatedLayout } from '../authenticated-layout.directive';
   templateUrl: './main-layout.html',
 })
 export class MainLayout {
-  isSidebarOpen = signal(true);
+  isSidebarOpen = signal(
+    inject(DOCUMENT).defaultView?.matchMedia?.('(min-width: 1024px)').matches ?? true,
+  );
 
   toggleSidebar() {
     this.isSidebarOpen.update((isOpen) => !isOpen);

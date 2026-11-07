@@ -1,0 +1,60 @@
+<div class="mx-auto max-w-5xl">
+  <p class="text-sm font-semibold text-indigo-700">Learning center</p>
+  <h1 class="mt-2 text-3xl font-bold text-gray-900">Grammar lessons</h1>
+  <p class="mt-3 text-gray-600">
+    Explore Japanese grammar by JLPT level, with readings and Vietnamese and English translations.
+  </p>
+  <label for="grammar-level" class="mt-6 block text-sm font-semibold text-gray-800">JLPT level</label>
+  <select #levelSelect id="grammar-level" [value]="level()" (change)="changeLevel(levelSelect.value)"
+    class="mt-2 min-h-11 rounded-xl border border-gray-300 bg-white px-4 text-gray-900 focus-visible:outline-2 focus-visible:outline-indigo-600">
+    @for (code of levels; track code) {
+    <option [value]="code">{{ code }}</option>
+    }
+  </select>
+  <section aria-labelledby="grammar-list-heading" [attr.aria-busy]="state().status === 'loading'" class="mt-6">
+    <h2 id="grammar-list-heading" class="mb-4 text-xl font-semibold text-gray-900">
+      {{ level() }} lessons
+    </h2>
+    @if (state(); as current) {
+    @switch (current.status) {
+    @case ('loading') {
+    <p role="status" class="rounded-xl border border-gray-200 bg-white p-6">
+      Loading lessons…
+    </p>
+    }
+    @case ('error') {
+    <div class="rounded-xl border border-red-200 bg-red-50 p-6">
+      <p role="alert" class="text-red-800">{{ current.message }}</p>
+      <button type="button" (click)="retry()"
+        class="mt-4 min-h-11 rounded-lg border border-indigo-300 bg-white px-4 font-semibold text-indigo-700 focus-visible:outline-indigo-600">
+        Retry lesson list
+      </button>
+    </div>
+    }
+    @case ('ready') {
+    <ol class="grid gap-4 sm:grid-cols-2">
+      @for (lesson of current.lessons; track lesson.id) {
+      <li class="min-w-0 rounded-2xl border border-gray-200 bg-white p-5 sm:p-6">
+        <p class="text-sm font-medium text-indigo-700">Lesson {{ lesson.lessonNumber }}</p>
+        <h3 class="mt-2 break-words text-xl font-semibold">
+          <a [routerLink]="['/grammar', lesson.id]"
+            class="rounded text-gray-900 underline decoration-indigo-200 underline-offset-4 hover:text-indigo-700 focus-visible:outline-2 focus-visible:outline-indigo-600">{{
+            lesson.title }}</a>
+        </h3>
+        @if (lesson.description) {
+        <p class="mt-3 whitespace-pre-wrap break-words leading-relaxed text-gray-600">
+          {{ lesson.description }}
+        </p>
+        }
+      </li>
+      } @empty {
+      <li class="rounded-xl border border-gray-200 bg-white p-6 text-gray-600 sm:col-span-2">
+        No grammar lessons are available for {{ level() }} yet. Try another level.
+      </li>
+      }
+    </ol>
+    }
+    }
+    }
+  </section>
+</div>
