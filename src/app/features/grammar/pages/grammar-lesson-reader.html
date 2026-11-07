@@ -1,0 +1,108 @@
+<div class="mx-auto max-w-4xl">
+  @if (state(); as current) {
+  @switch (current.status) {
+  @case ('loading') {
+  <a routerLink="/grammar" class="text-indigo-700 underline">Back to grammar lessons</a>
+  <p role="status" class="mt-6">Loading lesson…</p>
+  }
+  @case ('error') {
+  <a routerLink="/grammar" class="text-indigo-700 underline">Back to grammar lessons</a>
+  <div class="mt-6 rounded-xl border border-red-200 bg-red-50 p-6">
+    <p role="alert" class="text-red-800">{{ current.message }}</p>
+    <button type="button" (click)="retry()"
+      class="mt-4 min-h-11 rounded-lg border border-indigo-300 bg-white px-4 font-semibold text-indigo-700 focus-visible:outline-indigo-600">
+      Retry lesson
+    </button>
+  </div>
+  }
+  @case ('ready') {
+  <nav aria-label="Breadcrumb" class="mb-6 flex flex-wrap gap-2 text-sm">
+    <a routerLink="/grammar" class="text-indigo-700 underline">Grammar lessons</a><span aria-hidden="true">/</span><a
+      routerLink="/grammar" [queryParams]="{ level: current.level.code }" class="text-indigo-700 underline">{{
+      current.level.code }}</a><span aria-hidden="true">/</span><span aria-current="page" class="text-gray-600">Lesson
+      {{ current.lesson.lessonNumber }}</span>
+  </nav>
+  <article aria-labelledby="lesson-title"
+    class="min-w-0 rounded-2xl border border-gray-200 bg-white p-5 sm:p-8 lg:p-10">
+    <header class="mb-8 border-b border-gray-100 pb-6">
+      <p class="text-sm font-semibold text-indigo-700">
+        {{ current.level.code }} · Lesson {{ current.lesson.lessonNumber }}
+      </p>
+      <h1 #lessonHeading tabindex="-1" id="lesson-title"
+        class="mt-3 break-words text-3xl font-bold leading-relaxed text-gray-900">
+        {{ current.lesson.title }}
+      </h1>
+      @if (current.lesson.description) {
+      <p class="mt-4 whitespace-pre-wrap break-words leading-relaxed text-gray-600">
+        {{ current.lesson.description }}
+      </p>
+      }
+    </header>
+    <section aria-label="Grammar lesson content" [attr.aria-busy]="current.content.status === 'loading'">
+      @switch (current.content.status) {
+      @case ('loading') {
+      <p role="status">Loading grammar content…</p>
+      }
+      @case ('missing') {
+      <p class="rounded-xl bg-gray-50 p-5 text-gray-600">
+        Grammar content is not available for this lesson yet. Choose another lesson or
+        check back later.
+      </p>
+      }
+      @case ('error') {
+      <p role="alert" class="text-red-800">{{ current.content.message }}</p>
+      <button type="button" (click)="retryContent()"
+        class="mt-4 min-h-11 rounded-lg border border-indigo-300 px-4 font-semibold text-indigo-700 focus-visible:outline-indigo-600">
+        Retry content
+      </button>
+      }
+      @case ('ready') {
+      @if (current.content.document.blocks.length) {
+      <app-grammar-content [document]="current.content.document" />
+      } @else {
+      <p class="rounded-xl bg-gray-50 p-5 text-gray-600">
+        This lesson has no grammar content yet. Choose another lesson or check back
+        later.
+      </p>
+      }
+      }
+      }
+    </section>
+  </article>
+  <nav aria-label="Lesson navigation" class="mt-6" [attr.aria-busy]="current.navigation.status === 'loading'">
+    @switch (current.navigation.status) {
+    @case ('loading') {
+    <p role="status" class="text-sm text-gray-600">Loading lesson navigation…</p>
+    }
+    @case ('error') {
+    <p role="alert" class="text-sm text-red-800">{{ current.navigation.message }}</p>
+    <button type="button" (click)="retryNavigation()"
+      class="mt-2 min-h-11 text-sm font-semibold text-indigo-700 underline">
+      Retry navigation
+    </button>
+    }
+    @case ('ready') {
+    <div class="grid gap-4 sm:grid-cols-2">
+      @if (current.navigation.previous; as previous) {
+      <a [routerLink]="['/grammar', previous.id]" rel="prev"
+        class="min-w-0 rounded-xl border border-gray-200 bg-white p-4 text-indigo-700 focus-visible:outline-2 focus-visible:outline-indigo-600"><span
+          class="block text-sm">Previous lesson</span><span class="mt-1 block break-words font-semibold">{{
+          previous.lessonNumber }}. {{ previous.title }}</span></a>
+      }
+      @if (current.navigation.next; as next) {
+      <a [routerLink]="['/grammar', next.id]" rel="next"
+        class="min-w-0 rounded-xl border border-gray-200 bg-white p-4 text-indigo-700 focus-visible:outline-2 focus-visible:outline-indigo-600 sm:col-start-2"><span
+          class="block text-sm">Next lesson</span><span class="mt-1 block break-words font-semibold">{{
+          next.lessonNumber }}. {{ next.title }}</span></a>
+      }
+    </div>
+    }
+    }
+  </nav>
+  <a routerLink="/grammar" [queryParams]="{ level: current.level.code }"
+    class="mt-6 inline-flex min-h-11 items-center font-semibold text-indigo-700 underline focus-visible:outline-indigo-600">Back
+    to {{ current.level.code }} lessons</a>
+  }
+  }
+  }
+</div>

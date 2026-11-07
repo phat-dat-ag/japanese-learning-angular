@@ -28,4 +28,12 @@ describe('MainLayout', () => {
   it('should create', () => {
     expect(component).toBeTruthy();
   });
+  it('stacks navigation above content on small screens', () => {
+    expect(fixture.nativeElement.querySelector('.flex-col.lg\\:flex-row')).not.toBeNull();
+    const sidebar = fixture.nativeElement.querySelector('aside');
+    expect(sidebar.classList.contains('w-full')).toBe(true);
+    component.toggleSidebar();
+    fixture.detectChanges();
+    expect(fixture.nativeElement.querySelector('app-sidebar')).toBeNull();
+  });
 });

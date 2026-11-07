@@ -22,6 +22,8 @@ describe('Admin lesson contracts', () => {
   });
   it('requires persisted metadata fields without inferring order', () => {
     expect(isLessonMetadata(lesson)).toBe(true);
+    const { description, ...withoutDescription } = lesson;
+    expect(isLessonMetadata(withoutDescription)).toBe(true);
     expect(isLessonMetadata({ ...lesson, displayOrder: undefined })).toBe(false);
     expect(isLessonMetadata({ ...lesson, levelId: '72' })).toBe(false);
     expect(isLessonList([lesson, lesson])).toBe(false);

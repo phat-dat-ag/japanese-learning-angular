@@ -2,25 +2,14 @@ import { inject, Injectable } from '@angular/core';
 import { map } from 'rxjs';
 import { ApiClient } from '../../../../core/api/api-client.service';
 import { ApiError } from '../../../../core/api/api-error';
-import { isRecord } from '../../../../core/api/api-response.model';
+import { isSupportedContentResponse } from '../../../grammar/services/lesson-read.service';
 import {
   GrammarDocument,
-  isLessonContentResponse,
-  LessonContentResponse,
   LessonContentSnapshot,
   LessonContentWriteRequest,
 } from '../models/grammar-content.model';
 import { positiveInteger } from '../models/lesson.model';
 
-function contentResponse(value: unknown): value is LessonContentResponse {
-  if (isRecord(value) && typeof value['schemaVersion'] === 'number' && value['schemaVersion'] !== 1)
-    throw new ApiError(
-      'LESSON_CONTENT_SCHEMA_UNSUPPORTED',
-      'Only schema version 1 can be edited.',
-      200,
-    );
-  return isLessonContentResponse(value);
-}
 export function isStrongEtag(value: string | null): value is string {
   return value !== null && /^"[\x21\x23-\x7e\x80-\xff]*"$/.test(value);
 }
@@ -49,7 +38,7 @@ export class LessonContentService {
       .requestWithResponse(
         'DELETE',
         `v1/lessons/${id}/content?expectedVersion=${revision.version}`,
-        contentResponse,
+        isSupportedContentResponse,
         undefined,
         { 'If-Match': revision.etag },
       )
@@ -79,7 +68,7 @@ export class LessonContentService {
       .requestWithResponse(
         method,
         `v1/lessons/${id}/content`,
-        contentResponse,
+        isSupportedContentResponse,
         body,
         etag === undefined ? {} : { 'If-Match': etag },
       )

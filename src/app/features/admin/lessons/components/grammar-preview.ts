@@ -1,11 +1,11 @@
 import { ChangeDetectionStrategy, Component, input } from '@angular/core';
+import { GrammarContent } from '../../../grammar/components/grammar-content';
 import { GrammarDocument } from '../models/grammar-content.model';
-import { GrammarInlinePreview } from './grammar-inline-preview';
 
 @Component({
   selector: 'app-grammar-preview',
-  imports: [GrammarInlinePreview],
-  templateUrl: './grammar-preview.html',
+  imports: [GrammarContent],
+  template: '<app-grammar-content [document]="document()" />',
   changeDetection: ChangeDetectionStrategy.OnPush,
 })
 export class GrammarPreview {

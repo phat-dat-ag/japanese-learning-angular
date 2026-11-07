@@ -1,4 +1,4 @@
-<div class="space-y-5 break-words text-gray-800">
+<div class="space-y-6 break-words text-base leading-loose text-gray-800 sm:text-lg">
   @for (block of document().blocks; track block.id) {
     @switch (block.type) {
       @case ('heading') {
@@ -60,7 +60,12 @@
         }
       }
       @case ('table') {
-        <div class="overflow-x-auto">
+        <div
+          class="overflow-x-auto rounded-lg focus-visible:outline-2 focus-visible:outline-indigo-600"
+          role="region"
+          aria-label="Grammar table"
+          tabindex="0"
+        >
           <table class="w-full border-collapse text-left text-sm">
             <caption class="sr-only">
               Grammar table
@@ -92,8 +97,10 @@
       }
       @case ('example') {
         <figure class="space-y-2 rounded-lg bg-gray-50 p-4">
-          <p lang="ja" class="whitespace-pre-wrap text-lg">{{ block.japanese }}</p>
-          <p lang="ja" class="whitespace-pre-wrap text-sm text-gray-600">{{ block.reading }}</p>
+          <p lang="ja" class="whitespace-pre-wrap text-xl leading-loose">{{ block.japanese }}</p>
+          <p lang="ja" class="whitespace-pre-wrap text-base leading-relaxed text-gray-600">
+            {{ block.reading }}
+          </p>
           <figcaption class="space-y-2">
             <p lang="vi" class="whitespace-pre-wrap">{{ block.translations.vi }}</p>
             <p lang="en" class="whitespace-pre-wrap">{{ block.translations.en }}</p>
@@ -102,7 +109,14 @@
       }
       @case ('callout') {
         <aside
-          class="rounded-lg border border-indigo-200 bg-indigo-50 p-4"
+          class="rounded-lg border p-4"
+          [attr.aria-label]="block.variant + ' callout'"
+          [class.border-indigo-200]="block.variant === 'note'"
+          [class.bg-indigo-50]="block.variant === 'note'"
+          [class.border-emerald-200]="block.variant === 'tip'"
+          [class.bg-emerald-50]="block.variant === 'tip'"
+          [class.border-sky-200]="block.variant === 'information'"
+          [class.bg-sky-50]="block.variant === 'information'"
           [class.border-amber-300]="block.variant === 'warning'"
           [class.bg-amber-50]="block.variant === 'warning'"
         >

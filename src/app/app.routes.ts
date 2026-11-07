@@ -1,6 +1,7 @@
 import { Routes } from '@angular/router';
 import { guestGuard, guestLayoutMatch } from './core/auth/guest.guard';
 import { adminGuard, userGuard } from './core/auth/role.guard';
+import { grammarReadGuard } from './features/grammar/grammar.guard';
 
 export const routes: Routes = [
   {
@@ -25,6 +26,13 @@ export const routes: Routes = [
         loadComponent: () => import('./features/auth/guest').then((m) => m.Guest),
       },
     ],
+  },
+  {
+    path: 'grammar',
+    canActivate: [grammarReadGuard],
+    canActivateChild: [grammarReadGuard],
+    loadComponent: () => import('./core/layout/main-layout/main-layout').then((m) => m.MainLayout),
+    loadChildren: () => import('./features/grammar/grammar.routes').then((m) => m.GRAMMAR_ROUTES),
   },
   {
     path: 'admin',

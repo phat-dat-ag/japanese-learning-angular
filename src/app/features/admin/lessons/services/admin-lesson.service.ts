@@ -2,30 +2,21 @@ import { inject, Injectable } from '@angular/core';
 import { map } from 'rxjs';
 import { ApiClient } from '../../../../core/api/api-client.service';
 import { ApiError } from '../../../../core/api/api-error';
-import {
-  isLessonLevels,
-  isLessonList,
-  isLessonMetadata,
-  LessonLevelCode,
-  LessonWriteRequest,
-} from '../models/lesson.model';
+import { LessonReadService } from '../../../grammar/services/lesson-read.service';
+import { isLessonMetadata, LessonLevelCode, LessonWriteRequest } from '../models/lesson.model';
 
 @Injectable({ providedIn: 'root' })
 export class AdminLessonService {
   private readonly api = inject(ApiClient);
+  private readonly reads = inject(LessonReadService);
   getLevels() {
-    return this.api.get('v1/jlpt-levels', isLessonLevels);
+    return this.reads.getLevels();
   }
   getLessons(level: LessonLevelCode) {
-    return this.api.get(`v1/lessons?level=${encodeURIComponent(level)}`, isLessonList);
+    return this.reads.getLessons(level);
   }
   getLesson(id: number) {
-    return this.api.get(`v1/lessons/${id}`, isLessonMetadata).pipe(
-      map((response) => {
-        if (response.data.id !== id) throw ApiError.invalidResponse(200, response.meta);
-        return response;
-      }),
-    );
+    return this.reads.getLesson(id);
   }
   createLesson(body: LessonWriteRequest) {
     return this.api.post('v1/lessons', body, isLessonMetadata);
