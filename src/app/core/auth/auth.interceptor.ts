@@ -18,6 +18,20 @@ export const authInterceptor: HttpInterceptorFn = (request, next) => {
   } catch {
     return next(request);
   }
+  // Same-origin API requests keep one ID across the existing authentication retry.
+  if (
+    target.origin === new URL(document.baseURI).origin &&
+    target.origin === root.origin &&
+    target.pathname.startsWith(root.pathname)
+  ) {
+    const values = request.headers.getAll('X-Correlation-ID');
+    const candidate = values?.length === 1 ? values[0] : undefined;
+    const correlationId =
+      candidate && /^[A-Za-z0-9_-]{1,64}$/.test(candidate) ? candidate : createCorrelationId();
+    
+      request = request.clone({ setHeaders: { 'X-Correlation-ID': correlationId } });
+  }
+
   const apiPath = target.pathname.slice(root.pathname.length);
   if (
     target.origin !== root.origin ||
@@ -77,3 +91,10 @@ export const authInterceptor: HttpInterceptorFn = (request, next) => {
     }),
   );
 };
+
+// getRandomValues is also available on local HTTP development origins.
+function createCorrelationId(): string {
+  const bytes = crypto.getRandomValues(new Uint8Array(16));
+  
+  return Array.from(bytes, (value) => value.toString(16).padStart(2, '0')).join('');
+}
