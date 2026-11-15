@@ -46,3 +46,8 @@ Thumbs.db
 # Browser test artifacts
 /test-results/
 /playwright-report/
+
+# Local operator/tooling values (never browser assets)
+.env
+.env.*
+!.env.example

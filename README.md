@@ -260,3 +260,17 @@ project, apply pending migrations with `docker compose -p jp_learning_dev run --
 flyway-vocabulary migrate`, then run `validate` with the same service. Rebuild `vocabulary-api`
 and recreate it with `up -d --no-deps --wait vocabulary-api`. Rebuild/recreate `frontend` when
 its bundle is stale. Keep the existing project name and volumes; never reset data to fix this.
+
+### Operator environment template
+
+`.env.example` / ignored `.env` document four optional test-runner settings.
+They are not Angular build inputs and are not automatically loaded. Export reviewed
+values into the test process/IDE. `QUIZ_E2E_BROWSER_CHANNEL` may be empty (Playwright
+default); `QUIZ_E2E_PROJECT` is guarded to `jp_learning_dev` for mutating fixtures;
+`QUIZ_E2E_EXPIRY=0` disables the expiry scenario and
+`FLASHCARD_E2E_DEPLOYED=false` uses the native 4200 frontend. The deployed fixture
+target remains DEV port 8088; these runners do not target production-like port 1888.
+Container images keep same-origin `/api`, so both deployments use their own Gateway
+without browser environment substitution. The parent [environment guide](../README.md#environment-configuration)
+documents both Compose file sets, port isolation and secret-safe pair validation.
+No real credentials belong in browser configuration.
