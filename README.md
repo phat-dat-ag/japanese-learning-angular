@@ -1,5 +1,14 @@
 # Japanese Learning — Angular Frontend
 
+For the complete Japanese Learning Docker stack, follow the parent repository's
+[clone and first-time setup guide](../README.md#getting-started). It initializes
+root service dotenv inputs and provisions matching JWT/P07 files before startup.
+This repository's `.env.example` is for native/service configuration; it is not
+loaded automatically by every framework and is not a substitute for the parent
+Compose setup. If cloned standalone, obtain the [root repository](https://github.com/phat-dat-ag/japanese-learning);
+the relative guide link requires the submodule checkout layout.
+
+
 Angular frontend for the Japanese Learning application. It provides account registration and sign-in, JLPT vocabulary flashcards with personal SRS learning, resumable sessions, bookmarks and statistics, kanji quizzes with results/history/progress, and administration tools for vocabulary, lesson metadata/grammar content and imports, and quiz questions.
 
 This repository is the frontend submodule of a microservices system. The .NET service owns accounts and authentication; Quarkus provides learning APIs. Browser requests use a shared API Gateway root rather than individual service addresses. The frontend proxy configuration expects an HTTP Gateway at port 8080; Gateway implementation and backend deployment are managed outside this submodule.
