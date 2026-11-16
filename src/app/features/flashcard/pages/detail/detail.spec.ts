@@ -289,7 +289,7 @@ describe('Flashcard detail', () => {
     expect(front.hasAttribute('inert')).toBe(false);
   });
 
-  it('shows two plain Japanese examples on the front and their readings on the back', () => {
+  it('shows the first API example with its reading and Vietnamese meaning on the back', () => {
     const example = card.examples[0]!;
 
     http.expectOne('/api/v1/flashcards/1?includeLearning=true').flush({
@@ -309,18 +309,22 @@ describe('Flashcard detail', () => {
 
     const examples = element.querySelector('.example-panel')!;
 
-    expect(examples.querySelectorAll('li')).toHaveLength(2);
+    expect(examples.querySelectorAll('li')).toHaveLength(1);
     expect(examples.querySelector('mark')).toBeNull();
     expect(examples.textContent).not.toContain('Third example');
     expect(element.textContent).not.toContain(example.meaningEn);
-    expect(element.textContent).not.toContain(example.meaningVi);
+    expect(element.querySelector('.card-front')?.textContent).not.toContain(example.meaningVi);
+    expect(element.querySelector('.example-readings p[lang="vi"]')?.textContent).toContain(
+      example.meaningVi,
+    );
+    expect(examples.textContent).not.toContain('a+b');
     expect(element.querySelector('.card-front')?.textContent).not.toContain(
       example.japaneseReading,
     );
     expect(element.querySelector('.example-readings')?.textContent).toContain(
       example.japaneseReading,
     );
-    expect(element.querySelectorAll('.example-readings li')).toHaveLength(2);
+    expect(element.querySelectorAll('.example-readings li')).toHaveLength(1);
   });
 
   it.each(['', 'absent'])('preserves example text when target is %s', (targetText) => {
