@@ -30,7 +30,7 @@
         @if (bookmarks.error()) {
         <p role="alert" class="mb-3 text-red-700">{{ bookmarks.error() }}</p>
         }
-        <app-flashcard class="card-arrival" [card]="current.card" [viewing]="true" />
+        <app-flashcard class="card-arrival" [card]="current.card" />
         <section class="mt-5 rounded-xl border border-gray-200 p-4" aria-label="Learn in a lesson">
           <h2 class="font-semibold">Learn or practice in a lesson</h2>
           <p class="my-2 text-sm text-gray-600">
