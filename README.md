@@ -15,6 +15,21 @@ This repository is the frontend submodule of a microservices system. The .NET se
 
 Admin user-management and settings pages are placeholders. Lesson administration provides metadata CRUD, a structured grammar content editor, and separate complete-grammar and metadata-only JSON imports. See [Admin Grammar Lesson Management](docs/admin-grammar-lessons.md) for workflows, backend requirements, and manual live verification.
 
+## Flashcard viewing and learning
+
+User and Admin flashcard viewing and session study show only the first example in the
+backend's randomly ordered examples array. The front shows the Japanese sentence;
+the back shows its stored Japanese reading with its Vietnamese meaning below.
+The selected example stays the same while flipping. A new detail request may
+select another example (random selection can also repeat).
+
+Session study uses the same presentation and still requires flipping before rating.
+The shared detail API randomizes examples supplied to sessions; selections are not
+persisted. A session refresh (including window focus) may select another example.
+Ratings, session position, and SRS progress remain tied to the vocabulary/session item.
+Readings are displayed as stored, so hiragana requires correct source data.
+No additional environment variables or configuration are required.
+
 ## Technology stack and prerequisites
 
 Versions below reflect `package-lock.json`; `npm ci` installs the locked dependencies.

@@ -30,7 +30,7 @@ function splitMorae(reading: string): string[] {
 export class Flashcard {
   readonly card = input.required<FlashcardModel>();
   readonly flipped = linkedSignal({ source: this.card, computation: () => false });
-  readonly examples = computed(() => this.card().examples.slice(0, 2));
+  readonly examples = computed(() => this.card().examples.slice(0, 1));
   readonly readings = computed(() =>
     this.card().readings.map((reading) => {
       const morae = splitMorae(reading.reading);
